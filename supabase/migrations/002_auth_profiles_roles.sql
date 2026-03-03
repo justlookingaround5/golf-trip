@@ -31,10 +31,11 @@ create trigger player_profiles_updated_at
   for each row execute function update_updated_at();
 
 -- Auto-create profile on new auth.users signup
+-- NOTE: SET search_path = public is required so GoTrue can resolve table names
 create or replace function handle_new_user()
 returns trigger as $$
 begin
-  insert into player_profiles (user_id, display_name, avatar_url)
+  insert into public.player_profiles (user_id, display_name, avatar_url)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
@@ -42,15 +43,16 @@ begin
   );
 
   -- Auto-create owner records for trips where created_by matches this user
-  insert into trip_members (trip_id, user_id, role)
+  insert into public.trip_members (trip_id, user_id, role)
   select id, new.id, 'owner'
-  from trips
+  from public.trips
   where created_by = new.id
   on conflict (trip_id, user_id) do nothing;
 
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer
+set search_path = public;
 
 create trigger on_auth_user_created
   after insert on auth.users

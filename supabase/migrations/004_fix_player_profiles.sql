@@ -47,10 +47,11 @@ CREATE POLICY "Users can update own profile" ON player_profiles
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Recreate auth trigger
+-- NOTE: SET search_path = public is required so GoTrue can resolve table names
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO player_profiles (user_id, display_name, avatar_url)
+  INSERT INTO public.player_profiles (user_id, display_name, avatar_url)
   VALUES (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
@@ -58,15 +59,16 @@ BEGIN
   )
   ON CONFLICT (user_id) DO NOTHING;
 
-  INSERT INTO trip_members (trip_id, user_id, role)
+  INSERT INTO public.trip_members (trip_id, user_id, role)
   SELECT id, new.id, 'owner'
-  FROM trips
+  FROM public.trips
   WHERE created_by = new.id
   ON CONFLICT (trip_id, user_id) DO NOTHING;
 
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
