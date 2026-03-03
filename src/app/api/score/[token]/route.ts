@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 // Service role client bypasses RLS — scorer is not a Supabase user
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function GET(
   _request: NextRequest,
@@ -14,7 +16,7 @@ export async function GET(
   const { token } = await params
 
   // 1. Look up the match by scorer_token
-  const { data: match, error: matchError } = await supabase
+  const { data: match, error: matchError } = await getServiceClient()
     .from('matches')
     .select('*')
     .eq('scorer_token', token)
@@ -28,7 +30,7 @@ export async function GET(
   }
 
   // 2. Get the course + holes
-  const { data: course, error: courseError } = await supabase
+  const { data: course, error: courseError } = await getServiceClient()
     .from('courses')
     .select('*')
     .eq('id', match.course_id)
@@ -41,7 +43,7 @@ export async function GET(
     )
   }
 
-  const { data: holes, error: holesError } = await supabase
+  const { data: holes, error: holesError } = await getServiceClient()
     .from('holes')
     .select('*')
     .eq('course_id', course.id)
@@ -55,7 +57,7 @@ export async function GET(
   }
 
   // 3. Get match players with trip_player -> player details
-  const { data: matchPlayers, error: mpError } = await supabase
+  const { data: matchPlayers, error: mpError } = await getServiceClient()
     .from('match_players')
     .select(
       'id, match_id, trip_player_id, side, trip_player:trip_players(id, player_id, player:players(id, name, handicap_index))'
@@ -70,7 +72,7 @@ export async function GET(
   }
 
   // 4. Get existing scores for this match
-  const { data: scores, error: scoresError } = await supabase
+  const { data: scores, error: scoresError } = await getServiceClient()
     .from('scores')
     .select('*')
     .eq('match_id', match.id)
@@ -87,7 +89,7 @@ export async function GET(
     (mp: { trip_player_id: string }) => mp.trip_player_id
   )
 
-  const { data: courseHandicaps, error: chError } = await supabase
+  const { data: courseHandicaps, error: chError } = await getServiceClient()
     .from('player_course_handicaps')
     .select('*')
     .eq('course_id', course.id)

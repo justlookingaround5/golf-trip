@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 // Service role client bypasses RLS — scorer is not a Supabase user
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 interface ScoreEntry {
   trip_player_id: string
@@ -19,7 +21,7 @@ export async function POST(
   const { token } = await params
 
   // 1. Validate the scorer token
-  const { data: match, error: matchError } = await supabase
+  const { data: match, error: matchError } = await getServiceClient()
     .from('matches')
     .select('id, status')
     .eq('scorer_token', token)
@@ -78,7 +80,7 @@ export async function POST(
     updated_at: new Date().toISOString(),
   }))
 
-  const { error: upsertError } = await supabase
+  const { error: upsertError } = await getServiceClient()
     .from('scores')
     .upsert(upsertData, {
       onConflict: 'match_id,trip_player_id,hole_id',
@@ -93,14 +95,14 @@ export async function POST(
 
   // 4. If match is pending, update to in_progress
   if (match.status === 'pending') {
-    await supabase
+    await getServiceClient()
       .from('matches')
       .update({ status: 'in_progress' })
       .eq('id', match.id)
   }
 
   // 5. Return updated scores for this match
-  const { data: updatedScores, error: fetchError } = await supabase
+  const { data: updatedScores, error: fetchError } = await getServiceClient()
     .from('scores')
     .select('*')
     .eq('match_id', match.id)
