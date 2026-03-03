@@ -3,7 +3,7 @@ import { Resend } from 'resend'
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY)
 }
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
 interface TripInfo {
   name: string
