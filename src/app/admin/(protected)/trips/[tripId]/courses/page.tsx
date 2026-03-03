@@ -120,41 +120,35 @@ export default function CoursesPage() {
     }, 300)
   }
 
-  // Select a search result and auto-fill
+  // Select a search result and auto-fill from course detail API
   async function handleSelectSearchResult(result: GolfCourseSearchResult) {
     setShowSearchResults(false)
     setSearchQuery('')
     setCourseName(result.course_name || result.club_name)
 
-    // Fetch full course detail for holes data
+    // Fetch full course detail to get tee box data (slope, rating, holes)
     try {
-      const res = await fetch(`/api/courses/search?q=${encodeURIComponent(result.id)}&detail=1`)
-      // The search endpoint doesn't support detail, so we try a different approach
-      // For now, set the name from the search result. If the API provides slope/rating/holes
-      // in the search result, use them. Otherwise the admin fills them manually.
+      const res = await fetch(`/api/courses/lookup?id=${encodeURIComponent(result.id)}`)
+      if (res.ok) {
+        const detail = await res.json()
+        // Use the first male tee box as default (typically has the most data)
+        const teeBox = detail.tees?.male?.[0]
+        if (teeBox) {
+          if (teeBox.slope_rating) setSlope(String(teeBox.slope_rating))
+          if (teeBox.course_rating) setRating(String(teeBox.course_rating))
+          if (teeBox.holes && teeBox.holes.length > 0) {
+            setHoles(
+              teeBox.holes.map((h: { par: number; handicap: number }, i: number) => ({
+                hole_number: i + 1,
+                par: h.par,
+                handicap_index: h.handicap || (i + 1),
+              }))
+            )
+          }
+        }
+      }
     } catch {
-      // ignore
-    }
-
-    // If the search result object has additional data (depends on API response shape),
-    // attempt to use it
-    const detail = result as GolfCourseSearchResult & {
-      slope?: number
-      rating?: number
-      par?: number
-      holes?: Array<{ hole_number: number; par: number; handicap: number }>
-    }
-
-    if (detail.slope) setSlope(String(detail.slope))
-    if (detail.rating) setRating(String(detail.rating))
-    if (detail.holes && detail.holes.length > 0) {
-      setHoles(
-        detail.holes.map((h) => ({
-          hole_number: h.hole_number,
-          par: h.par,
-          handicap_index: h.handicap ?? h.hole_number,
-        }))
-      )
+      // Detail fetch failed — user can fill manually
     }
   }
 
@@ -425,7 +419,7 @@ export default function CoursesPage() {
                             {result.course_name || result.club_name}
                           </span>
                           <span className="ml-2 text-gray-500">
-                            {result.city}, {result.state}
+                            {result.location?.city}, {result.location?.state}
                           </span>
                         </button>
                       </li>
