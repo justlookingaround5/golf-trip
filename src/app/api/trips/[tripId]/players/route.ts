@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { calculateCourseHandicap } from '@/lib/handicap'
 import { requireTripRole } from '@/lib/auth'
+import { sendTripInviteEmail, sendTripAddedEmail } from '@/lib/email'
+
+function getServiceClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function GET(
   _request: NextRequest,
@@ -58,12 +67,145 @@ export async function POST(
   }
 
   const supabase = await createClient()
-
   const body = await request.json()
 
+  // Get trip info (needed for emails)
+  const { data: trip } = await supabase
+    .from('trips')
+    .select('id, name, year, location')
+    .eq('id', tripId)
+    .single()
+
+  // --- Mode 1: Add existing user by profile_user_id ---
+  if (body.profile_user_id) {
+    const serviceClient = getServiceClient()
+
+    // Get the profile data
+    const { data: profile, error: profileError } = await supabase
+      .from('player_profiles')
+      .select('user_id, display_name, handicap_index')
+      .eq('user_id', body.profile_user_id)
+      .single()
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+
+    // Find or create a players record for this user
+    let playerId: string
+
+    const { data: existingPlayer } = await supabase
+      .from('players')
+      .select('id')
+      .eq('user_id', body.profile_user_id)
+      .limit(1)
+      .single()
+
+    if (existingPlayer) {
+      playerId = existingPlayer.id
+    } else {
+      const { data: newPlayer, error: createError } = await supabase
+        .from('players')
+        .insert({
+          name: profile.display_name || 'Unknown',
+          handicap_index: profile.handicap_index,
+          user_id: body.profile_user_id,
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        return NextResponse.json({ error: createError.message }, { status: 500 })
+      }
+      playerId = newPlayer.id
+    }
+
+    // Create trip_player + trip_member
+    const tripPlayer = await createTripPlayerWithHandicaps(supabase, tripId, playerId)
+    if ('error' in tripPlayer) {
+      return NextResponse.json({ error: tripPlayer.error }, { status: 500 })
+    }
+
+    await serviceClient
+      .from('trip_members')
+      .upsert(
+        { trip_id: tripId, user_id: body.profile_user_id, role: 'player' },
+        { onConflict: 'trip_id,user_id' }
+      )
+
+    // Send "added" email (best effort — don't fail if email fails)
+    if (body.email && trip) {
+      try {
+        await sendTripAddedEmail({
+          to: body.email,
+          playerName: profile.display_name || 'there',
+          trip: { name: trip.name, year: trip.year, location: trip.location },
+        })
+      } catch {
+        // Email failure is non-fatal
+      }
+    }
+
+    return NextResponse.json(tripPlayer, { status: 201 })
+  }
+
+  // --- Mode 2: Invite new player by name + email ---
+  if (body.name && body.email) {
+    const { data: newPlayer, error: playerError } = await supabase
+      .from('players')
+      .insert({
+        name: body.name.trim(),
+        email: body.email.trim(),
+      })
+      .select()
+      .single()
+
+    if (playerError) {
+      return NextResponse.json({ error: playerError.message }, { status: 500 })
+    }
+
+    // Create trip_player
+    const tripPlayer = await createTripPlayerWithHandicaps(supabase, tripId, newPlayer.id)
+    if ('error' in tripPlayer) {
+      return NextResponse.json({ error: tripPlayer.error }, { status: 500 })
+    }
+
+    // Create invite record
+    const { data: invite, error: inviteError } = await supabase
+      .from('trip_invites')
+      .insert({
+        trip_id: tripId,
+        player_id: newPlayer.id,
+        email: body.email.trim(),
+        invited_by: access.userId,
+      })
+      .select()
+      .single()
+
+    if (inviteError) {
+      return NextResponse.json({ error: inviteError.message }, { status: 500 })
+    }
+
+    // Send invite email (best effort)
+    if (trip) {
+      try {
+        await sendTripInviteEmail({
+          to: body.email.trim(),
+          playerName: body.name.trim(),
+          trip: { name: trip.name, year: trip.year, location: trip.location },
+          token: invite.token,
+        })
+      } catch {
+        // Email failure is non-fatal
+      }
+    }
+
+    return NextResponse.json({ ...tripPlayer, invite }, { status: 201 })
+  }
+
+  // --- Mode 3: Manual add (existing behavior — name only or with player_id) ---
   let playerId = body.player_id
 
-  // If no existing player_id, create a new player
   if (!playerId) {
     if (!body.name) {
       return NextResponse.json(
@@ -90,36 +232,42 @@ export async function POST(
     playerId = newPlayer.id
   }
 
-  // Create trip_player record
+  const tripPlayer = await createTripPlayerWithHandicaps(supabase, tripId, playerId)
+  if ('error' in tripPlayer) {
+    return NextResponse.json({ error: tripPlayer.error }, { status: 500 })
+  }
+
+  return NextResponse.json(tripPlayer, { status: 201 })
+}
+
+// Helper: create trip_player record and auto-calculate course handicaps
+async function createTripPlayerWithHandicaps(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tripId: string,
+  playerId: string
+) {
   const { data: tripPlayer, error: tpError } = await supabase
     .from('trip_players')
-    .insert({
-      trip_id: tripId,
-      player_id: playerId,
-    })
+    .insert({ trip_id: tripId, player_id: playerId })
     .select('*, player:players(*)')
     .single()
 
   if (tpError) {
-    return NextResponse.json({ error: tpError.message }, { status: 500 })
+    return { error: tpError.message }
   }
 
-  // Get the player's handicap index
   const handicapIndex = tripPlayer.player?.handicap_index
 
-  // Auto-calculate course handicaps if the player has a handicap index
   if (handicapIndex != null) {
-    // Get all courses for this trip
     const { data: courses, error: coursesError } = await supabase
       .from('courses')
       .select('id, slope, rating, par')
       .eq('trip_id', tripId)
 
     if (coursesError) {
-      return NextResponse.json({ error: coursesError.message }, { status: 500 })
+      return { error: coursesError.message }
     }
 
-    // Calculate and insert course handicaps
     const courseHandicapRecords = courses
       .filter((c: { slope: number | null; rating: number | null }) => c.slope != null && c.rating != null)
       .map((c: { id: string; slope: number; rating: number; par: number }) => ({
@@ -129,31 +277,20 @@ export async function POST(
       }))
 
     if (courseHandicapRecords.length > 0) {
-      const { error: insertError } = await supabase
+      await supabase
         .from('player_course_handicaps')
         .insert(courseHandicapRecords)
-
-      if (insertError) {
-        return NextResponse.json({ error: insertError.message }, { status: 500 })
-      }
     }
 
-    // Fetch the inserted course handicaps to return
     const { data: handicaps } = await supabase
       .from('player_course_handicaps')
       .select('trip_player_id, course_id, handicap_strokes')
       .eq('trip_player_id', tripPlayer.id)
 
-    return NextResponse.json(
-      { ...tripPlayer, course_handicaps: handicaps || [] },
-      { status: 201 }
-    )
+    return { ...tripPlayer, course_handicaps: handicaps || [] }
   }
 
-  return NextResponse.json(
-    { ...tripPlayer, course_handicaps: [] },
-    { status: 201 }
-  )
+  return { ...tripPlayer, course_handicaps: [] }
 }
 
 export async function PATCH(

@@ -1,0 +1,78 @@
+import { Resend } from 'resend'
+
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY)
+}
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+interface TripInfo {
+  name: string
+  year: number
+  location: string | null
+}
+
+export async function sendTripInviteEmail({
+  to,
+  playerName,
+  trip,
+  token,
+  invitedByName,
+}: {
+  to: string
+  playerName: string
+  trip: TripInfo
+  token: string
+  invitedByName?: string
+}) {
+  const joinUrl = `${appUrl}/join/${token}`
+  const invitedBy = invitedByName ? ` by ${invitedByName}` : ''
+
+  await getResend().emails.send({
+    from: 'Golf Trip <onboarding@resend.dev>',
+    to,
+    subject: `You're invited to ${trip.name}!`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+        <h2 style="color: #15803d;">You're Invited!</h2>
+        <p>Hey ${playerName},</p>
+        <p>You've been invited${invitedBy} to join <strong>${trip.name}</strong>${trip.location ? ` in ${trip.location}` : ''} (${trip.year}).</p>
+        <p>
+          <a href="${joinUrl}" style="display: inline-block; background: #15803d; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+            Join This Trip
+          </a>
+        </p>
+        <p style="color: #6b7280; font-size: 14px;">Or copy this link: ${joinUrl}</p>
+      </div>
+    `,
+  })
+}
+
+export async function sendTripAddedEmail({
+  to,
+  playerName,
+  trip,
+}: {
+  to: string
+  playerName: string
+  trip: TripInfo
+}) {
+  const dashboardUrl = `${appUrl}/admin`
+
+  await getResend().emails.send({
+    from: 'Golf Trip <onboarding@resend.dev>',
+    to,
+    subject: `You've been added to ${trip.name}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+        <h2 style="color: #15803d;">You're In!</h2>
+        <p>Hey ${playerName},</p>
+        <p>You've been added to <strong>${trip.name}</strong>${trip.location ? ` in ${trip.location}` : ''} (${trip.year}).</p>
+        <p>
+          <a href="${dashboardUrl}" style="display: inline-block; background: #15803d; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+            View Your Dashboard
+          </a>
+        </p>
+      </div>
+    `,
+  })
+}

@@ -120,6 +120,18 @@ export interface Score {
   updated_at: string
 }
 
+export interface TripInvite {
+  id: string
+  trip_id: string
+  player_id: string
+  email: string
+  token: string
+  status: 'pending' | 'accepted' | 'expired'
+  invited_by: string | null
+  created_at: string
+  accepted_at: string | null
+}
+
 export type MatchFormat = Match['format']
 
 export const MATCH_FORMAT_LABELS: Record<MatchFormat, string> = {
