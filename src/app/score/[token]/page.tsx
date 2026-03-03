@@ -6,6 +6,7 @@ import { MATCH_FORMAT_LABELS } from '@/lib/types'
 import type { MatchFormat } from '@/lib/types'
 import { calculateMatchPlay } from '@/lib/match-play'
 import { getStrokesPerHole } from '@/lib/handicap'
+import { useSwipe } from '@/hooks/useSwipe'
 
 // ---------------------------------------------------------------------------
 // Types matching API response
@@ -234,6 +235,7 @@ export default function ScorerPage() {
   }
 
   function adjustScore(tripPlayerId: string, delta: number) {
+    if (navigator.vibrate) navigator.vibrate(10)
     setHoleScores((prev) => {
       const current = prev[tripPlayerId] ?? 4
       const next = Math.max(1, Math.min(20, current + delta))
@@ -241,11 +243,47 @@ export default function ScorerPage() {
     })
   }
 
+  function setScore(tripPlayerId: string, value: number) {
+    if (navigator.vibrate) navigator.vibrate(10)
+    setHoleScores((prev) => ({ ...prev, [tripPlayerId]: value }))
+  }
+
   async function submitHoleScores() {
+    if (navigator.vibrate) navigator.vibrate([20, 50, 20])
     if (!data || activeHole === null) return
     const hole = holes.find((h) => h.hole_number === activeHole)
     if (!hole) return
 
+    // ---- Optimistic update: mark hole complete immediately ----
+    const optimisticScores = allMatchPlayers.map((mp) => ({
+      id: `optimistic-${mp.trip_player_id}-${hole.id}`,
+      match_id: data.match.id,
+      trip_player_id: mp.trip_player_id,
+      hole_id: hole.id,
+      gross_score: holeScores[mp.trip_player_id] ?? hole.par,
+    }))
+
+    setData((prev) => {
+      if (!prev) return prev
+      const otherScores = prev.scores.filter((s) => s.hole_id !== hole.id)
+      return { ...prev, scores: [...otherScores, ...optimisticScores] }
+    })
+
+    // Immediately advance to next hole
+    const currentHole = activeHole
+    setActiveHole(null)
+    setTimeout(() => {
+      const updatedCompletedHoles = new Set(completedHoles)
+      updatedCompletedHoles.add(currentHole)
+      for (const h of holes) {
+        if (!updatedCompletedHoles.has(h.hole_number)) {
+          openHole(h.hole_number)
+          return
+        }
+      }
+    }, 100)
+
+    // ---- Then actually save in background ----
     setSaving(true)
     try {
       const scores = allMatchPlayers.map((mp) => ({
@@ -259,38 +297,26 @@ export default function ScorerPage() {
         body: JSON.stringify({ hole_id: hole.id, scores }),
       })
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error || 'Failed to save scores')
+      if (res.ok) {
+        const result = await res.json()
+        // Replace optimistic data with real data
+        setData((prev) => {
+          if (!prev) return prev
+          return { ...prev, scores: result.scores }
+        })
+        if (result.matchStatus) setMatchStatus(result.matchStatus)
+      } else {
+        // Revert optimistic update on failure
+        setData((prev) => {
+          if (!prev) return prev
+          const reverted = prev.scores.filter((s) => !s.id.startsWith('optimistic-'))
+          return { ...prev, scores: reverted }
+        })
+        setError('Failed to save. Tap the hole to retry.')
       }
-
-      const result = await res.json()
-
-      // Update local data with new scores
-      setData((prev) => {
-        if (!prev) return prev
-        return { ...prev, scores: result.scores }
-      })
-      if (result.matchStatus) {
-        setMatchStatus(result.matchStatus)
-      }
-
-      // Close entry and advance to next unscored hole
-      setActiveHole(null)
-
-      // After a tick, auto-advance to next hole
-      setTimeout(() => {
-        const updatedCompletedHoles = new Set(completedHoles)
-        updatedCompletedHoles.add(activeHole)
-        for (const h of holes) {
-          if (!updatedCompletedHoles.has(h.hole_number)) {
-            openHole(h.hole_number)
-            return
-          }
-        }
-      }, 300)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+    } catch {
+      setError('Connection lost. Score saved locally.')
+      // Service worker will queue the retry
     } finally {
       setSaving(false)
     }
@@ -408,94 +434,25 @@ export default function ScorerPage() {
       </div>
 
       <div className="mx-auto max-w-lg px-4 py-4">
-        {/* Score entry modal-like overlay for a hole */}
-        {activeHole !== null && activeHoleData && (
-          <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/40 sm:items-center">
-            <div className="w-full max-w-lg rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl">
-              {/* Hole header */}
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Hole {activeHoleData.hole_number}
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    Par {activeHoleData.par} &middot; Hdcp{' '}
-                    {activeHoleData.handicap_index}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setActiveHole(null)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500 hover:bg-gray-200"
-                  aria-label="Close"
-                >
-                  &times;
-                </button>
-              </div>
-
-              {/* Player scores */}
-              <div className="space-y-4">
-                {/* Team A */}
-                {teamAPlayers.length > 0 && (
-                  <div>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-700">
-                      Team A
-                    </p>
-                    {teamAPlayers.map((mp) => (
-                      <PlayerScoreRow
-                        key={mp.trip_player_id}
-                        name={playerName(mp)}
-                        strokes={
-                          playerStrokesMap
-                            .get(mp.trip_player_id)
-                            ?.get(activeHoleData.hole_number) ?? 0
-                        }
-                        score={holeScores[mp.trip_player_id] ?? activeHoleData.par}
-                        onAdjust={(d) => adjustScore(mp.trip_player_id, d)}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Team B */}
-                {teamBPlayers.length > 0 && (
-                  <div>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-700">
-                      Team B
-                    </p>
-                    {teamBPlayers.map((mp) => (
-                      <PlayerScoreRow
-                        key={mp.trip_player_id}
-                        name={playerName(mp)}
-                        strokes={
-                          playerStrokesMap
-                            .get(mp.trip_player_id)
-                            ?.get(activeHoleData.hole_number) ?? 0
-                        }
-                        score={holeScores[mp.trip_player_id] ?? activeHoleData.par}
-                        onAdjust={(d) => adjustScore(mp.trip_player_id, d)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Submit */}
-              <button
-                onClick={submitHoleScores}
-                disabled={saving}
-                className="mt-5 w-full rounded-xl bg-green-700 py-4 text-lg font-bold text-white shadow-lg active:bg-green-800 disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save & Next'}
-              </button>
-
-              {error && (
-                <p className="mt-2 text-center text-sm text-red-600">
-                  {error}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Full-screen hole entry with swipe navigation */}
+        <HoleEntryView
+          activeHole={activeHole}
+          activeHoleData={activeHoleData}
+          holes={holes}
+          completedHoles={completedHoles}
+          teamAPlayers={teamAPlayers}
+          teamBPlayers={teamBPlayers}
+          allMatchPlayers={allMatchPlayers}
+          playerStrokesMap={playerStrokesMap}
+          holeScores={holeScores}
+          saving={saving}
+          error={error}
+          openHole={openHole}
+          adjustScore={adjustScore}
+          setScore={setScore}
+          submitHoleScores={submitHoleScores}
+          onClose={() => setActiveHole(null)}
+        />
 
         {/* Hole List */}
         <div className="mb-4 flex items-center justify-between">
@@ -644,6 +601,177 @@ export default function ScorerPage() {
 }
 
 // ---------------------------------------------------------------------------
+// HoleEntryView — full-screen swipeable hole entry
+// ---------------------------------------------------------------------------
+
+function HoleEntryView({
+  activeHole,
+  activeHoleData,
+  holes,
+  completedHoles,
+  teamAPlayers,
+  teamBPlayers,
+  allMatchPlayers,
+  playerStrokesMap,
+  holeScores,
+  saving,
+  error,
+  openHole,
+  adjustScore,
+  setScore,
+  submitHoleScores,
+  onClose,
+}: {
+  activeHole: number | null
+  activeHoleData: HoleData | null | undefined
+  holes: HoleData[]
+  completedHoles: Set<number>
+  teamAPlayers: MatchPlayerData[]
+  teamBPlayers: MatchPlayerData[]
+  allMatchPlayers: MatchPlayerData[]
+  playerStrokesMap: Map<string, Map<number, number>>
+  holeScores: Record<string, number>
+  saving: boolean
+  error: string | null
+  openHole: (n: number) => void
+  adjustScore: (id: string, d: number) => void
+  setScore: (id: string, v: number) => void
+  submitHoleScores: () => void
+  onClose: () => void
+}) {
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: () => {
+      if (activeHole !== null && activeHole < holes.length) {
+        openHole(activeHole + 1)
+      }
+    },
+    onSwipeRight: () => {
+      if (activeHole !== null && activeHole > 1) {
+        openHole(activeHole - 1)
+      }
+    },
+  })
+
+  if (activeHole === null || !activeHoleData) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-30 bg-white flex flex-col"
+      {...swipeHandlers}
+    >
+      {/* Top bar with hole navigation */}
+      <div className="flex items-center justify-between bg-green-800 px-4 py-2 text-white">
+        <button
+          onClick={() => activeHole > 1 && openHole(activeHole - 1)}
+          disabled={activeHole <= 1}
+          className="px-3 py-1 text-sm disabled:opacity-30"
+        >
+          &larr; Prev
+        </button>
+        <div className="text-center">
+          <span className="text-lg font-bold">Hole {activeHoleData.hole_number}</span>
+          <span className="ml-2 text-sm text-green-200">Par {activeHoleData.par}</span>
+          <span className="ml-2 text-xs text-green-300">Hdcp {activeHoleData.handicap_index}</span>
+        </div>
+        <button
+          onClick={() => activeHole < holes.length && openHole(activeHole + 1)}
+          disabled={activeHole >= holes.length}
+          className="px-3 py-1 text-sm disabled:opacity-30"
+        >
+          Next &rarr;
+        </button>
+      </div>
+
+      {/* Hole dots */}
+      <div className="flex justify-center gap-1 py-2 bg-green-700">
+        {holes.map(h => (
+          <button
+            key={h.id}
+            onClick={() => openHole(h.hole_number)}
+            className={`h-2.5 w-2.5 rounded-full transition ${
+              h.hole_number === activeHole
+                ? 'bg-white scale-125'
+                : completedHoles.has(h.hole_number)
+                  ? 'bg-green-400'
+                  : 'bg-green-900'
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Score entry area — vertically centered */}
+      <div className="flex-1 flex flex-col justify-center px-4 overflow-y-auto">
+        <div className="space-y-3 max-w-lg mx-auto w-full">
+          {/* Team A */}
+          {teamAPlayers.length > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-700">
+                Team A
+              </p>
+              {teamAPlayers.map((mp) => (
+                <PlayerScoreRow
+                  key={mp.trip_player_id}
+                  name={playerName(mp)}
+                  strokes={
+                    playerStrokesMap.get(mp.trip_player_id)?.get(activeHoleData.hole_number) ?? 0
+                  }
+                  score={holeScores[mp.trip_player_id] ?? activeHoleData.par}
+                  par={activeHoleData.par}
+                  onAdjust={(d) => adjustScore(mp.trip_player_id, d)}
+                  onSet={(v) => setScore(mp.trip_player_id, v)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Team B */}
+          {teamBPlayers.length > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-700">
+                Team B
+              </p>
+              {teamBPlayers.map((mp) => (
+                <PlayerScoreRow
+                  key={mp.trip_player_id}
+                  name={playerName(mp)}
+                  strokes={
+                    playerStrokesMap.get(mp.trip_player_id)?.get(activeHoleData.hole_number) ?? 0
+                  }
+                  score={holeScores[mp.trip_player_id] ?? activeHoleData.par}
+                  par={activeHoleData.par}
+                  onAdjust={(d) => adjustScore(mp.trip_player_id, d)}
+                  onSet={(v) => setScore(mp.trip_player_id, v)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom action */}
+      <div className="px-4 pb-6 pt-2 max-w-lg mx-auto w-full">
+        <button
+          onClick={submitHoleScores}
+          disabled={saving}
+          className="w-full rounded-xl bg-green-700 py-4 text-lg font-bold text-white shadow-lg active:bg-green-800 disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : 'Save & Next'}
+        </button>
+        <button
+          onClick={onClose}
+          className="w-full mt-2 py-2 text-sm text-gray-500"
+        >
+          Back to scorecard
+        </button>
+        {error && (
+          <p className="mt-2 text-center text-sm text-red-600">{error}</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // PlayerScoreRow — big +/- buttons for mobile
 // ---------------------------------------------------------------------------
 
@@ -651,45 +779,73 @@ function PlayerScoreRow({
   name,
   strokes,
   score,
+  par,
   onAdjust,
+  onSet,
 }: {
   name: string
   strokes: number
   score: number
+  par: number
   onAdjust: (delta: number) => void
+  onSet: (value: number) => void
 }) {
+  // Common scores: par-1 through par+3
+  const presets: number[] = []
+  for (let i = Math.max(1, par - 1); i <= par + 3; i++) {
+    presets.push(i)
+  }
+
   return (
-    <div className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2">
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-gray-900">{name}</p>
-        {strokes > 0 && (
-          <p className="text-xs text-green-600">
-            {strokes} stroke{strokes !== 1 ? 's' : ''}
-          </p>
-        )}
+    <div className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{name}</p>
+          {strokes > 0 && (
+            <p className="text-xs text-green-600 dark:text-green-400">
+              {strokes} stroke{strokes !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onAdjust(-1)}
+            disabled={score <= 1}
+            className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 dark:bg-red-900/30 text-2xl font-bold text-red-700 dark:text-red-400 active:bg-red-200 disabled:opacity-30"
+            aria-label={`Decrease ${name} score`}
+          >
+            &minus;
+          </button>
+          <span className="w-10 text-center text-2xl font-bold text-gray-900 dark:text-white">
+            {score}
+          </span>
+          <button
+            type="button"
+            onClick={() => onAdjust(1)}
+            disabled={score >= 20}
+            className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30 text-2xl font-bold text-green-700 dark:text-green-400 active:bg-green-200 disabled:opacity-30"
+            aria-label={`Increase ${name} score`}
+          >
+            +
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onAdjust(-1)}
-          disabled={score <= 1}
-          className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 text-2xl font-bold text-red-700 active:bg-red-200 disabled:opacity-30"
-          aria-label={`Decrease ${name} score`}
-        >
-          &minus;
-        </button>
-        <span className="w-10 text-center text-2xl font-bold text-gray-900">
-          {score}
-        </span>
-        <button
-          type="button"
-          onClick={() => onAdjust(1)}
-          disabled={score >= 20}
-          className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-2xl font-bold text-green-700 active:bg-green-200 disabled:opacity-30"
-          aria-label={`Increase ${name} score`}
-        >
-          +
-        </button>
+      {/* Quick presets */}
+      <div className="flex justify-center gap-1.5">
+        {presets.map(v => (
+          <button
+            key={v}
+            onClick={() => onSet(v)}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+              score === v
+                ? 'bg-green-700 text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+            }`}
+          >
+            {v}
+          </button>
+        ))}
       </div>
     </div>
   )

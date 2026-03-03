@@ -9,20 +9,20 @@ interface TeamStandingsProps {
 export default function TeamStandings({ standings }: TeamStandingsProps) {
   if (standings.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 text-center text-sm text-gray-500">
         No team results yet.
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-200 bg-green-50 px-4 py-3">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30 px-4 py-3">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-green-800">
           Team Standings
         </h3>
       </div>
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-gray-100 dark:divide-gray-700">
         {standings.map((team, index) => (
           <div
             key={team.teamId}
@@ -41,7 +41,7 @@ export default function TeamStandings({ standings }: TeamStandingsProps) {
                 {index + 1}
               </span>
               <div>
-                <p className="font-semibold text-gray-900">{team.teamName}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{team.teamName}</p>
                 <p className="text-xs text-gray-500">
                   {team.wins}W - {team.losses}L - {team.ties}T
                   {team.matchesPlayed > 0 && (

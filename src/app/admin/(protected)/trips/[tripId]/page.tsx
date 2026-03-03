@@ -23,6 +23,13 @@ export default async function TripDetailPage({
 
   const typedTrip = trip as Trip
 
+  // Fetch courses for per-round game links
+  const { data: courses } = await supabase
+    .from('courses')
+    .select('id, name, round_number, par')
+    .eq('trip_id', tripId)
+    .order('round_number')
+
   return (
     <div className="space-y-6">
       <TripActions trip={typedTrip} />
@@ -58,6 +65,17 @@ export default async function TripDetailPage({
               /trip/{typedTrip.id}
             </dd>
           </div>
+          {typedTrip.join_code && (
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Join Code</dt>
+              <dd className="mt-1 flex items-center gap-2">
+                <span className="inline-block rounded-md bg-gray-100 px-3 py-1 font-mono text-lg font-bold tracking-widest text-gray-900">
+                  {typedTrip.join_code}
+                </span>
+                <span className="text-xs text-gray-500">Share this code so players can join at /join/code</span>
+              </dd>
+            </div>
+          )}
         </dl>
       </div>
 
@@ -69,6 +87,30 @@ export default async function TripDetailPage({
           <ManageLink href={`/admin/trips/${typedTrip.id}/teams`} label="Teams" />
           <ManageLink href={`/admin/trips/${typedTrip.id}/matches`} label="Matches" />
         </div>
+      </div>
+
+      {/* Per-Round Game Setup */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">Games by Round</h3>
+        {courses && courses.length > 0 ? (
+          <div className="space-y-2">
+            {courses.map((course: { id: string; name: string; round_number: number; par: number }) => (
+              <a
+                key={course.id}
+                href={`/admin/trips/${typedTrip.id}/rounds/${course.id}/games`}
+                className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm transition hover:bg-green-50 hover:text-green-700"
+              >
+                <div>
+                  <span className="font-medium text-gray-900">{course.name}</span>
+                  <span className="ml-2 text-gray-500">R{course.round_number}</span>
+                </div>
+                <span className="text-gray-400">Set up games &rarr;</span>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">Add courses first to set up games.</p>
+        )}
       </div>
     </div>
   )

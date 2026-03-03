@@ -89,17 +89,21 @@ export async function GET(
     (mp: { trip_player_id: string }) => mp.trip_player_id
   )
 
-  const { data: courseHandicaps, error: chError } = await getServiceClient()
-    .from('player_course_handicaps')
-    .select('*')
-    .eq('course_id', course.id)
-    .in('trip_player_id', tripPlayerIds)
+  let courseHandicaps: { trip_player_id: string; handicap_strokes: number }[] = []
+  if (tripPlayerIds.length > 0) {
+    const { data: chData, error: chError } = await getServiceClient()
+      .from('player_course_handicaps')
+      .select('*')
+      .eq('course_id', course.id)
+      .in('trip_player_id', tripPlayerIds)
 
-  if (chError) {
-    return NextResponse.json(
-      { error: 'Failed to load handicaps' },
-      { status: 500 }
-    )
+    if (chError) {
+      return NextResponse.json(
+        { error: 'Failed to load handicaps' },
+        { status: 500 }
+      )
+    }
+    courseHandicaps = chData || []
   }
 
   return NextResponse.json({

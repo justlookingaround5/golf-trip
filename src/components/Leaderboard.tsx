@@ -21,7 +21,7 @@ function relativeColor(score: number, par: number): string {
   const diff = score - par
   if (diff < 0) return 'text-red-600'
   if (diff > 0) return 'text-blue-600'
-  return 'text-gray-900'
+  return 'text-gray-900 dark:text-gray-100'
 }
 
 export default function Leaderboard({
@@ -38,9 +38,9 @@ export default function Leaderboard({
   ]
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
       {/* Tab bar */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -48,7 +48,7 @@ export default function Leaderboard({
             className={`flex-1 px-4 py-3 text-center text-sm font-medium transition ${
               activeTab === tab.key
                 ? 'border-b-2 border-green-700 text-green-700'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             {tab.label}
@@ -95,7 +95,7 @@ function StandingsTable({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-500">
+          <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-left text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
             <th className="px-4 py-3 font-medium">#</th>
             <th className="px-4 py-3 font-medium">Player</th>
             {standings[0]?.roundScores.length > 0 &&
@@ -111,7 +111,7 @@ function StandingsTable({
             <th className="px-4 py-3 text-center font-medium">+/-</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
           {standings.map((player, index) => {
             const total = scoreType === 'gross' ? player.totalGross : player.totalNet
             const par = player.totalPar
@@ -124,7 +124,7 @@ function StandingsTable({
                 <td className="px-4 py-3 font-medium text-gray-500">
                   {index + 1}
                 </td>
-                <td className="px-4 py-3 font-medium text-gray-900">
+                <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
                   {player.playerName}
                 </td>
                 {player.roundScores.map((rs) => {
@@ -141,7 +141,7 @@ function StandingsTable({
                     </td>
                   )
                 })}
-                <td className="px-4 py-3 text-center font-semibold text-gray-900">
+                <td className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">
                   {total}
                 </td>
                 <td
@@ -178,7 +178,7 @@ function MatchPlayTable({ records }: { records: MatchPlayRecord[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-500">
+          <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-left text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
             <th className="px-4 py-3 font-medium">#</th>
             <th className="px-4 py-3 font-medium">Player</th>
             <th className="px-4 py-3 text-center font-medium">W</th>
@@ -187,7 +187,7 @@ function MatchPlayTable({ records }: { records: MatchPlayRecord[] }) {
             <th className="px-4 py-3 text-center font-medium">Pts</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
           {records.map((record, index) => (
             <tr
               key={record.tripPlayerId}
@@ -196,7 +196,7 @@ function MatchPlayTable({ records }: { records: MatchPlayRecord[] }) {
               <td className="px-4 py-3 font-medium text-gray-500">
                 {index + 1}
               </td>
-              <td className="px-4 py-3 font-medium text-gray-900">
+              <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
                 {record.playerName}
               </td>
               <td className="px-4 py-3 text-center font-semibold text-green-700">

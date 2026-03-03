@@ -142,7 +142,7 @@ export default async function TripPublicPage({
   const totalMatches = (matches ?? []).length
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <header className="bg-green-800 px-4 py-6 text-white shadow-md">
         <div className="mx-auto max-w-2xl">
@@ -161,7 +161,7 @@ export default async function TripPublicPage({
         />
 
         {/* Match Summary */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
             Matches
           </h3>
@@ -183,23 +183,17 @@ export default async function TripPublicPage({
 
         {/* Navigation Links */}
         <div className="grid grid-cols-2 gap-3">
-          <Link
-            href={`/trip/${tripId}/leaderboard`}
-            className="flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-4 text-sm font-semibold text-green-700 shadow-sm transition hover:bg-green-50"
-          >
-            Leaderboard
-          </Link>
-          <Link
-            href={`/trip/${tripId}/matches`}
-            className="flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-4 text-sm font-semibold text-green-700 shadow-sm transition hover:bg-green-50"
-          >
-            Match Details
-          </Link>
+          <NavLink href={`/trip/${tripId}/leaderboard`} label="Leaderboard" icon="🏆" />
+          <NavLink href={`/trip/${tripId}/matches`} label="Matches" icon="⛳" />
+          <NavLink href={`/trip/${tripId}/stats`} label="Stats & Awards" icon="📊" />
+          <NavLink href={`/trip/${tripId}/settlement`} label="The Bank" icon="💰" />
+          <NavLink href={`/trip/${tripId}/competition`} label="Ryder Cup" icon="🏅" />
+          <NavLink href={`/trip/${tripId}/dashboard`} label="Dashboard" icon="📋" />
         </div>
 
         {/* Rounds */}
         {(courses ?? []).length > 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
               Rounds
             </h3>
@@ -224,5 +218,17 @@ export default async function TripPublicPage({
         )}
       </div>
     </div>
+  )
+}
+
+function NavLink({ href, label, icon }: { href: string; label: string; icon: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 text-sm font-semibold text-green-700 dark:text-green-400 shadow-sm transition hover:bg-green-50 dark:hover:bg-green-900/30"
+    >
+      <span>{icon}</span>
+      {label}
+    </Link>
   )
 }

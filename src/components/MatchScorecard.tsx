@@ -154,12 +154,12 @@ export default function MatchScorecard({
   const allPlayers = [...teamAPlayers, ...teamBPlayers]
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-green-50 px-4 py-3">
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-gray-900">{courseName}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{courseName}</h3>
             <p className="text-xs text-gray-500">
               {MATCH_FORMAT_LABELS[format]} &middot; Par {coursePar} &middot;{' '}
               {pointValue} pt{pointValue !== 1 ? 's' : ''}
@@ -170,13 +170,13 @@ export default function MatchScorecard({
       </div>
 
       {/* Teams & Match Status */}
-      <div className="border-b border-gray-200 px-4 py-3">
+      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
         <div className="mb-2 flex items-center justify-between text-sm">
-          <div className="font-semibold text-gray-900">
+          <div className="font-semibold text-gray-900 dark:text-white">
             {teamAPlayers.map(playerName).join(' & ')}
           </div>
           <span className="mx-2 text-xs text-gray-400">vs</span>
-          <div className="font-semibold text-gray-900">
+          <div className="font-semibold text-gray-900 dark:text-white">
             {teamBPlayers.map(playerName).join(' & ')}
           </div>
         </div>
@@ -199,7 +199,7 @@ export default function MatchScorecard({
               <div key={nine.label}>
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                       <th className="px-2 py-2 text-left font-medium text-gray-500">
                         {nine.label}
                       </th>
@@ -245,7 +245,7 @@ export default function MatchScorecard({
                           key={mp.trip_player_id}
                           className="border-b border-gray-100"
                         >
-                          <td className="px-2 py-2 font-medium text-gray-900">
+                          <td className="px-2 py-2 font-medium text-gray-900 dark:text-white">
                             <span className="text-xs text-gray-400">
                               [{sideLabel}]{' '}
                             </span>
@@ -279,7 +279,7 @@ export default function MatchScorecard({
                               </td>
                             )
                           })}
-                          <td className="px-2 py-2 text-center font-semibold text-gray-900">
+                          <td className="px-2 py-2 text-center font-semibold text-gray-900 dark:text-white">
                             {hasScores ? nineTotal : '-'}
                           </td>
                         </tr>
@@ -287,7 +287,7 @@ export default function MatchScorecard({
                     })}
 
                     {/* Match result row */}
-                    <tr className="border-b border-gray-200 bg-green-50/50">
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30/50">
                       <td className="px-2 py-1 text-xs font-medium text-green-700">
                         Result
                       </td>
