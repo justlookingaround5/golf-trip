@@ -54,5 +54,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Auto-create owner record in trip_members
+  await supabase.from('trip_members').insert({
+    trip_id: trip.id,
+    user_id: user.id,
+    role: 'owner',
+  })
+
   return NextResponse.json(trip, { status: 201 })
 }

@@ -40,6 +40,30 @@ export interface Player {
   phone: string | null
   handicap_index: number | null
   created_at: string
+  user_id: string | null
+}
+
+export type TripRole = 'owner' | 'admin' | 'player'
+
+export interface PlayerProfile {
+  id: string
+  user_id: string
+  display_name: string | null
+  avatar_url: string | null
+  ghin_number: string | null
+  handicap_index: number | null
+  home_club: string | null
+  preferred_tee: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TripMember {
+  id: string
+  trip_id: string
+  user_id: string
+  role: TripRole
+  created_at: string
 }
 
 export interface TripPlayer {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { calculateCourseHandicap } from '@/lib/handicap'
+import { requireTripRole } from '@/lib/auth'
 
 export async function GET(
   _request: NextRequest,
@@ -50,6 +51,12 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params
+
+  const access = await requireTripRole(tripId, ['owner', 'admin'])
+  if (!access) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const supabase = await createClient()
 
   const body = await request.json()
@@ -186,7 +193,13 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  await params
+  const { tripId } = await params
+
+  const access = await requireTripRole(tripId, ['owner', 'admin'])
+  if (!access) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const supabase = await createClient()
 
   const { searchParams } = new URL(request.url)

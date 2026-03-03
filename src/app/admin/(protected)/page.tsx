@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
-type Trip = {
+type TripWithRole = {
   id: string
   name: string
   location: string
   year: number
   status: string
+  role: string
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -27,13 +28,44 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+function RoleBadge({ role }: { role: string }) {
+  const colors: Record<string, string> = {
+    owner: 'bg-purple-100 text-purple-800',
+    admin: 'bg-blue-100 text-blue-800',
+    player: 'bg-gray-100 text-gray-600',
+  }
+
+  const colorClass = colors[role] || 'bg-gray-100 text-gray-600'
+
+  return (
+    <span
+      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${colorClass}`}
+    >
+      {role}
+    </span>
+  )
+}
+
 export default async function AdminDashboardPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: trips } = await supabase
-    .from('trips')
-    .select('id, name, location, year, status')
-    .order('year', { ascending: false })
+  // Get trips where user is a member, joined with trip data
+  const { data: memberships } = await supabase
+    .from('trip_members')
+    .select('role, trip:trips(id, name, location, year, status)')
+    .eq('user_id', user!.id)
+    .order('created_at', { ascending: false })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const trips: TripWithRole[] = (memberships || [])
+    .filter((m: any) => m.trip != null)
+    .map((m: any) => {
+      const trip = Array.isArray(m.trip) ? m.trip[0] : m.trip
+      return { ...trip, role: m.role }
+    })
+    .filter((t: TripWithRole) => t.id != null)
+    .sort((a: TripWithRole, b: TripWithRole) => b.year - a.year)
 
   return (
     <div>
@@ -47,7 +79,7 @@ export default async function AdminDashboardPage() {
         </Link>
       </div>
 
-      {!trips || trips.length === 0 ? (
+      {trips.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 bg-white p-12 text-center">
           <p className="text-gray-500">
             No trips yet. Create your first golf trip to get started.
@@ -55,7 +87,7 @@ export default async function AdminDashboardPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(trips as Trip[]).map((trip) => (
+          {trips.map((trip) => (
             <Link
               key={trip.id}
               href={`/admin/trips/${trip.id}`}
@@ -63,7 +95,10 @@ export default async function AdminDashboardPage() {
             >
               <div className="mb-2 flex items-start justify-between">
                 <h3 className="font-semibold text-gray-900">{trip.name}</h3>
-                <StatusBadge status={trip.status} />
+                <div className="flex gap-1.5">
+                  <RoleBadge role={trip.role} />
+                  <StatusBadge status={trip.status} />
+                </div>
               </div>
               <p className="text-sm text-gray-600">{trip.location}</p>
               <p className="mt-1 text-sm text-gray-400">{trip.year}</p>

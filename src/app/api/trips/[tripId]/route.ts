@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireTripRole } from '@/lib/auth'
 
 export async function GET(
   _request: NextRequest,
@@ -26,15 +27,13 @@ export async function PUT(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params
-  const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await requireTripRole(tripId, ['owner', 'admin'])
+  if (!access) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const supabase = await createClient()
 
   const body = await request.json()
 
@@ -65,15 +64,13 @@ export async function DELETE(
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params
-  const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const access = await requireTripRole(tripId, ['owner', 'admin'])
+  if (!access) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('trips')

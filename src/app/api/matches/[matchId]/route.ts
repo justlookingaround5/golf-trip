@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireTripRole } from '@/lib/auth'
 
 export async function GET(
   _request: NextRequest,
@@ -35,6 +36,22 @@ export async function PUT(
 ) {
   const { matchId } = await params
   const supabase = await createClient()
+
+  // Look up trip_id via match → course to check role
+  const { data: matchForRole } = await supabase
+    .from('matches')
+    .select('course_id, course:courses(trip_id)')
+    .eq('id', matchId)
+    .single()
+
+  if (matchForRole?.course) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const courseData = Array.isArray(matchForRole.course) ? matchForRole.course[0] : matchForRole.course as any
+    const access = await requireTripRole(courseData.trip_id, ['owner', 'admin'])
+    if (!access) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
 
   const body = await request.json()
 
@@ -123,6 +140,22 @@ export async function DELETE(
 ) {
   const { matchId } = await params
   const supabase = await createClient()
+
+  // Look up trip_id via match → course to check role
+  const { data: matchForRole } = await supabase
+    .from('matches')
+    .select('course_id, course:courses(trip_id)')
+    .eq('id', matchId)
+    .single()
+
+  if (matchForRole?.course) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const courseData = Array.isArray(matchForRole.course) ? matchForRole.course[0] : matchForRole.course as any
+    const access = await requireTripRole(courseData.trip_id, ['owner', 'admin'])
+    if (!access) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
 
   // Delete match_players first
   await supabase.from('match_players').delete().eq('match_id', matchId)

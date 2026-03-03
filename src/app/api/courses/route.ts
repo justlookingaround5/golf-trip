@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireTripRole } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   const body = await request.json()
 
@@ -19,6 +12,11 @@ export async function POST(request: NextRequest) {
       { error: 'trip_id, name, and round_number are required' },
       { status: 400 }
     )
+  }
+
+  const access = await requireTripRole(body.trip_id, ['owner', 'admin'])
+  if (!access) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Create the course
