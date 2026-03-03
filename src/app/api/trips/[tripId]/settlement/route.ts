@@ -142,7 +142,7 @@ export async function POST(
     }
 
     // Record transaction
-    await supabase.from('wallet_transactions').insert({
+    const { error: txError } = await supabase.from('wallet_transactions').insert({
       wallet_id: walletId,
       source_type: 'trip_settlement',
       source_trip_id: tripId,
@@ -151,7 +151,10 @@ export async function POST(
       balance_after: newBalance,
     })
 
-    results.push({ from: payment.from_player, to: payment.to_player, amount: payment.amount, status: 'recorded' })
+    results.push({
+      from: payment.from_player, to: payment.to_player, amount: payment.amount,
+      status: txError ? 'wallet_ok_audit_failed' : 'recorded',
+    })
   }
 
   return NextResponse.json({ results, count: results.length })

@@ -84,12 +84,16 @@ export async function POST(
   }
 
   // 2. Create trip_members record (role: player)
-  await serviceClient
+  const { error: memberError } = await serviceClient
     .from('trip_members')
     .upsert(
       { trip_id: invite.trip_id, user_id: user.id, role: 'player' },
       { onConflict: 'trip_id,user_id' }
     )
+
+  if (memberError) {
+    return NextResponse.json({ error: `Failed to add as trip member: ${memberError.message}` }, { status: 500 })
+  }
 
   // 3. Update invite status to accepted
   await serviceClient

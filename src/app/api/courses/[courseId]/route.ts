@@ -60,7 +60,10 @@ export async function PUT(
   // Update holes if provided
   if (body.holes && Array.isArray(body.holes)) {
     // Delete existing holes and re-create
-    await supabase.from('holes').delete().eq('course_id', courseId)
+    const { error: deleteHolesError } = await supabase.from('holes').delete().eq('course_id', courseId)
+    if (deleteHolesError) {
+      return NextResponse.json({ error: `Failed to clear holes: ${deleteHolesError.message}` }, { status: 500 })
+    }
 
     if (body.holes.length > 0) {
       const holesData = body.holes.map((hole: { hole_number: number; par: number; handicap_index: number }) => ({

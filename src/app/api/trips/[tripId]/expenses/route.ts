@@ -113,7 +113,10 @@ export async function POST(
       })
     }
 
-    await supabase.from('settlement_ledger').insert(ledgerEntries)
+    const { error: ledgerError } = await supabase.from('settlement_ledger').insert(ledgerEntries)
+    if (ledgerError) {
+      console.error('Settlement ledger insert failed for expense:', expense.id, ledgerError.message)
+    }
   }
 
   // Post to activity feed

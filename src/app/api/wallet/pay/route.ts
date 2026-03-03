@@ -67,13 +67,17 @@ export async function POST(request: NextRequest) {
   }
 
   // Record transaction
-  await supabase.from('wallet_transactions').insert({
+  const { error: txError } = await supabase.from('wallet_transactions').insert({
     wallet_id: walletId,
     source_type: 'manual_payment',
     source_description: note || 'Manual payment',
     amount: walletAmount,
     balance_after: newBalance,
   })
+
+  if (txError) {
+    return NextResponse.json({ error: `Wallet updated but audit trail failed: ${txError.message}` }, { status: 500 })
+  }
 
   return NextResponse.json({ wallet_id: walletId, new_balance: newBalance })
 }
