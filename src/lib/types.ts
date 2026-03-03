@@ -481,3 +481,27 @@ export interface CompetitionMatch {
   status: 'pending' | 'active' | 'completed'
   created_at: string
 }
+
+// ============================================================================
+// Wallet Types
+// ============================================================================
+
+export interface PlayerWallet {
+  id: string
+  player_a_id: string
+  player_b_id: string
+  balance: number
+  last_trip_id: string | null
+  last_updated: string
+}
+
+export interface WalletTransaction {
+  id: string
+  wallet_id: string
+  source_type: 'trip_settlement' | 'manual_payment' | 'adjustment'
+  source_trip_id: string | null
+  source_description: string | null
+  amount: number
+  balance_after: number
+  created_at: string
+}

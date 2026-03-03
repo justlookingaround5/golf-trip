@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { PlayerBalance, PaymentInstruction } from '@/lib/settlement'
 
 interface SettlementClientProps {
@@ -16,7 +16,8 @@ interface SettlementClientProps {
     paid_by: { id: string; player: { name: string } | { name: string }[] } | null
     created_at: string
   }[]
-  tripPlayers: { id: string; name: string }[]
+  tripPlayers: { id: string; name: string; player_id?: string }[]
+  currentPlayerId?: string | null
 }
 
 export default function SettlementClient({
@@ -26,8 +27,9 @@ export default function SettlementClient({
   payments,
   expenses,
   tripPlayers,
+  currentPlayerId = null,
 }: SettlementClientProps) {
-  const [activeTab, setActiveTab] = useState<'payments' | 'balances' | 'expenses'>('payments')
+  const [activeTab, setActiveTab] = useState<'payments' | 'balances' | 'expenses' | 'wallet'>('payments')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -41,7 +43,7 @@ export default function SettlementClient({
       {/* Tabs */}
       <div className="bg-white border-b">
         <div className="mx-auto max-w-lg flex">
-          {(['payments', 'balances', 'expenses'] as const).map(tab => (
+          {(['payments', 'balances', 'expenses', 'wallet'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -168,7 +170,177 @@ export default function SettlementClient({
             )}
           </div>
         )}
+
+        {/* Wallet */}
+        {activeTab === 'wallet' && (
+          <WalletTab tripId={tripId} currentPlayerId={currentPlayerId} />
+        )}
       </div>
+    </div>
+  )
+}
+
+interface WalletBalance {
+  other_player_id: string
+  other_player_name: string
+  balance: number
+  wallet_id: string
+}
+
+interface WalletData {
+  balances: WalletBalance[]
+  totalOwed: number
+  totalOwing: number
+}
+
+function WalletTab({ tripId, currentPlayerId }: { tripId: string; currentPlayerId: string | null }) {
+  const [walletData, setWalletData] = useState<WalletData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [showPayForm, setShowPayForm] = useState(false)
+  const [payTarget, setPayTarget] = useState<WalletBalance | null>(null)
+  const [payAmount, setPayAmount] = useState('')
+  const [paying, setPaying] = useState(false)
+  const [finalizing, setFinalizing] = useState(false)
+
+  useEffect(() => {
+    if (!currentPlayerId) { setLoading(false); return }
+    fetch(`/api/wallet?playerId=${currentPlayerId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { setWalletData(data); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [currentPlayerId])
+
+  async function handlePay() {
+    if (!payTarget || !payAmount || !currentPlayerId) return
+    setPaying(true)
+    try {
+      await fetch('/api/wallet/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_player_id: currentPlayerId,
+          to_player_id: payTarget.other_player_id,
+          amount: parseFloat(payAmount),
+          note: 'Paid via Golf Trip app',
+        }),
+      })
+      setShowPayForm(false)
+      setPayAmount('')
+      const res = await fetch(`/api/wallet?playerId=${currentPlayerId}`)
+      if (res.ok) setWalletData(await res.json())
+    } catch {
+      // ignore
+    } finally {
+      setPaying(false)
+    }
+  }
+
+  async function handleFinalize() {
+    setFinalizing(true)
+    try {
+      await fetch(`/api/trips/${tripId}/settlement`, { method: 'POST' })
+      if (currentPlayerId) {
+        const res = await fetch(`/api/wallet?playerId=${currentPlayerId}`)
+        if (res.ok) setWalletData(await res.json())
+      }
+    } catch {
+      // ignore
+    } finally {
+      setFinalizing(false)
+    }
+  }
+
+  if (loading) return <div className="text-center py-8 text-gray-500">Loading wallet...</div>
+  if (!currentPlayerId) return <div className="text-center py-8 text-gray-500">Sign in to see your wallet</div>
+
+  const owing = walletData?.balances?.filter(b => b.balance < 0) || []
+  const owed = walletData?.balances?.filter(b => b.balance > 0) || []
+
+  return (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-center">
+          <p className="text-xs text-green-700">Owed to you</p>
+          <p className="text-xl font-bold text-green-700">${walletData?.totalOwed?.toFixed(2) || '0.00'}</p>
+        </div>
+        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-center">
+          <p className="text-xs text-red-600">You owe</p>
+          <p className="text-xl font-bold text-red-600">${walletData?.totalOwing?.toFixed(2) || '0.00'}</p>
+        </div>
+      </div>
+
+      {/* Finalize trip button */}
+      <button
+        onClick={handleFinalize}
+        disabled={finalizing}
+        className="w-full rounded-md bg-green-700 py-2 text-sm font-medium text-white disabled:opacity-50"
+      >
+        {finalizing ? 'Finalizing...' : 'Finalize Trip → Push to Wallet'}
+      </button>
+
+      {/* People who owe you */}
+      {owed.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 mb-2">OWED TO YOU</p>
+          {owed.map(b => (
+            <div key={b.wallet_id} className="flex items-center justify-between py-2 border-b border-gray-100">
+              <span className="text-sm text-gray-900">{b.other_player_name}</span>
+              <span className="font-bold text-green-700">${b.balance.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* People you owe */}
+      {owing.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 mb-2">YOU OWE</p>
+          {owing.map(b => (
+            <div key={b.wallet_id} className="flex items-center justify-between py-2 border-b border-gray-100">
+              <span className="text-sm text-gray-900">{b.other_player_name}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-red-600">${Math.abs(b.balance).toFixed(2)}</span>
+                <button
+                  onClick={() => { setPayTarget(b); setPayAmount(Math.abs(b.balance).toFixed(2)); setShowPayForm(true) }}
+                  className="rounded-md bg-blue-600 px-2 py-1 text-xs text-white"
+                >
+                  Paid
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pay form */}
+      {showPayForm && payTarget && (
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 space-y-2">
+          <p className="text-sm font-medium text-gray-900">
+            Record payment to {payTarget.other_player_name}
+          </p>
+          <input
+            type="number"
+            value={payAmount}
+            onChange={e => setPayAmount(e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handlePay}
+              disabled={paying || !payAmount}
+              className="flex-1 rounded-md bg-blue-600 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {paying ? 'Recording...' : 'Confirm Payment'}
+            </button>
+            <button onClick={() => setShowPayForm(false)} className="px-3 py-2 text-sm text-gray-500">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {owing.length === 0 && owed.length === 0 && (
+        <p className="text-center text-sm text-gray-500 py-4">No wallet history yet. Finalize a trip to start tracking.</p>
+      )}
     </div>
   )
 }

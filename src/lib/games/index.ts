@@ -11,6 +11,9 @@ import { scrambleEngine } from './scramble'
 import { wolfEngine } from './wolf'
 import { bankerEngine } from './banker'
 import { hammerEngine } from './hammer'
+import { dotsEngine } from './dots'
+import { snakeEngine } from './snake'
+import { rabbitEngine } from './rabbit'
 
 /** Registry of all available game engines */
 const engines: Record<string, GameEngine> = {}
@@ -32,6 +35,9 @@ register(scrambleEngine)
 register(wolfEngine)
 register(bankerEngine)
 register(hammerEngine)
+register(dotsEngine)
+register(snakeEngine)
+register(rabbitEngine)
 
 /** Get an engine by its key. Returns undefined if not found. */
 export function getEngine(key: string): GameEngine | undefined {

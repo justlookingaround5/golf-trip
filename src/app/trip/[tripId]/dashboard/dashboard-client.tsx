@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import type { Trip, Course, ActivityFeedItem, TripAward } from '@/lib/types'
 import PhotoUpload from '@/components/PhotoUpload'
+import RsvpCard from '@/components/RsvpCard'
 
 interface DashboardClientProps {
   trip: Trip
@@ -20,6 +21,9 @@ interface DashboardClientProps {
     trip_player?: { player?: { name: string } | { name: string }[] }
   }[]
   awards: TripAward[]
+  tripPlayers?: { id: string; player?: { name: string } | { name: string }[] }[]
+  currentTripPlayerId?: string | null
+  nextRound?: Course | null
 }
 
 export default function DashboardClient({
@@ -30,6 +34,9 @@ export default function DashboardClient({
   recentFeed: initialFeed,
   topStandings,
   awards,
+  tripPlayers = [],
+  currentTripPlayerId = null,
+  nextRound = null,
 }: DashboardClientProps) {
   const [feed, setFeed] = useState<ActivityFeedItem[]>(initialFeed)
   const [weather, setWeather] = useState<{
@@ -170,6 +177,18 @@ export default function DashboardClient({
               </Link>
             </div>
           </div>
+        )}
+
+        {/* RSVP for next round */}
+        {nextRound && tripPlayers.length > 0 && (
+          <RsvpCard
+            tripId={trip.id}
+            courseId={nextRound.id}
+            courseName={nextRound.name}
+            roundDate={nextRound.round_date}
+            tripPlayers={tripPlayers}
+            currentTripPlayerId={currentTripPlayerId}
+          />
         )}
 
         {/* Quick Standings */}
