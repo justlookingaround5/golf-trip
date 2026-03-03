@@ -4,21 +4,18 @@ export interface GhinLookupResult {
   player_name: string | null
 }
 
-export async function lookupGhin(ghinNumber: string): Promise<GhinLookupResult | null> {
-  const username = process.env.GHIN_USERNAME
-  const password = process.env.GHIN_PASSWORD
-
-  if (!username || !password) {
-    return null
-  }
-
+export async function lookupGhin(
+  ghinNumber: string,
+  email: string,
+  password: string
+): Promise<GhinLookupResult | null> {
   try {
-    // Authenticate with GHIN API
+    // Authenticate with GHIN API using the user's own credentials
     const authResponse = await fetch('https://api.ghin.com/api/v1/golfer_login.json', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user: { email_or_ghin: username, password },
+        user: { email_or_ghin: email, password },
       }),
     })
 

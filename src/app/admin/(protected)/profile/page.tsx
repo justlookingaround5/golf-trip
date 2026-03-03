@@ -21,6 +21,9 @@ export default function ProfilePage() {
 
   const [displayName, setDisplayName] = useState('')
   const [ghinNumber, setGhinNumber] = useState('')
+  const [ghinEmail, setGhinEmail] = useState('')
+  const [ghinPassword, setGhinPassword] = useState('')
+  const [showGhinLogin, setShowGhinLogin] = useState(false)
   const [handicapIndex, setHandicapIndex] = useState('')
   const [homeClub, setHomeClub] = useState('')
   const [preferredTee, setPreferredTee] = useState('')
@@ -40,12 +43,20 @@ export default function ProfilePage() {
   }, [])
 
   async function handleGhinLookup() {
-    if (!ghinNumber.trim()) return
+    if (!ghinNumber.trim() || !ghinEmail.trim() || !ghinPassword) return
     setLookingUp(true)
     setMessage(null)
 
     try {
-      const res = await fetch(`/api/ghin/lookup?ghin_number=${encodeURIComponent(ghinNumber.trim())}`)
+      const res = await fetch('/api/ghin/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ghin_number: ghinNumber.trim(),
+          email: ghinEmail.trim(),
+          password: ghinPassword,
+        }),
+      })
       if (!res.ok) {
         const err = await res.json()
         setMessage({ type: 'error', text: err.error || 'GHIN lookup failed' })
@@ -54,6 +65,8 @@ export default function ProfilePage() {
       const data = await res.json()
       if (data.handicap_index != null) setHandicapIndex(String(data.handicap_index))
       if (data.home_club) setHomeClub(data.home_club)
+      setGhinPassword('')
+      setShowGhinLogin(false)
       setMessage({ type: 'success', text: 'GHIN data loaded successfully' })
     } catch {
       setMessage({ type: 'error', text: 'GHIN lookup failed' })
@@ -159,15 +172,68 @@ export default function ProfilePage() {
               placeholder="e.g. 1234567"
               className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
             />
-            <button
-              type="button"
-              onClick={handleGhinLookup}
-              disabled={lookingUp || !ghinNumber.trim()}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {lookingUp ? 'Looking up...' : 'Lookup'}
-            </button>
+            {!showGhinLogin && (
+              <button
+                type="button"
+                onClick={() => setShowGhinLogin(true)}
+                disabled={!ghinNumber.trim()}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Lookup
+              </button>
+            )}
           </div>
+
+          {showGhinLogin && (
+            <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-4 space-y-3">
+              <p className="text-xs text-blue-700">
+                Sign in with your GHIN account to auto-fill your handicap. Your credentials are not stored.
+              </p>
+              <div>
+                <label htmlFor="ghinEmail" className="mb-1 block text-xs font-medium text-gray-700">
+                  GHIN Email
+                </label>
+                <input
+                  id="ghinEmail"
+                  type="email"
+                  value={ghinEmail}
+                  onChange={(e) => setGhinEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="ghinPassword" className="mb-1 block text-xs font-medium text-gray-700">
+                  GHIN Password
+                </label>
+                <input
+                  id="ghinPassword"
+                  type="password"
+                  value={ghinPassword}
+                  onChange={(e) => setGhinPassword(e.target.value)}
+                  placeholder="Your GHIN password"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleGhinLookup}
+                  disabled={lookingUp || !ghinEmail.trim() || !ghinPassword}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {lookingUp ? 'Looking up...' : 'Fetch Handicap'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowGhinLogin(false); setGhinPassword('') }}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>
