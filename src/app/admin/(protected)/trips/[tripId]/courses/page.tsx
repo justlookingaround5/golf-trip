@@ -3,12 +3,48 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import type { Course } from '@/lib/types'
-import type { GolfCourseSearchResult } from '@/lib/golf-course-api'
 
 interface HoleInput {
   hole_number: number
   par: number
   handicap_index: number
+  yardage?: number
+}
+
+interface TeeBox {
+  tee_name: string
+  course_rating: number
+  slope_rating: number
+  par_total: number
+  total_yards: number
+  number_of_holes: number
+  holes: { par: number; yardage: number; handicap: number }[]
+}
+
+interface CourseDetail {
+  id: number
+  club_name: string
+  course_name: string
+  location: {
+    address: string
+    city: string
+    state: string
+    country: string
+  }
+  tees: {
+    male: TeeBox[]
+    female: TeeBox[]
+  }
+}
+
+interface SearchResult {
+  id: number
+  club_name: string
+  course_name: string
+  location: {
+    city: string
+    state: string
+  }
 }
 
 function defaultHoles(): HoleInput[] {
@@ -43,11 +79,17 @@ export default function CoursesPage() {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<GolfCourseSearchResult[]>([])
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchContainerRef = useRef<HTMLDivElement>(null)
+
+  // Course detail state
+  const [courseDetail, setCourseDetail] = useState<CourseDetail | null>(null)
+  const [selectedTeeIndex, setSelectedTeeIndex] = useState<number | null>(null)
+  const [teeGender, setTeeGender] = useState<'male' | 'female'>('male')
+  const [loadingDetail, setLoadingDetail] = useState(false)
 
   // Delete confirmation
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -55,12 +97,13 @@ export default function CoursesPage() {
   // Computed par total
   const totalPar = holes.reduce((sum, h) => sum + h.par, 0)
 
+  // Available tees based on gender selection
+  const availableTees = courseDetail?.tees?.[teeGender] || []
+
   useEffect(() => {
     async function loadCourses() {
       setLoading(true)
       try {
-        // Fetch courses for this trip by fetching each course
-        // We'll use the trip detail approach - get courses from Supabase via an API call
         const res = await fetch(`/api/trips/${tripId}/courses`)
         if (res.ok) {
           const data = await res.json()
@@ -120,36 +163,54 @@ export default function CoursesPage() {
     }, 300)
   }
 
-  // Select a search result and auto-fill from course detail API
-  async function handleSelectSearchResult(result: GolfCourseSearchResult) {
+  // Select a search result and fetch full detail
+  async function handleSelectSearchResult(result: SearchResult) {
     setShowSearchResults(false)
     setSearchQuery('')
     setCourseName(result.course_name || result.club_name)
+    setLoadingDetail(true)
+    setCourseDetail(null)
+    setSelectedTeeIndex(null)
 
-    // Fetch full course detail to get tee box data (slope, rating, holes)
     try {
       const res = await fetch(`/api/courses/lookup?id=${encodeURIComponent(result.id)}`)
       if (res.ok) {
-        const detail = await res.json()
-        // Use the first male tee box as default (typically has the most data)
-        const teeBox = detail.tees?.male?.[0]
-        if (teeBox) {
-          if (teeBox.slope_rating) setSlope(String(teeBox.slope_rating))
-          if (teeBox.course_rating) setRating(String(teeBox.course_rating))
-          if (teeBox.holes && teeBox.holes.length > 0) {
-            setHoles(
-              teeBox.holes.map((h: { par: number; handicap: number }, i: number) => ({
-                hole_number: i + 1,
-                par: h.par,
-                handicap_index: h.handicap || (i + 1),
-              }))
-            )
-          }
+        const detail: CourseDetail = await res.json()
+        setCourseDetail(detail)
+
+        // Auto-select first male tee if available
+        const maleTees = detail.tees?.male || []
+        if (maleTees.length > 0) {
+          setTeeGender('male')
+          selectTee(maleTees[0], 0)
         }
       }
     } catch {
-      // Detail fetch failed — user can fill manually
+      // Detail fetch failed
+    } finally {
+      setLoadingDetail(false)
     }
+  }
+
+  function selectTee(tee: TeeBox, index: number) {
+    setSelectedTeeIndex(index)
+    if (tee.slope_rating) setSlope(String(tee.slope_rating))
+    if (tee.course_rating) setRating(String(tee.course_rating))
+    if (tee.holes && tee.holes.length > 0) {
+      setHoles(
+        tee.holes.map((h, i) => ({
+          hole_number: i + 1,
+          par: h.par,
+          handicap_index: h.handicap || (i + 1),
+          yardage: h.yardage,
+        }))
+      )
+    }
+  }
+
+  function handleTeeGenderChange(gender: 'male' | 'female') {
+    setTeeGender(gender)
+    setSelectedTeeIndex(null)
   }
 
   function resetForm() {
@@ -163,6 +224,9 @@ export default function CoursesPage() {
     setSearchQuery('')
     setSearchResults([])
     setShowSearchResults(false)
+    setCourseDetail(null)
+    setSelectedTeeIndex(null)
+    setTeeGender('male')
     setError(null)
   }
 
@@ -179,6 +243,8 @@ export default function CoursesPage() {
     setSlope(course.slope != null ? String(course.slope) : '')
     setRating(course.rating != null ? String(course.rating) : '')
     setEditingCourseId(course.id)
+    setCourseDetail(null)
+    setSelectedTeeIndex(null)
     setError(null)
 
     if (course.holes && course.holes.length > 0) {
@@ -429,6 +495,83 @@ export default function CoursesPage() {
               )}
             </div>
 
+            {loadingDetail && (
+              <div className="rounded-md bg-gray-50 p-4 text-center text-sm text-gray-500">
+                Loading course details...
+              </div>
+            )}
+
+            {/* Course Detail Card */}
+            {courseDetail && (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-4">
+                <div>
+                  <h4 className="font-semibold text-green-900">
+                    {courseDetail.course_name || courseDetail.club_name}
+                  </h4>
+                  <p className="text-sm text-green-700">{courseDetail.location?.address}</p>
+                </div>
+
+                {/* Tee Gender Toggle */}
+                {courseDetail.tees?.female?.length > 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleTeeGenderChange('male')}
+                      className={`rounded-md px-3 py-1 text-xs font-medium ${
+                        teeGender === 'male'
+                          ? 'bg-green-700 text-white'
+                          : 'bg-white text-gray-700 border border-gray-300'
+                      }`}
+                    >
+                      Men&apos;s Tees
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTeeGenderChange('female')}
+                      className={`rounded-md px-3 py-1 text-xs font-medium ${
+                        teeGender === 'female'
+                          ? 'bg-green-700 text-white'
+                          : 'bg-white text-gray-700 border border-gray-300'
+                      }`}
+                    >
+                      Women&apos;s Tees
+                    </button>
+                  </div>
+                )}
+
+                {/* Tee Box Selection */}
+                {availableTees.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase text-green-800">
+                      Select Tee Box
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {availableTees.map((tee, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => selectTee(tee, idx)}
+                          className={`rounded-md border p-3 text-left transition ${
+                            selectedTeeIndex === idx
+                              ? 'border-green-600 bg-white ring-2 ring-green-500'
+                              : 'border-gray-200 bg-white hover:border-green-300'
+                          }`}
+                        >
+                          <p className="font-semibold text-gray-900 text-sm">{tee.tee_name}</p>
+                          <div className="mt-1 grid grid-cols-2 gap-x-3 text-xs text-gray-600">
+                            <span>Yards: <span className="font-medium text-gray-900">{tee.total_yards?.toLocaleString()}</span></span>
+                            <span>Par: <span className="font-medium text-gray-900">{tee.par_total}</span></span>
+                            <span>Slope: <span className="font-medium text-gray-900">{tee.slope_rating}</span></span>
+                            <span>Rating: <span className="font-medium text-gray-900">{tee.course_rating}</span></span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Round Number, Round Date */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -500,6 +643,13 @@ export default function CoursesPage() {
             {/* Par total display */}
             <div className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
               Total Par: <span className="font-semibold">{totalPar}</span>
+              {holes[0]?.yardage != null && (
+                <span className="ml-4">
+                  Total Yards: <span className="font-semibold">
+                    {holes.reduce((sum, h) => sum + (h.yardage || 0), 0).toLocaleString()}
+                  </span>
+                </span>
+              )}
             </div>
 
             {/* 18-Hole Grid */}
@@ -513,17 +663,31 @@ export default function CoursesPage() {
                   <table className="w-full text-center text-xs">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="px-1 py-1 text-gray-500">Hole</th>
+                        <th className="px-1 py-1 text-gray-500 text-left w-14">Hole</th>
                         {holes.slice(0, 9).map((h) => (
                           <th key={h.hole_number} className="px-1 py-1 font-medium text-gray-700">
                             {h.hole_number}
                           </th>
                         ))}
+                        <th className="px-1 py-1 font-medium text-gray-700 bg-gray-50">Out</th>
                       </tr>
                     </thead>
                     <tbody>
+                      {holes[0]?.yardage != null && (
+                        <tr className="border-b border-gray-100 bg-blue-50/50">
+                          <td className="px-1 py-1 text-gray-500 text-left">Yards</td>
+                          {holes.slice(0, 9).map((h) => (
+                            <td key={h.hole_number} className="px-1 py-1 text-gray-700 font-medium">
+                              {h.yardage}
+                            </td>
+                          ))}
+                          <td className="px-1 py-1 font-semibold text-gray-800 bg-gray-50">
+                            {holes.slice(0, 9).reduce((s, h) => s + (h.yardage || 0), 0)}
+                          </td>
+                        </tr>
+                      )}
                       <tr className="border-b border-gray-100">
-                        <td className="px-1 py-1 text-gray-500">Par</td>
+                        <td className="px-1 py-1 text-gray-500 text-left">Par</td>
                         {holes.slice(0, 9).map((h, i) => (
                           <td key={h.hole_number} className="px-1 py-1">
                             <select
@@ -537,9 +701,12 @@ export default function CoursesPage() {
                             </select>
                           </td>
                         ))}
+                        <td className="px-1 py-1 font-semibold text-gray-800 bg-gray-50">
+                          {holes.slice(0, 9).reduce((s, h) => s + h.par, 0)}
+                        </td>
                       </tr>
                       <tr>
-                        <td className="px-1 py-1 text-gray-500">Hdcp</td>
+                        <td className="px-1 py-1 text-gray-500 text-left">Hdcp</td>
                         {holes.slice(0, 9).map((h, i) => (
                           <td key={h.hole_number} className="px-1 py-1">
                             <select
@@ -555,6 +722,7 @@ export default function CoursesPage() {
                             </select>
                           </td>
                         ))}
+                        <td className="px-1 py-1 bg-gray-50" />
                       </tr>
                     </tbody>
                   </table>
@@ -568,17 +736,31 @@ export default function CoursesPage() {
                   <table className="w-full text-center text-xs">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="px-1 py-1 text-gray-500">Hole</th>
+                        <th className="px-1 py-1 text-gray-500 text-left w-14">Hole</th>
                         {holes.slice(9, 18).map((h) => (
                           <th key={h.hole_number} className="px-1 py-1 font-medium text-gray-700">
                             {h.hole_number}
                           </th>
                         ))}
+                        <th className="px-1 py-1 font-medium text-gray-700 bg-gray-50">In</th>
                       </tr>
                     </thead>
                     <tbody>
+                      {holes[0]?.yardage != null && (
+                        <tr className="border-b border-gray-100 bg-blue-50/50">
+                          <td className="px-1 py-1 text-gray-500 text-left">Yards</td>
+                          {holes.slice(9, 18).map((h) => (
+                            <td key={h.hole_number} className="px-1 py-1 text-gray-700 font-medium">
+                              {h.yardage}
+                            </td>
+                          ))}
+                          <td className="px-1 py-1 font-semibold text-gray-800 bg-gray-50">
+                            {holes.slice(9, 18).reduce((s, h) => s + (h.yardage || 0), 0)}
+                          </td>
+                        </tr>
+                      )}
                       <tr className="border-b border-gray-100">
-                        <td className="px-1 py-1 text-gray-500">Par</td>
+                        <td className="px-1 py-1 text-gray-500 text-left">Par</td>
                         {holes.slice(9, 18).map((h, i) => (
                           <td key={h.hole_number} className="px-1 py-1">
                             <select
@@ -592,9 +774,12 @@ export default function CoursesPage() {
                             </select>
                           </td>
                         ))}
+                        <td className="px-1 py-1 font-semibold text-gray-800 bg-gray-50">
+                          {holes.slice(9, 18).reduce((s, h) => s + h.par, 0)}
+                        </td>
                       </tr>
                       <tr>
-                        <td className="px-1 py-1 text-gray-500">Hdcp</td>
+                        <td className="px-1 py-1 text-gray-500 text-left">Hdcp</td>
                         {holes.slice(9, 18).map((h, i) => (
                           <td key={h.hole_number} className="px-1 py-1">
                             <select
@@ -610,6 +795,7 @@ export default function CoursesPage() {
                             </select>
                           </td>
                         ))}
+                        <td className="px-1 py-1 bg-gray-50" />
                       </tr>
                     </tbody>
                   </table>

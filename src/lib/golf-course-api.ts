@@ -63,7 +63,9 @@ export async function getCourseDetail(courseId: string | number): Promise<GolfCo
       headers: { Authorization: `Key ${apiKey}` },
     })
     if (!res.ok) return null
-    return res.json()
+    const data = await res.json()
+    // API wraps response in { course: {...} }
+    return data.course || data
   } catch {
     return null
   }
