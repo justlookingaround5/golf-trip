@@ -241,14 +241,29 @@ export default function ProfilePage() {
           <label htmlFor="ghinNumber" className="mb-1 block text-sm font-medium text-gray-700">
             GHIN Number
           </label>
-          <input
-            id="ghinNumber"
-            type="text"
-            value={ghinNumber}
-            onChange={(e) => setGhinNumber(e.target.value)}
-            placeholder="e.g. 1234567"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-          />
+          <div className="flex gap-2">
+            <input
+              id="ghinNumber"
+              type="text"
+              value={ghinNumber}
+              onChange={(e) => setGhinNumber(e.target.value)}
+              placeholder="e.g. 1234567"
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+            />
+            {ghinNumber.trim().length > 0 && (
+              <a
+                href={`https://www.ghin.com/lookup?ghinNumber=${encodeURIComponent(ghinNumber.trim())}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 whitespace-nowrap"
+              >
+                Look Up
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path fillRule="evenodd" d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17h-8.5A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5zm7.25-.75a.75.75 0 01.75-.75h3.5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V6.31l-5.47 5.47a.75.75 0 01-1.06-1.06l5.47-5.47H12.25a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+                </svg>
+              </a>
+            )}
+          </div>
         </div>
 
         <div>
@@ -261,12 +276,9 @@ export default function ProfilePage() {
             step="0.1"
             value={handicapIndex}
             onChange={(e) => setHandicapIndex(e.target.value)}
-            placeholder="e.g. 12.3"
+            placeholder="Enter your index from GHIN"
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
           />
-          <p className="mt-1 text-xs text-gray-500">
-            Find your index at <a href="https://www.ghin.com" target="_blank" rel="noopener noreferrer" className="text-green-700 underline">ghin.com</a>
-          </p>
         </div>
 
         {/* Home Club with Search */}
