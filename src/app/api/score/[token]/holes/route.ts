@@ -311,8 +311,8 @@ async function recomputeRoundGames(
       .from('game_results')
       .upsert(resultRecords, { onConflict: 'round_game_id,trip_player_id' })
 
-    // Update game status to active if it was pending
-    if (rg.status === 'pending') {
+    // Update game status to active if it was setup
+    if (rg.status === 'setup') {
       await db.from('round_games').update({ status: 'active' }).eq('id', rg.id)
     }
   }

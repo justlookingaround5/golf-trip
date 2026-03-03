@@ -46,6 +46,18 @@ export default async function SettlementPage({
   const balances = calculateBalances(entriesRes.data || [], playerNames)
   const payments = minimizePayments(balances)
 
+  // Find current user's player_id for the wallet tab
+  let currentPlayerId: string | null = null
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: playerLink } = await supabase
+      .from('players')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+    if (playerLink) currentPlayerId = playerLink.id
+  }
+
   return (
     <SettlementClient
       tripId={tripId}
@@ -57,6 +69,7 @@ export default async function SettlementPage({
         const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
         return { id: tp.id, name: (player as { name: string } | null)?.name || 'Unknown' }
       })}
+      currentPlayerId={currentPlayerId}
     />
   )
 }

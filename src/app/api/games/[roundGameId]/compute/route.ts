@@ -137,11 +137,13 @@ export async function POST(
     return NextResponse.json({ error: upsertError.message }, { status: 500 })
   }
 
-  // 9. Update round game status
-  await supabase
-    .from('round_games')
-    .update({ status: 'active' })
-    .eq('id', roundGameId)
+  // 9. Update round game status (only if still in setup — don't revert finalized games)
+  if (roundGame.status === 'setup') {
+    await supabase
+      .from('round_games')
+      .update({ status: 'active' })
+      .eq('id', roundGameId)
+  }
 
   return NextResponse.json({
     summary: result.summary,

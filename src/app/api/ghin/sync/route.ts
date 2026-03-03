@@ -87,13 +87,70 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // If tripId provided, trigger stats recomputation for updated players
+  // If tripId provided, trigger stats recomputation directly (no fetch-to-self)
   if (tripId && results.some(r => r.status === 'updated')) {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    await fetch(`${baseUrl}/api/trips/${tripId}/stats/compute`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    }).catch(() => {})
+    try {
+      const { computeRoundStats, computeTripStats, computeAwards } = await import('@/lib/stats')
+      const { getStrokesPerHole } = await import('@/lib/handicap')
+
+      const { data: tripPlayers } = await supabase
+        .from('trip_players')
+        .select('id, player:players(id, name)')
+        .eq('trip_id', tripId)
+
+      const { data: courses } = await supabase
+        .from('courses')
+        .select('id, par, holes(id, hole_number, par, handicap_index)')
+        .eq('trip_id', tripId)
+
+      if (tripPlayers?.length && courses?.length) {
+        const tpIds = tripPlayers.map(tp => tp.id)
+        const allHoleIds = courses.flatMap(c => (c.holes || []).map((h: { id: string }) => h.id))
+
+        const [scoresRes, hcpRes] = await Promise.all([
+          supabase.from('scores').select('trip_player_id, hole_id, gross_score').in('trip_player_id', tpIds).in('hole_id', allHoleIds),
+          supabase.from('player_course_handicaps').select('trip_player_id, course_id, handicap_strokes').in('trip_player_id', tpIds),
+        ])
+
+        const allRoundStats: Record<string, ReturnType<typeof computeRoundStats>[]> = {}
+        for (const tp of tripPlayers) {
+          allRoundStats[tp.id] = []
+          for (const course of courses) {
+            const holes = (course.holes || []).map((h: { id: string; hole_number: number; par: number; handicap_index: number }) => ({ ...h, course_id: course.id }))
+            const ch = (hcpRes.data || []).find(c => c.trip_player_id === tp.id && c.course_id === course.id)
+            const strokesMap = getStrokesPerHole(ch?.handicap_strokes ?? 0, holes)
+            allRoundStats[tp.id].push(computeRoundStats(course.id, tp.id, scoresRes.data || [], holes, strokesMap))
+          }
+        }
+
+        // Upsert trip stats
+        const tripStatsRecords = tripPlayers
+          .map(tp => ({ ...computeTripStats(tripId, tp.id, allRoundStats[tp.id]), computed_at: new Date().toISOString() }))
+          .filter(ts => ts.total_holes > 0)
+
+        if (tripStatsRecords.length > 0) {
+          await supabase.from('trip_stats').upsert(tripStatsRecords, { onConflict: 'trip_id,trip_player_id' })
+        }
+
+        // Compute awards
+        const awardInputs = tripPlayers.map(tp => {
+          const playerArr = tp.player as unknown as { id: string; name: string }[] | null
+          return {
+            trip_player_id: tp.id,
+            player_name: playerArr?.[0]?.name ?? 'Unknown',
+            trip_stats: computeTripStats(tripId, tp.id, allRoundStats[tp.id]),
+            round_stats: allRoundStats[tp.id],
+          }
+        })
+        const awards = computeAwards(tripId, awardInputs)
+        if (awards.length > 0) {
+          await supabase.from('trip_awards').delete().eq('trip_id', tripId)
+          await supabase.from('trip_awards').insert(awards.map(a => ({ trip_id: tripId, ...a, computed_at: new Date().toISOString() })))
+        }
+      }
+    } catch (err) {
+      console.error('Stats recomputation after GHIN sync failed:', err)
+    }
   }
 
   return NextResponse.json({

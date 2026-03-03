@@ -7,6 +7,7 @@ import type { MatchFormat } from '@/lib/types'
 import { calculateMatchPlay } from '@/lib/match-play'
 import { getStrokesPerHole } from '@/lib/handicap'
 import { useSwipe } from '@/hooks/useSwipe'
+import DotsTracker from '@/components/DotsTracker'
 
 // ---------------------------------------------------------------------------
 // Types matching API response
@@ -114,6 +115,7 @@ export default function ScorerPage() {
   const [holeScores, setHoleScores] = useState<Record<string, number>>({})
   const [saving, setSaving] = useState(false)
   const [matchStatus, setMatchStatus] = useState<string>('pending')
+  const [dotsHits, setDotsHits] = useState<Record<string, Record<number, string[]>>>({})
 
   // ------ Data loading ------
 
@@ -452,6 +454,13 @@ export default function ScorerPage() {
           setScore={setScore}
           submitHoleScores={submitHoleScores}
           onClose={() => setActiveHole(null)}
+          dotsHits={dotsHits}
+          onDotsUpdate={(playerId, holeNumber, dots) => {
+            setDotsHits(prev => ({
+              ...prev,
+              [playerId]: { ...prev[playerId], [holeNumber]: dots },
+            }))
+          }}
         />
 
         {/* Hole List */}
@@ -621,6 +630,8 @@ function HoleEntryView({
   setScore,
   submitHoleScores,
   onClose,
+  dotsHits,
+  onDotsUpdate,
 }: {
   activeHole: number | null
   activeHoleData: HoleData | null | undefined
@@ -638,6 +649,8 @@ function HoleEntryView({
   setScore: (id: string, v: number) => void
   submitHoleScores: () => void
   onClose: () => void
+  dotsHits: Record<string, Record<number, string[]>>
+  onDotsUpdate: (playerId: string, holeNumber: number, dots: string[]) => void
 }) {
   const swipeHandlers = useSwipe({
     onSwipeLeft: () => {
@@ -747,6 +760,23 @@ function HoleEntryView({
           )}
         </div>
       </div>
+
+      {/* Dots Tracker (shown if players exist) */}
+      {activeHoleData && allMatchPlayers.length > 0 && (
+        <div className="px-4 max-w-lg mx-auto w-full">
+          <DotsTracker
+            holeNumber={activeHoleData.hole_number}
+            par={activeHoleData.par}
+            players={allMatchPlayers.map(mp => ({
+              id: mp.trip_player_id,
+              name: playerName(mp),
+            }))}
+            enabledDots={['greenie', 'sandy', 'barkie', 'polie', 'chippy', 'water', 'ob', 'three_putt']}
+            onUpdate={onDotsUpdate}
+            currentDots={dotsHits}
+          />
+        </div>
+      )}
 
       {/* Bottom action */}
       <div className="px-4 pb-6 pt-2 max-w-lg mx-auto w-full">

@@ -60,6 +60,49 @@ export default async function TripDashboardPage({
     .select('*')
     .eq('trip_id', tripId)
 
+  // Fetch trip players for RSVP card
+  const { data: tripPlayersData } = await supabase
+    .from('trip_players')
+    .select('id, player:players(name)')
+    .eq('trip_id', tripId)
+
+  const tripPlayers = (tripPlayersData || []).map(tp => {
+    const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
+    return { id: tp.id, player: player ? { name: (player as { name: string }).name } : undefined }
+  })
+
+  // Find current user's trip_player_id
+  let currentTripPlayerId: string | null = null
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: member } = await supabase
+      .from('trip_members')
+      .select('user_id')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (member) {
+      // Find the trip_player linked to this user
+      const { data: playerLink } = await supabase
+        .from('players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (playerLink) {
+        const tp = (tripPlayersData || []).find(tp => {
+          const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
+          return (player as { id?: string } | null)?.id === playerLink.id
+        })
+        if (tp) currentTripPlayerId = tp.id
+      }
+    }
+  }
+
+  // Find next upcoming round (for RSVP)
+  const nextRound = courses?.find(c => c.round_date && c.round_date >= today) || null
+
   return (
     <DashboardClient
       trip={trip}
@@ -69,6 +112,9 @@ export default async function TripDashboardPage({
       recentFeed={recentFeed || []}
       topStandings={tripStats || []}
       awards={awards || []}
+      tripPlayers={tripPlayers}
+      currentTripPlayerId={currentTripPlayerId}
+      nextRound={nextRound}
     />
   )
 }

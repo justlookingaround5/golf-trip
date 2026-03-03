@@ -44,13 +44,14 @@ export async function PUT(
     .eq('id', matchId)
     .single()
 
-  if (matchForRole?.course) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const courseData = Array.isArray(matchForRole.course) ? matchForRole.course[0] : matchForRole.course as any
-    const access = await requireTripRole(courseData.trip_id, ['owner', 'admin'])
-    if (!access) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  if (!matchForRole?.course) {
+    return NextResponse.json({ error: 'Match not found' }, { status: 404 })
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const courseData = Array.isArray(matchForRole.course) ? matchForRole.course[0] : matchForRole.course as any
+  const access = await requireTripRole(courseData.trip_id, ['owner', 'admin'])
+  if (!access) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const body = await request.json()
@@ -148,13 +149,14 @@ export async function DELETE(
     .eq('id', matchId)
     .single()
 
-  if (matchForRole?.course) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const courseData = Array.isArray(matchForRole.course) ? matchForRole.course[0] : matchForRole.course as any
-    const access = await requireTripRole(courseData.trip_id, ['owner', 'admin'])
-    if (!access) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  if (!matchForRole?.course) {
+    return NextResponse.json({ error: 'Match not found' }, { status: 404 })
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const courseData = Array.isArray(matchForRole.course) ? matchForRole.course[0] : matchForRole.course as any
+  const access = await requireTripRole(courseData.trip_id, ['owner', 'admin'])
+  if (!access) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Delete match_players first

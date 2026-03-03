@@ -93,14 +93,9 @@ export async function POST(
 
   // For each payment instruction, create a wallet transaction
   for (const payment of payments) {
-    // Look up player IDs from trip_player_id via the name
-    let fromPlayerId: string | undefined
-    let toPlayerId: string | undefined
-
-    for (const [tpId, name] of playerNames.entries()) {
-      if (name === payment.from_player) fromPlayerId = tpToPlayerId.get(tpId)
-      if (name === payment.to_player) toPlayerId = tpToPlayerId.get(tpId)
-    }
+    // Use trip_player_id from payment to look up player_id
+    const fromPlayerId = tpToPlayerId.get(payment.from_player_id)
+    const toPlayerId = tpToPlayerId.get(payment.to_player_id)
 
     if (!fromPlayerId || !toPlayerId) {
       results.push({ from: payment.from_player, to: payment.to_player, amount: payment.amount, status: 'skipped' })

@@ -7,12 +7,17 @@ import { createClient } from '@/lib/supabase/server'
  * Returns all wallet balances for a player — who they owe, who owes them.
  */
 export async function GET(request: NextRequest) {
+  const supabase = await createClient()
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
+
   const playerId = request.nextUrl.searchParams.get('playerId')
   if (!playerId) {
     return NextResponse.json({ error: 'playerId required' }, { status: 400 })
   }
-
-  const supabase = await createClient()
 
   // Get all wallets where this player is A or B
   const { data: walletsA } = await supabase
