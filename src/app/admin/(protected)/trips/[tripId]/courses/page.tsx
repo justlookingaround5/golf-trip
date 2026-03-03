@@ -460,10 +460,15 @@ export default function CoursesPage() {
                 onFocus={() => {
                   if (searchResults.length > 0) setShowSearchResults(true)
                 }}
-                placeholder="Search for a course or enter name manually..."
+                placeholder="Type to search courses..."
                 required
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
               />
+              {!courseDetail && !loadingDetail && !showSearchResults && courseName.length > 0 && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Select a course from the dropdown to auto-fill pars, yardages, slope &amp; rating
+                </p>
+              )}
               {searchLoading && (
                 <div className="absolute right-3 top-9 text-xs text-gray-400">
                   Searching...
@@ -472,14 +477,17 @@ export default function CoursesPage() {
 
               {/* Search Results Dropdown */}
               {showSearchResults && searchResults.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+                <div className="absolute z-10 mt-1 w-full rounded-md border border-green-300 bg-white shadow-lg ring-1 ring-green-200">
+                  <div className="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border-b border-green-200">
+                    Click a course to auto-fill details
+                  </div>
                   <ul className="max-h-60 overflow-auto py-1">
                     {searchResults.map((result) => (
                       <li key={result.id}>
                         <button
                           type="button"
                           onClick={() => handleSelectSearchResult(result)}
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-green-50"
+                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-green-50 border-b border-gray-100 last:border-0"
                         >
                           <span className="font-medium text-gray-900">
                             {result.course_name || result.club_name}
@@ -504,11 +512,22 @@ export default function CoursesPage() {
             {/* Course Detail Card */}
             {courseDetail && (
               <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-4">
-                <div>
-                  <h4 className="font-semibold text-green-900">
-                    {courseDetail.course_name || courseDetail.club_name}
-                  </h4>
-                  <p className="text-sm text-green-700">{courseDetail.location?.address}</p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-semibold text-green-900">
+                      {courseDetail.course_name || courseDetail.club_name}
+                    </h4>
+                    <p className="text-sm text-green-700">{courseDetail.location?.address}</p>
+                    <p className="text-sm text-green-700">
+                      {courseDetail.location?.city}, {courseDetail.location?.state}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                      <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                    </svg>
+                    Course found
+                  </span>
                 </div>
 
                 {/* Tee Gender Toggle */}
