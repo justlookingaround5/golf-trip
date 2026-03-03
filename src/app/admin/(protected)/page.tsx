@@ -58,13 +58,35 @@ export default async function AdminDashboardPage() {
     .order('created_at', { ascending: false })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const trips: TripWithRole[] = (memberships || [])
+  const memberTrips: TripWithRole[] = (memberships || [])
     .filter((m: any) => m.trip != null)
     .map((m: any) => {
       const trip = Array.isArray(m.trip) ? m.trip[0] : m.trip
       return { ...trip, role: m.role }
     })
     .filter((t: TripWithRole) => t.id != null)
+
+  // Also find trips created by this user that might be missing trip_members records
+  const memberTripIds = new Set(memberTrips.map((t) => t.id))
+  const { data: ownedTrips } = await supabase
+    .from('trips')
+    .select('id, name, location, year, status')
+    .eq('created_by', user!.id)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const missingTrips: TripWithRole[] = (ownedTrips || [])
+    .filter((t: any) => !memberTripIds.has(t.id))
+    .map((t: any) => ({ ...t, role: 'owner' }))
+
+  // Backfill missing trip_members records
+  for (const t of missingTrips) {
+    await supabase.from('trip_members').upsert(
+      { trip_id: t.id, user_id: user!.id, role: 'owner' },
+      { onConflict: 'trip_id,user_id' }
+    )
+  }
+
+  const trips = [...memberTrips, ...missingTrips]
     .sort((a: TripWithRole, b: TripWithRole) => b.year - a.year)
 
   return (

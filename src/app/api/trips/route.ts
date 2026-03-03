@@ -55,11 +55,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Auto-create owner record in trip_members
-  await supabase.from('trip_members').insert({
-    trip_id: trip.id,
-    user_id: user.id,
-    role: 'owner',
-  })
+  const { error: memberError } = await supabase.from('trip_members').upsert(
+    { trip_id: trip.id, user_id: user.id, role: 'owner' },
+    { onConflict: 'trip_id,user_id' }
+  )
+
+  if (memberError) {
+    console.error('Failed to create trip_members owner record:', memberError)
+  }
 
   return NextResponse.json(trip, { status: 201 })
 }
