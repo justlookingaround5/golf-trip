@@ -9,14 +9,31 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: profile, error } = await supabase
+  let { data: profile, error } = await supabase
     .from('player_profiles')
     .select('*')
     .eq('user_id', user.id)
     .single()
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 404 })
+  if (error && error.code === 'PGRST116') {
+    // Profile doesn't exist — create it
+    const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || ''
+    const { data: newProfile, error: insertError } = await supabase
+      .from('player_profiles')
+      .insert({
+        user_id: user.id,
+        display_name: displayName,
+        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 500 })
+    }
+    profile = newProfile
+  } else if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json(profile)
@@ -37,6 +54,7 @@ export async function PUT(request: NextRequest) {
   if (body.ghin_number !== undefined) updates.ghin_number = body.ghin_number
   if (body.handicap_index !== undefined) updates.handicap_index = body.handicap_index
   if (body.home_club !== undefined) updates.home_club = body.home_club
+  if (body.home_club_logo_url !== undefined) updates.home_club_logo_url = body.home_club_logo_url
   if (body.preferred_tee !== undefined) updates.preferred_tee = body.preferred_tee
 
   const { data: profile, error } = await supabase
