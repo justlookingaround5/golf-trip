@@ -15,6 +15,14 @@ interface TripPlayerBasic {
   player: Player
 }
 
+interface TeamWithPlayers {
+  id: string
+  trip_id: string
+  name: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  team_players: any[]
+}
+
 interface MatchPlayerWithDetails {
   id: string
   match_id: string
@@ -88,6 +96,7 @@ export default function MatchesPage() {
 
   const [courses, setCourses] = useState<Course[]>([])
   const [tripPlayers, setTripPlayers] = useState<TripPlayerBasic[]>([])
+  const [teams, setTeams] = useState<TeamWithPlayers[]>([])
   const [matchesByCourse, setMatchesByCourse] = useState<
     Record<string, MatchWithPlayers[]>
   >({})
@@ -112,9 +121,10 @@ export default function MatchesPage() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [coursesRes, playersRes] = await Promise.all([
+      const [coursesRes, playersRes, teamsRes] = await Promise.all([
         fetch(`/api/trips/${tripId}/courses`),
         fetch(`/api/trips/${tripId}/players`),
+        fetch(`/api/trips/${tripId}/teams`),
       ])
 
       let loadedCourses: Course[] = []
@@ -130,6 +140,11 @@ export default function MatchesPage() {
         setTripPlayers(data)
       } else {
         setError('Failed to load players')
+      }
+
+      if (teamsRes.ok) {
+        const data = await teamsRes.json()
+        setTeams(data)
       }
 
       // Load matches for each course
@@ -613,120 +628,16 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Player Selection */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      Select Players{' '}
-                      <span className="text-gray-400">
-                        ({playersPerSide(format)} per side)
-                      </span>
-                    </label>
-
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      {/* Team A Column */}
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold uppercase text-golf-800">
-                          Team A ({teamAIds.length}/{playersPerSide(format)})
-                        </p>
-                        <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-gray-200 bg-white p-2">
-                          {tripPlayers
-                            .sort((a, b) =>
-                              a.player.name.localeCompare(b.player.name)
-                            )
-                            .map((tp) => {
-                              const side = getPlayerSide(tp.id)
-                              const isOnTeamA = side === 'team_a'
-                              const isOnTeamB = side === 'team_b'
-
-                              return (
-                                <button
-                                  key={tp.id}
-                                  type="button"
-                                  onClick={() =>
-                                    togglePlayerOnSide('team_a', tp.id)
-                                  }
-                                  className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm ${
-                                    isOnTeamA
-                                      ? 'bg-golf-100 font-medium text-golf-900'
-                                      : isOnTeamB
-                                        ? 'text-gray-300'
-                                        : 'text-gray-700 hover:bg-gray-50'
-                                  }`}
-                                  disabled={isOnTeamB}
-                                >
-                                  <span
-                                    className={`flex h-4 w-4 items-center justify-center rounded border text-xs ${
-                                      isOnTeamA
-                                        ? 'border-golf-600 bg-golf-600 text-white'
-                                        : 'border-gray-300'
-                                    }`}
-                                  >
-                                    {isOnTeamA && '\u2713'}
-                                  </span>
-                                  {tp.player.name}
-                                  {tp.player.handicap_index != null && (
-                                    <span className="text-xs text-gray-400">
-                                      ({tp.player.handicap_index})
-                                    </span>
-                                  )}
-                                </button>
-                              )
-                            })}
-                        </div>
-                      </div>
-
-                      {/* Team B Column */}
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold uppercase text-golf-800">
-                          Team B ({teamBIds.length}/{playersPerSide(format)})
-                        </p>
-                        <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-gray-200 bg-white p-2">
-                          {tripPlayers
-                            .sort((a, b) =>
-                              a.player.name.localeCompare(b.player.name)
-                            )
-                            .map((tp) => {
-                              const side = getPlayerSide(tp.id)
-                              const isOnTeamA = side === 'team_a'
-                              const isOnTeamB = side === 'team_b'
-
-                              return (
-                                <button
-                                  key={tp.id}
-                                  type="button"
-                                  onClick={() =>
-                                    togglePlayerOnSide('team_b', tp.id)
-                                  }
-                                  className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm ${
-                                    isOnTeamB
-                                      ? 'bg-golf-100 font-medium text-golf-900'
-                                      : isOnTeamA
-                                        ? 'text-gray-300'
-                                        : 'text-gray-700 hover:bg-gray-50'
-                                  }`}
-                                  disabled={isOnTeamA}
-                                >
-                                  <span
-                                    className={`flex h-4 w-4 items-center justify-center rounded border text-xs ${
-                                      isOnTeamB
-                                        ? 'border-golf-600 bg-golf-600 text-white'
-                                        : 'border-gray-300'
-                                    }`}
-                                  >
-                                    {isOnTeamB && '\u2713'}
-                                  </span>
-                                  {tp.player.name}
-                                  {tp.player.handicap_index != null && (
-                                    <span className="text-xs text-gray-400">
-                                      ({tp.player.handicap_index})
-                                    </span>
-                                  )}
-                                </button>
-                              )
-                            })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <PlayerSelection
+                    tripPlayers={tripPlayers}
+                    teams={teams}
+                    courseMatches={courseMatches}
+                    format={format}
+                    teamAIds={teamAIds}
+                    teamBIds={teamBIds}
+                    getPlayerSide={getPlayerSide}
+                    togglePlayerOnSide={togglePlayerOnSide}
+                  />
 
                   {/* Form Actions */}
                   <div className="flex gap-3 pt-2">
@@ -755,6 +666,190 @@ export default function MatchesPage() {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ---- Player Selection Sub-Component ----
+
+function PlayerSelection({
+  tripPlayers,
+  teams,
+  courseMatches,
+  format,
+  teamAIds,
+  teamBIds,
+  getPlayerSide,
+  togglePlayerOnSide,
+}: {
+  tripPlayers: TripPlayerBasic[]
+  teams: TeamWithPlayers[]
+  courseMatches: MatchWithPlayers[]
+  format: MatchFormat
+  teamAIds: string[]
+  teamBIds: string[]
+  getPlayerSide: (id: string) => 'team_a' | 'team_b' | null
+  togglePlayerOnSide: (side: 'team_a' | 'team_b', id: string) => void
+}) {
+  const maxPerSide = playersPerSide(format)
+  const hasTeams = teams.length >= 2
+
+  // Build map: trip_player_id → team info
+  const playerTeamMap = new Map<string, { teamId: string; teamName: string }>()
+  for (const team of teams) {
+    for (const tp of team.team_players) {
+      playerTeamMap.set(tp.trip_player_id, { teamId: team.id, teamName: team.name })
+    }
+  }
+
+  // Collect trip_player_ids already in matches on this course
+  const assignedPlayerIds = new Set<string>()
+  for (const match of courseMatches) {
+    for (const mp of match.match_players) {
+      assignedPlayerIds.add(mp.trip_player_id)
+    }
+  }
+
+  // When teams exist, lock each side to a specific team.
+  // Determine which team is "Side A" and which is "Side B":
+  // - If a player is already selected on side A, their team locks to side A
+  // - Otherwise default to teams[0] = side A, teams[1] = side B
+  let sideATeamId: string | null = null
+  let sideBTeamId: string | null = null
+
+  if (hasTeams) {
+    // Check if any selected player determines the team mapping
+    for (const id of teamAIds) {
+      const t = playerTeamMap.get(id)
+      if (t) { sideATeamId = t.teamId; break }
+    }
+    for (const id of teamBIds) {
+      const t = playerTeamMap.get(id)
+      if (t) { sideBTeamId = t.teamId; break }
+    }
+
+    // Default: first team → side A, second team → side B
+    if (!sideATeamId && !sideBTeamId) {
+      sideATeamId = teams[0].id
+      sideBTeamId = teams[1].id
+    } else if (sideATeamId && !sideBTeamId) {
+      sideBTeamId = teams.find(t => t.id !== sideATeamId)?.id ?? null
+    } else if (!sideATeamId && sideBTeamId) {
+      sideATeamId = teams.find(t => t.id !== sideBTeamId)?.id ?? null
+    }
+  }
+
+  const sideATeamName = hasTeams ? teams.find(t => t.id === sideATeamId)?.name : null
+  const sideBTeamName = hasTeams ? teams.find(t => t.id === sideBTeamId)?.name : null
+
+  // Filter players eligible for each side
+  const sortedPlayers = [...tripPlayers].sort((a, b) =>
+    a.player.name.localeCompare(b.player.name)
+  )
+
+  function isEligibleForSide(tp: TripPlayerBasic, side: 'team_a' | 'team_b'): boolean {
+    // Already assigned in another match on this course
+    if (assignedPlayerIds.has(tp.id)) return false
+    // If teams exist, player must be on the correct team for this side
+    if (hasTeams) {
+      const playerTeam = playerTeamMap.get(tp.id)
+      if (!playerTeam) return false
+      if (side === 'team_a' && playerTeam.teamId !== sideATeamId) return false
+      if (side === 'team_b' && playerTeam.teamId !== sideBTeamId) return false
+    }
+    return true
+  }
+
+  function renderPlayerButton(
+    tp: TripPlayerBasic,
+    side: 'team_a' | 'team_b'
+  ) {
+    const currentSide = getPlayerSide(tp.id)
+    const isSelected = currentSide === side
+    const isOnOtherSide = currentSide !== null && currentSide !== side
+    const isAssigned = assignedPlayerIds.has(tp.id)
+    const eligible = isEligibleForSide(tp, side)
+    const disabled = isOnOtherSide || (isAssigned && !isSelected) || (!eligible && !isSelected)
+
+    return (
+      <button
+        key={tp.id}
+        type="button"
+        onClick={() => togglePlayerOnSide(side, tp.id)}
+        className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm ${
+          isSelected
+            ? 'bg-golf-100 font-medium text-golf-900'
+            : isAssigned
+              ? 'text-gray-300 line-through'
+              : disabled
+                ? 'text-gray-300'
+                : 'text-gray-700 hover:bg-gray-50'
+        }`}
+        disabled={disabled}
+      >
+        <span
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs ${
+            isSelected
+              ? 'border-golf-600 bg-golf-600 text-white'
+              : 'border-gray-300'
+          }`}
+        >
+          {isSelected && '\u2713'}
+        </span>
+        <span className="truncate">{tp.player.name}</span>
+        {tp.player.handicap_index != null && (
+          <span className="text-xs text-gray-400">
+            ({tp.player.handicap_index})
+          </span>
+        )}
+        {isAssigned && !isSelected && (
+          <span className="ml-auto text-xs text-gray-400">in match</span>
+        )}
+      </button>
+    )
+  }
+
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-gray-700">
+        Select Players{' '}
+        <span className="text-gray-400">
+          ({maxPerSide} per side)
+        </span>
+      </label>
+
+      {hasTeams && assignedPlayerIds.size > 0 && (
+        <p className="mb-2 text-xs text-amber-600">
+          Players already in a match for this round are greyed out.
+        </p>
+      )}
+      {hasTeams && (
+        <p className="mb-2 text-xs text-gray-500">
+          Players are filtered by team. Opponents must be on different teams.
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {/* Side A Column */}
+        <div>
+          <p className="mb-1.5 text-xs font-semibold uppercase text-golf-800">
+            {sideATeamName ?? 'Team A'} ({teamAIds.length}/{maxPerSide})
+          </p>
+          <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-gray-200 bg-white p-2">
+            {sortedPlayers.map((tp) => renderPlayerButton(tp, 'team_a'))}
+          </div>
+        </div>
+
+        {/* Side B Column */}
+        <div>
+          <p className="mb-1.5 text-xs font-semibold uppercase text-golf-800">
+            {sideBTeamName ?? 'Team B'} ({teamBIds.length}/{maxPerSide})
+          </p>
+          <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-gray-200 bg-white p-2">
+            {sortedPlayers.map((tp) => renderPlayerButton(tp, 'team_b'))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
