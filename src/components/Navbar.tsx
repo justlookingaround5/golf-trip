@@ -48,7 +48,7 @@ export default function Navbar({
             href="/admin"
             className="rounded-md px-2 py-1 text-sm font-medium hover:bg-golf-700"
           >
-            Admin
+            Manage Trips
           </Link>
         </div>
 
