@@ -1,16 +1,4 @@
-import webpush from 'web-push'
 import { createClient } from '@supabase/supabase-js'
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:admin@forelive.app',
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  )
-}
 
 export async function sendPushToTrip({
   tripId,
@@ -27,7 +15,19 @@ export async function sendPushToTrip({
 }) {
   if (!process.env.VAPID_PRIVATE_KEY) return
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  // Dynamic import to avoid top-level Node crypto issues during Vercel page collection
+  const webpush = (await import('web-push')).default
+
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || 'mailto:admin@forelive.app',
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY
+  )
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   // Get trip member user_ids
   const { data: members } = await supabase
