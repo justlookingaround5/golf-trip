@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { getEngine } from '@/lib/games'
 import { getStrokesPerHole } from '@/lib/handicap'
 import type { GameEngineInput } from '@/lib/types'
+
+// Service role client bypasses RLS for writing game results
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 /**
  * POST /api/games/[roundGameId]/compute
@@ -15,7 +23,7 @@ export async function POST(
   { params }: { params: Promise<{ roundGameId: string }> }
 ) {
   const { roundGameId } = await params
-  const supabase = await createClient()
+  const supabase = getServiceClient()
 
   // 1. Fetch the round game with format and players
   const { data: roundGame, error: gameError } = await supabase
@@ -135,6 +143,40 @@ export async function POST(
 
   if (upsertError) {
     return NextResponse.json({ error: upsertError.message }, { status: 500 })
+  }
+
+  // 8b. Write settlement_ledger entries (idempotent — delete + re-insert)
+  const formatName = roundGame.game_format?.name || engineKey
+  const tripId = roundGame.trip_id
+
+  // Delete previous entries for this game
+  await supabase
+    .from('settlement_ledger')
+    .delete()
+    .eq('source_type', 'game_result')
+    .eq('source_id', roundGameId)
+
+  // Insert new entries for each player with a non-zero money result
+  const ledgerEntries = result.players
+    .filter((pr: { money: number }) => Math.abs(pr.money) > 0.005)
+    .map((pr: { trip_player_id: string; money: number }) => ({
+      trip_id: tripId,
+      trip_player_id: pr.trip_player_id,
+      source_type: 'game_result' as const,
+      source_id: roundGameId,
+      amount: pr.money,
+      description: formatName,
+    }))
+
+  if (ledgerEntries.length > 0) {
+    const { error: ledgerError } = await supabase
+      .from('settlement_ledger')
+      .insert(ledgerEntries)
+
+    if (ledgerError) {
+      console.error('Failed to write settlement ledger:', ledgerError.message)
+      // Non-fatal — game results are saved, ledger is secondary
+    }
   }
 
   // 9. Update round game status (only if still in setup — don't revert finalized games)
