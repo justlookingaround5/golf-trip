@@ -31,6 +31,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const [displayName, setDisplayName] = useState('')
@@ -172,6 +173,8 @@ export default function ProfilePage() {
       const updated = await res.json()
       setProfile(updated)
       setMessage({ type: 'success', text: 'Profile saved' })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
     } catch {
       setMessage({ type: 'error', text: 'Failed to save profile' })
     } finally {
@@ -448,7 +451,7 @@ export default function ProfilePage() {
           disabled={saving}
           className="w-full rounded-md bg-golf-700 px-4 py-2 text-white font-medium hover:bg-golf-800 focus:outline-none focus:ring-2 focus:ring-golf-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saving ? 'Saving...' : 'Save Profile'}
+          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Profile'}
         </button>
       </form>
 
