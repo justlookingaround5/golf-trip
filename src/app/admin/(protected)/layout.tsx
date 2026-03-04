@@ -1,8 +1,6 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import SignOutButton from './sign-out-button'
+import Navbar from '@/components/Navbar'
 
 export default async function ProtectedAdminLayout({
   children,
@@ -60,43 +58,7 @@ export default async function ProtectedAdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-golf-800 text-white shadow-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/admin" className="text-lg font-bold hover:text-gold">
-            ForeLive Admin
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/home"
-              className="rounded-md px-2 py-1 text-sm font-medium hover:bg-golf-700"
-            >
-              Home
-            </Link>
-            <Link
-              href="/admin/profile"
-              className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-golf-700"
-            >
-              {profile.avatar_url ? (
-                <Image
-                  src={profile.avatar_url}
-                  alt=""
-                  width={28}
-                  height={28}
-                  className="rounded-full"
-                />
-              ) : (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-golf-600 text-xs font-bold">
-                  {(profile.display_name || '?')[0].toUpperCase()}
-                </div>
-              )}
-              <span className="text-sm font-medium hidden sm:inline">
-                {profile.display_name}
-              </span>
-            </Link>
-            <SignOutButton />
-          </div>
-        </div>
-      </nav>
+      <Navbar profile={profile} />
       <main className="mx-auto max-w-6xl px-4 py-8">
         {children}
       </main>
