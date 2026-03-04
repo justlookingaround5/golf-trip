@@ -59,3 +59,50 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json(group)
 }
+
+export async function DELETE(request: NextRequest) {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
+
+  const { group_id } = await request.json()
+  if (!group_id) {
+    return NextResponse.json({ error: 'group_id is required' }, { status: 400 })
+  }
+
+  const admin = getServiceClient()
+
+  // Verify user is the group creator
+  const { data: group } = await admin
+    .from('groups')
+    .select('id, created_by')
+    .eq('id', group_id)
+    .single()
+
+  if (!group) {
+    return NextResponse.json({ error: 'Group not found' }, { status: 404 })
+  }
+
+  if (group.created_by !== user.id) {
+    return NextResponse.json({ error: 'Only the group creator can delete it' }, { status: 403 })
+  }
+
+  // Unlink any trips from this group
+  await admin
+    .from('trips')
+    .update({ group_id: null })
+    .eq('group_id', group_id)
+
+  // Delete members, then group
+  await admin.from('group_members').delete().eq('group_id', group_id)
+  const { error } = await admin.from('groups').delete().eq('id', group_id)
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
+}

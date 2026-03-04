@@ -58,6 +58,7 @@ export default function GroupDetailPage() {
   const searchContainerRef = useRef<HTMLDivElement>(null)
 
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -226,6 +227,30 @@ export default function GroupDetailPage() {
         type: 'success',
         text: `${member.display_name || 'Member'} is now ${newRole === 'admin' ? 'an admin' : 'a member'}`,
       })
+    }
+  }
+
+  async function handleDeleteGroup() {
+    if (!confirm('Delete this group? Linked trips will be unlinked but not deleted.')) return
+    setDeleting(true)
+    setMessage(null)
+
+    try {
+      const res = await fetch('/api/groups', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to delete group')
+      }
+
+      router.push('/home')
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to delete' })
+      setDeleting(false)
     }
   }
 
@@ -421,6 +446,23 @@ export default function GroupDetailPage() {
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Danger Zone */}
+      {isGroupCreator && (
+        <div className="mt-8 rounded-lg border border-red-200 bg-red-50 p-5">
+          <h3 className="mb-1 text-sm font-semibold text-red-800">Danger Zone</h3>
+          <p className="mb-3 text-xs text-red-600">
+            Deleting this group will unlink any trips but won&apos;t delete them.
+          </p>
+          <button
+            onClick={handleDeleteGroup}
+            disabled={deleting}
+            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {deleting ? 'Deleting...' : 'Delete Group'}
+          </button>
         </div>
       )}
     </div>
