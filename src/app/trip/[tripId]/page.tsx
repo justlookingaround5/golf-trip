@@ -115,6 +115,27 @@ export default async function TripPublicPage({
     .select('*')
     .in('course_id', (courses ?? []).map((c) => c.id))
 
+  // Fetch games per round
+  const courseIds = (courses ?? []).map((c) => c.id)
+  const { data: roundGames } = courseIds.length > 0
+    ? await supabase
+        .from('round_games')
+        .select('id, course_id, buy_in, status, game_format:game_formats(name, icon)')
+        .in('course_id', courseIds)
+        .neq('status', 'cancelled')
+    : { data: [] }
+
+  const gamesByCourse: Record<string, { name: string; icon: string; buy_in: number }[]> = {}
+  for (const g of roundGames ?? []) {
+    if (!gamesByCourse[g.course_id]) gamesByCourse[g.course_id] = []
+    const fmt = Array.isArray(g.game_format) ? g.game_format[0] : g.game_format
+    gamesByCourse[g.course_id].push({
+      name: fmt?.name || 'Game',
+      icon: fmt?.icon || '🎯',
+      buy_in: g.buy_in ?? 0,
+    })
+  }
+
   // Reshape teams for the utility function
   const shapedTeams = (teams ?? []).map((t) => ({
     id: t.id as string,
@@ -278,6 +299,18 @@ export default async function TripPublicPage({
           </div>
         )}
 
+        {/* Navigation Links */}
+        <div className="grid grid-cols-2 gap-3">
+          <NavLink href={`/trip/${tripId}/leaderboard`} label="Leaderboard" />
+          <NavLink href={`/trip/${tripId}/matches`} label="Matches" />
+          <NavLink href={`/trip/${tripId}/stats`} label="Stats & Awards" />
+          <NavLink href={`/trip/${tripId}/settlement`} label="The Bank" />
+          <NavLink href={`/trip/${tripId}/competition`} label="Ryder Cup" />
+          <NavLink href={`/trip/${tripId}/dashboard`} label="Dashboard" />
+          <NavLink href={`/trip/${tripId}/head-to-head`} label="Head-to-Head" />
+          <NavLink href={`/trip/${tripId}/chat`} label="Trash Talk" />
+        </div>
+
         {/* Team Standings */}
         <TripLandingClient
           tripId={tripId}
@@ -361,18 +394,6 @@ export default async function TripPublicPage({
           <PlanningSection tripId={tripId} />
         )}
 
-        {/* Navigation Links */}
-        <div className="grid grid-cols-2 gap-3">
-          <NavLink href={`/trip/${tripId}/leaderboard`} label="Leaderboard" />
-          <NavLink href={`/trip/${tripId}/matches`} label="Matches" />
-          <NavLink href={`/trip/${tripId}/stats`} label="Stats & Awards" />
-          <NavLink href={`/trip/${tripId}/settlement`} label="The Bank" />
-          <NavLink href={`/trip/${tripId}/competition`} label="Ryder Cup" />
-          <NavLink href={`/trip/${tripId}/dashboard`} label="Dashboard" />
-          <NavLink href={`/trip/${tripId}/head-to-head`} label="Head-to-Head" />
-          <NavLink href={`/trip/${tripId}/chat`} label="Trash Talk" />
-        </div>
-
         {/* Rounds */}
         {(courses ?? []).length > 0 && (
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
@@ -380,21 +401,39 @@ export default async function TripPublicPage({
               Rounds
             </h3>
             <div className="space-y-2">
-              {(courses as Course[]).map((course) => (
-                <div
-                  key={course.id}
-                  className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900">{course.name}</p>
-                    <p className="text-xs text-gray-500">
-                      Round {course.round_number}
-                      {course.round_date && ` - ${course.round_date}`}
-                    </p>
+              {(courses as Course[]).map((course) => {
+                const games = gamesByCourse[course.id] || []
+                return (
+                  <div
+                    key={course.id}
+                    className="rounded-lg bg-gray-50 px-4 py-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">{course.name}</p>
+                        <p className="text-xs text-gray-500">
+                          Round {course.round_number}
+                          {course.round_date && ` - ${course.round_date}`}
+                        </p>
+                      </div>
+                      <p className="text-sm text-gray-500">Par {course.par}</p>
+                    </div>
+                    {games.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {games.map((game, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1 rounded-full bg-golf-50 border border-golf-200 px-2.5 py-0.5 text-xs font-medium text-golf-800"
+                          >
+                            {game.icon} {game.name}
+                            {game.buy_in > 0 && ` · $${game.buy_in}`}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-500">Par {course.par}</p>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
