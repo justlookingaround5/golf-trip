@@ -28,7 +28,7 @@ export async function sendTripInviteEmail({
   const invitedBy = invitedByName ? ` by ${invitedByName}` : ''
 
   await getResend().emails.send({
-    from: 'ForeLive <onboarding@resend.dev>',
+    from: 'ForeLive <noreply@golf.dynavestcapital.com>',
     to,
     subject: `You're invited to ${trip.name}!`,
     html: `
@@ -59,7 +59,7 @@ export async function sendTripAddedEmail({
   const dashboardUrl = `${appUrl}/admin`
 
   await getResend().emails.send({
-    from: 'ForeLive <onboarding@resend.dev>',
+    from: 'ForeLive <noreply@golf.dynavestcapital.com>',
     to,
     subject: `You've been added to ${trip.name}`,
     html: `
