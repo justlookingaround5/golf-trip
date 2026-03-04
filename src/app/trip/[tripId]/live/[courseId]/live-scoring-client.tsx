@@ -80,6 +80,7 @@ interface ApiResponse {
   activityFeed: ActivityFeedItem[]
   currentTripPlayerId: string | null
   playerTees: PlayerTeeData[]
+  isQuickRound: boolean
 }
 
 function getPlayerName(tp: TripPlayerData): string {
@@ -522,12 +523,22 @@ export default function LiveScoringClient({
               Live Scoring &middot; Par {data.course.par}
             </p>
           </div>
-          <a
-            href={`/trip/${tripId}`}
-            className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
-          >
-            Trip
-          </a>
+          {!data.isQuickRound && (
+            <a
+              href={`/trip/${tripId}`}
+              className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
+            >
+              Trip
+            </a>
+          )}
+          {data.isQuickRound && (
+            <a
+              href="/home"
+              className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
+            >
+              Home
+            </a>
+          )}
         </div>
       </header>
 
@@ -674,6 +685,7 @@ export default function LiveScoringClient({
           sideBets={data.sideBets}
           sideBetHits={enrichedHits}
           coursePar={data.course.par}
+          isQuickRound={data.isQuickRound}
         />
 
         {/* Spacer for fixed bottom button */}

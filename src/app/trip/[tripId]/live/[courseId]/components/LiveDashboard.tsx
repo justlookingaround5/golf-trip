@@ -37,6 +37,7 @@ interface LiveDashboardProps {
   sideBets: SideBet[]
   sideBetHits: (SideBetHit & { playerName?: string; holeNumber?: number })[]
   coursePar: number
+  isQuickRound?: boolean
 }
 
 export default function LiveDashboard({
@@ -46,15 +47,21 @@ export default function LiveDashboard({
   sideBets,
   sideBetHits,
   coursePar,
+  isQuickRound,
 }: LiveDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('leaderboard')
 
-  const tabs: { key: Tab; label: string }[] = [
+  const allTabs: { key: Tab; label: string }[] = [
     { key: 'leaderboard', label: 'Board' },
     { key: 'games', label: 'Games' },
     { key: 'feed', label: 'Feed' },
     { key: 'side_bets', label: 'Bets' },
   ]
+
+  // Hide games and bets tabs for quick rounds
+  const tabs = isQuickRound
+    ? allTabs.filter(t => t.key === 'leaderboard' || t.key === 'feed')
+    : allTabs
 
   return (
     <div className="mt-4">

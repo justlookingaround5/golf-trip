@@ -24,6 +24,13 @@ export async function GET(
     return NextResponse.json({ error: 'Course not found' }, { status: 404 })
   }
 
+  // Check if this is a quick round
+  const { data: trip } = await supabase
+    .from('trips')
+    .select('is_quick_round')
+    .eq('id', course.trip_id)
+    .single()
+
   // Fetch holes with yardage
   const { data: holes } = await supabase
     .from('holes')
@@ -119,5 +126,6 @@ export async function GET(
     activityFeed: activityFeed || [],
     currentTripPlayerId: currentTripPlayer?.id || null,
     playerTees: playerTees || [],
+    isQuickRound: trip?.is_quick_round || false,
   })
 }

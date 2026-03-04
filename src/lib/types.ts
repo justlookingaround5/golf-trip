@@ -13,6 +13,7 @@ export interface Trip {
   created_by: string | null
   join_code: string | null
   group_id: string | null
+  is_quick_round: boolean
 }
 
 // ============================================================================
