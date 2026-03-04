@@ -5,15 +5,40 @@ import type { Trip } from '@/lib/types'
 export default async function Home() {
   const supabase = await createClient()
 
+  // Fetch current user (may be null for anonymous visitors)
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data: trips } = await supabase
     .from('trips')
     .select('id, name, year, location, status')
-    .in('status', ['active', 'completed'])
+    .in('status', ['setup', 'active', 'completed'])
     .order('year', { ascending: false })
-    .limit(10)
+    .limit(20)
 
-  const activeTrips = (trips as Trip[] | null)?.filter(t => t.status === 'active') ?? []
+  // Get trip IDs the user is a member of
+  const memberTripIds = new Set<string>()
+  if (user) {
+    const tripIds = (trips ?? []).map(t => t.id)
+    if (tripIds.length > 0) {
+      const { data: memberships } = await supabase
+        .from('trip_members')
+        .select('trip_id')
+        .eq('user_id', user.id)
+        .in('trip_id', tripIds)
+      for (const m of memberships ?? []) {
+        memberTripIds.add(m.trip_id)
+      }
+    }
+  }
+
+  const upcomingTrips = (trips as Trip[] | null)?.filter(t => t.status === 'setup' || t.status === 'active') ?? []
   const completedTrips = (trips as Trip[] | null)?.filter(t => t.status === 'completed') ?? []
+
+  const statusPill: Record<string, { label: string; className: string }> = {
+    setup: { label: 'Setting Up', className: 'bg-amber-100 text-amber-800' },
+    active: { label: 'Active', className: 'bg-green-100 text-green-800' },
+    completed: { label: 'Completed', className: 'bg-gray-100 text-gray-600' },
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -45,37 +70,63 @@ export default async function Home() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-10">
-        {/* Active Trips */}
-        {activeTrips.length > 0 && (
+        {/* Upcoming / Active Trips */}
+        {upcomingTrips.length > 0 && (
           <section className="mb-10">
             <h2 className="text-xl font-semibold text-golf-900 mb-4">
-              Active Trips
+              Upcoming Trips
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
-              {activeTrips.map(trip => (
-                <Link
-                  key={trip.id}
-                  href={`/trip/${trip.id}`}
-                  className="block border border-golf-200 rounded-lg p-5 hover:border-golf-600 hover:shadow-md transition-all bg-white"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg text-golf-900">
-                        {trip.name}
-                      </h3>
-                      {trip.location && (
-                        <p className="text-sm text-gray-500 mt-1">{trip.location}</p>
+              {upcomingTrips.map(trip => {
+                const isMember = memberTripIds.has(trip.id)
+                const pill = statusPill[trip.status] ?? statusPill.setup
+                const card = (
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg text-golf-900">
+                          {trip.name}
+                        </h3>
+                        {trip.location && (
+                          <p className="text-sm text-gray-500 mt-1">{trip.location}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${pill.className}`}>
+                          {pill.label}
+                        </span>
+                        <span className="text-xs font-medium bg-golf-100 text-golf-800 px-2 py-1 rounded-full">
+                          {trip.year}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center text-sm font-medium">
+                      {isMember ? (
+                        <span className="text-golf-700">View trip &rarr;</span>
+                      ) : (
+                        <span className="text-gray-400">Sign in to view</span>
                       )}
                     </div>
-                    <span className="text-xs font-medium bg-golf-100 text-golf-800 px-2 py-1 rounded-full">
-                      {trip.year}
-                    </span>
                   </div>
-                  <div className="mt-3 flex items-center text-sm text-golf-700 font-medium">
-                    View leaderboard &rarr;
+                )
+
+                return isMember ? (
+                  <Link
+                    key={trip.id}
+                    href={`/trip/${trip.id}`}
+                    className="block border border-golf-200 rounded-lg p-5 hover:border-golf-600 hover:shadow-md transition-all bg-white"
+                  >
+                    {card}
+                  </Link>
+                ) : (
+                  <div
+                    key={trip.id}
+                    className="block border border-gray-200 rounded-lg p-5 bg-white opacity-75"
+                  >
+                    {card}
                   </div>
-                </Link>
-              ))}
+                )
+              })}
             </div>
           </section>
         )}
@@ -87,36 +138,56 @@ export default async function Home() {
               Past Trips
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
-              {completedTrips.map(trip => (
-                <Link
-                  key={trip.id}
-                  href={`/trip/${trip.id}`}
-                  className="block border border-gray-200 rounded-lg p-5 hover:border-golf-600 hover:shadow-md transition-all bg-white"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-800">
-                        {trip.name}
-                      </h3>
-                      {trip.location && (
-                        <p className="text-sm text-gray-500 mt-1">{trip.location}</p>
+              {completedTrips.map(trip => {
+                const isMember = memberTripIds.has(trip.id)
+                const card = (
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg text-gray-800">
+                          {trip.name}
+                        </h3>
+                        {trip.location && (
+                          <p className="text-sm text-gray-500 mt-1">{trip.location}</p>
+                        )}
+                      </div>
+                      <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                        {trip.year}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center text-sm font-medium">
+                      {isMember ? (
+                        <span className="text-gray-500">View results &rarr;</span>
+                      ) : (
+                        <span className="text-gray-400">Sign in to view</span>
                       )}
                     </div>
-                    <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                      {trip.year}
-                    </span>
                   </div>
-                  <div className="mt-3 flex items-center text-sm text-gray-500 font-medium">
-                    View results &rarr;
+                )
+
+                return isMember ? (
+                  <Link
+                    key={trip.id}
+                    href={`/trip/${trip.id}`}
+                    className="block border border-gray-200 rounded-lg p-5 hover:border-golf-600 hover:shadow-md transition-all bg-white"
+                  >
+                    {card}
+                  </Link>
+                ) : (
+                  <div
+                    key={trip.id}
+                    className="block border border-gray-200 rounded-lg p-5 bg-white opacity-75"
+                  >
+                    {card}
                   </div>
-                </Link>
-              ))}
+                )
+              })}
             </div>
           </section>
         )}
 
         {/* No trips */}
-        {activeTrips.length === 0 && completedTrips.length === 0 && (
+        {upcomingTrips.length === 0 && completedTrips.length === 0 && (
           <section className="text-center py-16">
             <div className="text-5xl mb-4">&#9971;</div>
             <h2 className="text-xl font-semibold text-gray-700 mb-2">
