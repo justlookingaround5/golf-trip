@@ -317,6 +317,23 @@ export default async function HomePage() {
           {/* Upcoming rounds */}
           <UpcomingRounds rounds={upcomingRounds} />
 
+          {/* Live Scoring promo — always visible */}
+          {upcomingRounds.every(r => r.round_date !== new Date().toISOString().split('T')[0]) && (
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                  <span className="text-xl">🏌️</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Live Scoring</h3>
+                  <p className="text-sm text-gray-500">
+                    Score your round in real time on game day. A &ldquo;Go Live&rdquo; button will appear here when a round is scheduled for today.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Groups + trips */}
           <GroupsSection
             groups={groups}

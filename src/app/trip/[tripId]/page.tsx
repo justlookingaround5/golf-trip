@@ -181,18 +181,34 @@ export default async function TripPublicPage({
           </div>
         </div>
 
-        {/* Go Live — today's round */}
+        {/* Go Live Scoring */}
         {(() => {
           const today = new Date().toISOString().split('T')[0]
           const todaysCourse = (courses as Course[] ?? []).find(c => c.round_date === today)
-          if (!todaysCourse) return null
+          if (todaysCourse) {
+            return (
+              <Link
+                href={`/trip/${tripId}/live/${todaysCourse.id}`}
+                className="flex items-center justify-center gap-2 rounded-xl bg-green-600 py-4 text-lg font-bold text-white shadow-lg active:bg-green-700"
+              >
+                <span>🏌️</span> Go Live — {todaysCourse.name}
+              </Link>
+            )
+          }
           return (
-            <Link
-              href={`/trip/${tripId}/live/${todaysCourse.id}`}
-              className="flex items-center justify-center gap-2 rounded-xl bg-green-600 py-4 text-lg font-bold text-white shadow-lg active:bg-green-700"
-            >
-              <span>🏌️</span> Go Live — {todaysCourse.name}
-            </Link>
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                  <span className="text-xl">🏌️</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Live Scoring</h3>
+                  <p className="text-sm text-gray-500">
+                    Score your round in real time on game day. Available when a round is scheduled for today.
+                  </p>
+                </div>
+              </div>
+            </div>
           )
         })()}
 
