@@ -32,8 +32,7 @@ export default function NewTripPage() {
   const [name, setName] = useState('')
   const [year, setYear] = useState(new Date().getFullYear())
   const [location, setLocation] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [tripDate, setTripDate] = useState('')
 
   // Step 2: Invite
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([])
@@ -292,34 +291,21 @@ export default function NewTripPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="startDate" className="mb-1 block text-sm font-medium text-gray-700">
-                Start Date
-              </label>
-              <input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value)
-                  if (e.target.value) setYear(new Date(e.target.value).getFullYear())
-                }}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="endDate" className="mb-1 block text-sm font-medium text-gray-700">
-                End Date
-              </label>
-              <input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
-              />
-            </div>
+          <div>
+            <label htmlFor="tripDate" className="mb-1 block text-sm font-medium text-gray-700">
+              Trip Date
+            </label>
+            <input
+              id="tripDate"
+              type="date"
+              value={tripDate}
+              onChange={(e) => {
+                setTripDate(e.target.value)
+                if (e.target.value) setYear(new Date(e.target.value).getFullYear())
+              }}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">Sets the trip year. Add individual round dates after creating.</p>
           </div>
 
           <div className="flex items-center justify-between pt-2">

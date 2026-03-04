@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const { data: profiles, error } = await supabase
     .from('player_profiles')
     .select('user_id, display_name, avatar_url, handicap_index')
-    .ilike('display_name', `%${query}%`)
+    .ilike('display_name', `%${query.replace(/[%_]/g, '\\$&')}%`)
     .limit(10)
 
   if (error) {

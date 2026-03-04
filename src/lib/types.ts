@@ -80,6 +80,10 @@ export interface PlayerProfile {
   handicap_index: number | null
   home_club: string | null
   preferred_tee: string | null
+  bio: string | null
+  venmo_username: string | null
+  cashapp_cashtag: string | null
+  zelle_email: string | null
   created_at: string
   updated_at: string
 }

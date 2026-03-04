@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
       skins_buy_in: body.skins_buy_in ?? 10,
       skins_mode: body.skins_mode || 'net',
       created_by: user.id,
+      group_id: body.group_id || null,
     })
     .select()
     .single()

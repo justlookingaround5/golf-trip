@@ -45,10 +45,16 @@ ALTER TABLE date_poll_responses ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Anyone can read course_votes" ON course_votes FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can insert course_votes" ON course_votes FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Users can delete own course_votes" ON course_votes FOR DELETE USING (auth.uid() = proposed_by);
 CREATE POLICY "Anyone can read course_vote_responses" ON course_vote_responses FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can manage own course_vote_responses" ON course_vote_responses FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Authenticated users can insert course_vote_responses" ON course_vote_responses FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own course_vote_responses" ON course_vote_responses FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own course_vote_responses" ON course_vote_responses FOR DELETE USING (auth.uid() = user_id);
 
 CREATE POLICY "Anyone can read date_polls" ON date_polls FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can insert date_polls" ON date_polls FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Users can delete own date_polls" ON date_polls FOR DELETE USING (auth.uid() = proposed_by);
 CREATE POLICY "Anyone can read date_poll_responses" ON date_poll_responses FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can manage own date_poll_responses" ON date_poll_responses FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Authenticated users can insert date_poll_responses" ON date_poll_responses FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own date_poll_responses" ON date_poll_responses FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own date_poll_responses" ON date_poll_responses FOR DELETE USING (auth.uid() = user_id);

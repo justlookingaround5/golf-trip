@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
+import { getActiveRound } from '@/lib/active-round'
 
 export default async function HomeLayout({
   children,
@@ -39,30 +40,8 @@ export default async function HomeLayout({
     profile = { display_name: displayName, avatar_url: avatarUrl }
   }
 
-  // Find today's active round for the Live Play nav link
-  const today = new Date().toISOString().split('T')[0]
-  const { data: tripMemberships } = await supabase
-    .from('trip_members')
-    .select('trip_id')
-    .eq('user_id', user.id)
-  const tripIds = (tripMemberships || []).map(m => m.trip_id)
-
-  let activeRound: { tripId: string; courseId: string; courseName: string } | null = null
-  if (tripIds.length > 0) {
-    const { data: todayCourses } = await supabase
-      .from('courses')
-      .select('id, trip_id, name')
-      .in('trip_id', tripIds)
-      .eq('round_date', today)
-      .limit(1)
-    if (todayCourses && todayCourses.length > 0) {
-      activeRound = {
-        tripId: todayCourses[0].trip_id,
-        courseId: todayCourses[0].id,
-        courseName: todayCourses[0].name,
-      }
-    }
-  }
+  // Find today's active round for the Live Scoring nav link
+  const activeRound = await getActiveRound(supabase, user.id)
 
   return (
     <div className="min-h-screen bg-gray-50">
