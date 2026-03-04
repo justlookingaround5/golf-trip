@@ -166,12 +166,15 @@ export default function GroupDetailPage() {
     setAddingUserId(result.user_id)
     setMessage(null)
 
-    const { error } = await supabase
-      .from('group_members')
-      .insert({ group_id: groupId, user_id: result.user_id, role: 'member' })
+    const res = await fetch(`/api/groups/${groupId}/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: result.user_id }),
+    })
 
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
+    if (!res.ok) {
+      const data = await res.json()
+      setMessage({ type: 'error', text: data.error || 'Failed to add member' })
     } else {
       setMembers([...members, {
         id: crypto.randomUUID(),
@@ -192,14 +195,15 @@ export default function GroupDetailPage() {
     if (member.user_id === currentUserId) return
     setMessage(null)
 
-    const { error } = await supabase
-      .from('group_members')
-      .delete()
-      .eq('group_id', groupId)
-      .eq('user_id', member.user_id)
+    const res = await fetch(`/api/groups/${groupId}/members`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: member.user_id }),
+    })
 
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
+    if (!res.ok) {
+      const data = await res.json()
+      setMessage({ type: 'error', text: data.error || 'Failed to remove member' })
     } else {
       setMembers(members.filter(m => m.user_id !== member.user_id))
       setMessage({ type: 'success', text: `${member.display_name || 'Member'} removed` })
