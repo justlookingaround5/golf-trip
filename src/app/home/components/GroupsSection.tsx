@@ -158,7 +158,8 @@ export default function GroupsSection({
   const [groups, setGroups] = useState(initialGroups)
   const [showCreateForm, setShowCreateForm] = useState(false)
 
-  const ungroupedTrips = trips.filter(t => !t.group_id)
+  const groupIds = new Set(groups.map(g => g.id))
+  const ungroupedTrips = trips.filter(t => !t.group_id || !groupIds.has(t.group_id))
   const tripsByGroup = (groupId: string) => trips.filter(t => t.group_id === groupId)
 
   return (
