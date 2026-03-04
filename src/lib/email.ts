@@ -76,3 +76,40 @@ export async function sendTripAddedEmail({
     `,
   })
 }
+
+// NEW: Sent when a user is added to a group
+export async function sendGroupInviteEmail({
+  to,
+  displayName,
+  groupName,
+  groupId,
+  invitedByName,
+}: {
+  to: string
+  displayName: string
+  groupName: string
+  groupId: string
+  invitedByName?: string
+}) {
+  const groupUrl = `${appUrl}/home`
+  const invitedBy = invitedByName ? ` by ${invitedByName}` : ''
+
+  await getResend().emails.send({
+    from: 'ForeLive <noreply@golf.dynavestcapital.com>',
+    to,
+    subject: `You've been added to the ${groupName} group on ForeLive`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+        <h2 style="color: #1e4080;">You've been added to a group!</h2>
+        <p>Hey ${displayName},</p>
+        <p>You've been added${invitedBy} to the <strong>${groupName}</strong> group on ForeLive. You'll now see shared trips and activity from this group.</p>
+        <p>
+          <a href="${groupUrl}" style="display: inline-block; background: #1e4080; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+            Go to ForeLive
+          </a>
+        </p>
+        <p style="color: #6b7280; font-size: 14px;">If you weren't expecting this, you can ignore this email or contact the person who added you.</p>
+      </div>
+    `,
+  })
+}
