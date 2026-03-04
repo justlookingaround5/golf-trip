@@ -26,12 +26,20 @@ export default async function Home() {
           <p className="text-golf-200 text-lg mt-3">
             Live scoring, games, and settlements for your golf trip
           </p>
-          <Link
-            href="/join"
-            className="mt-6 inline-block rounded-lg bg-gold px-6 py-2.5 text-sm font-semibold text-golf-950 hover:bg-gold-dark transition-colors"
-          >
-            Join a Trip
-          </Link>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/join"
+              className="inline-block rounded-lg bg-gold px-6 py-2.5 text-sm font-semibold text-golf-950 hover:bg-gold-dark transition-colors"
+            >
+              Join a Trip
+            </Link>
+            <Link
+              href="/home"
+              className="inline-block rounded-lg border border-golf-400 px-6 py-2.5 text-sm font-semibold text-golf-200 hover:bg-golf-800 transition-colors"
+            >
+              Go to My Dashboard
+            </Link>
+          </div>
         </div>
       </header>
 
