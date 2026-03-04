@@ -179,13 +179,13 @@ export default async function HomePage() {
 
   // Upcoming rounds from active trips
   const activeTripIds = trips.filter(t => t.status === 'active').map(t => t.id)
-  let upcomingRounds: { trip_id: string; trip_name: string; course_name: string; round_date: string }[] = []
+  let upcomingRounds: { trip_id: string; trip_name: string; course_name: string; course_id: string; round_date: string }[] = []
 
   if (activeTripIds.length > 0) {
     const today = new Date().toISOString().split('T')[0]
     const { data: courses } = await supabase
       .from('courses')
-      .select('trip_id, name, round_date')
+      .select('id, trip_id, name, round_date')
       .in('trip_id', activeTripIds)
       .gte('round_date', today)
       .order('round_date', { ascending: true })
@@ -198,6 +198,7 @@ export default async function HomePage() {
         trip_id: c.trip_id,
         trip_name: tripNameMap.get(c.trip_id) || 'Unknown Trip',
         course_name: c.name,
+        course_id: c.id,
         round_date: c.round_date!,
       }))
   }

@@ -4,6 +4,7 @@ type UpcomingRound = {
   trip_id: string
   trip_name: string
   course_name: string
+  course_id: string
   round_date: string
 }
 
@@ -32,22 +33,40 @@ export default function UpcomingRounds({ rounds }: { rounds: UpcomingRound[] }) 
       <div className="space-y-3">
         {rounds.map((round, i) => {
           const countdown = daysUntil(round.round_date)
+          const isToday = countdown === 'Today'
+
           return (
-            <Link
+            <div
               key={`${round.trip_id}-${round.course_name}-${i}`}
-              href={`/trip/${round.trip_id}`}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+              className={`rounded-lg border bg-white p-4 shadow-sm ${
+                isToday ? 'border-golf-300 ring-1 ring-golf-200' : 'border-gray-200'
+              }`}
             >
-              <div>
-                <p className="text-sm font-semibold text-gray-900">{round.course_name}</p>
-                <p className="text-xs text-gray-500">{round.trip_name} &middot; {formatDate(round.round_date)}</p>
-              </div>
-              {countdown && (
-                <span className="rounded-full bg-golf-100 px-2.5 py-0.5 text-xs font-medium text-golf-800">
-                  {countdown}
-                </span>
+              <Link
+                href={`/trip/${round.trip_id}`}
+                className="flex items-center justify-between"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{round.course_name}</p>
+                  <p className="text-xs text-gray-500">{round.trip_name} &middot; {formatDate(round.round_date)}</p>
+                </div>
+                {countdown && (
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    isToday ? 'bg-green-100 text-green-800' : 'bg-golf-100 text-golf-800'
+                  }`}>
+                    {countdown}
+                  </span>
+                )}
+              </Link>
+              {isToday && (
+                <Link
+                  href={`/trip/${round.trip_id}/live/${round.course_id}`}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-bold text-white shadow-sm active:bg-green-700"
+                >
+                  <span>🏌️</span> Go Live
+                </Link>
               )}
-            </Link>
+            </div>
           )
         })}
       </div>

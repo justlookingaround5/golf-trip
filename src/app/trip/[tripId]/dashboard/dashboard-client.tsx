@@ -163,6 +163,14 @@ export default function DashboardClient({
             )}
 
             <div className="mt-3 flex gap-2">
+              {todaysRound.round_date === today && (
+                <Link
+                  href={`/trip/${trip.id}/live/${todaysRound.id}`}
+                  className="flex-1 rounded-md bg-green-600 py-2 text-center text-sm font-bold text-white hover:bg-green-700"
+                >
+                  Go Live
+                </Link>
+              )}
               <Link
                 href={`/trip/${trip.id}/leaderboard`}
                 className="flex-1 rounded-md bg-golf-700 py-2 text-center text-sm font-medium text-white hover:bg-golf-600"

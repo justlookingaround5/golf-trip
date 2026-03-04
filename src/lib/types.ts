@@ -46,6 +46,7 @@ export interface Course {
   round_number: number
   round_date: string | null
   created_at: string
+  golf_course_api_id?: number | null
   holes?: Hole[]
 }
 
@@ -55,6 +56,7 @@ export interface Hole {
   hole_number: number
   par: number
   handicap_index: number
+  yardage?: Record<string, number> // e.g. {"White": 345, "Blue": 372}
 }
 
 export interface Player {
@@ -140,6 +142,17 @@ export interface Score {
   trip_player_id: string
   hole_id: string
   gross_score: number
+  created_at: string
+  updated_at: string
+}
+
+export interface RoundScore {
+  id: string
+  course_id: string
+  trip_player_id: string
+  hole_id: string
+  gross_score: number
+  entered_by: string | null
   created_at: string
   updated_at: string
 }

@@ -1,0 +1,647 @@
+'use client'
+
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { getStrokesPerHole } from '@/lib/handicap'
+import type { ActivityFeedItem, RoundScore, SideBet, SideBetHit } from '@/lib/types'
+import HoleView from './components/HoleView'
+import LiveDashboard from './components/LiveDashboard'
+
+interface HoleData {
+  id: string
+  course_id: string
+  hole_number: number
+  par: number
+  handicap_index: number
+  yardage?: Record<string, number>
+}
+
+interface CourseData {
+  id: string
+  trip_id: string
+  name: string
+  par: number
+  round_number: number
+  round_date: string | null
+}
+
+interface TripPlayerData {
+  id: string
+  trip_id: string
+  player_id: string
+  paid: boolean
+  player: { id: string; name: string; handicap_index: number | null; user_id: string | null } | { id: string; name: string; handicap_index: number | null; user_id: string | null }[]
+}
+
+interface CourseHandicapData {
+  id: string
+  trip_player_id: string
+  course_id: string
+  handicap_strokes: number
+}
+
+interface RoundGameData {
+  id: string
+  course_id: string
+  trip_id: string
+  config: Record<string, unknown>
+  buy_in: number
+  status: string
+  game_format?: { id: string; name: string; icon: string; engine_key: string; scoring_type: string } | null
+  round_game_players: { id: string; trip_player_id: string; side: string | null; metadata: Record<string, unknown> }[]
+}
+
+interface GameResultData {
+  id: string
+  round_game_id: string
+  trip_player_id: string
+  position: number
+  points: number
+  money: number
+  details: Record<string, unknown>
+}
+
+interface PlayerTeeData {
+  trip_player_id: string
+  tee_name: string
+}
+
+interface ApiResponse {
+  course: CourseData
+  holes: HoleData[]
+  tripPlayers: TripPlayerData[]
+  roundScores: RoundScore[]
+  courseHandicaps: CourseHandicapData[]
+  roundGames: RoundGameData[]
+  gameResults: GameResultData[]
+  sideBets: SideBet[]
+  sideBetHits: SideBetHit[]
+  activityFeed: ActivityFeedItem[]
+  currentTripPlayerId: string | null
+  playerTees: PlayerTeeData[]
+}
+
+function getPlayerName(tp: TripPlayerData): string {
+  const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
+  return player?.name || 'Unknown'
+}
+
+export default function LiveScoringClient({
+  tripId,
+  courseId,
+  courseName,
+}: {
+  tripId: string
+  courseId: string
+  courseName: string
+}) {
+  const [data, setData] = useState<ApiResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const [activeHole, setActiveHole] = useState<number | null>(null)
+  const [holeScores, setHoleScores] = useState<Record<string, number>>({})
+  const [saving, setSaving] = useState(false)
+
+  // Load data
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/live/${courseId}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || 'Failed to load')
+      }
+      const json: ApiResponse = await res.json()
+      setData(json)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }, [courseId])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  // Realtime subscriptions
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`live-${courseId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'round_scores', filter: `course_id=eq.${courseId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const newScore = payload.new as RoundScore
+            setData(prev => {
+              if (!prev) return prev
+              const filtered = prev.roundScores.filter(
+                s => !(s.trip_player_id === newScore.trip_player_id && s.hole_id === newScore.hole_id)
+              )
+              return { ...prev, roundScores: [...filtered, newScore] }
+            })
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'game_results' },
+        () => {
+          // Refresh game results on change
+          loadData()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'activity_feed', filter: `course_id=eq.${courseId}` },
+        (payload) => {
+          setData(prev => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              activityFeed: [payload.new as ActivityFeedItem, ...prev.activityFeed].slice(0, 30),
+            }
+          })
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'side_bet_hits', filter: `course_id=eq.${courseId}` },
+        (payload) => {
+          setData(prev => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              sideBetHits: [...prev.sideBetHits, payload.new as SideBetHit],
+            }
+          })
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [courseId, loadData])
+
+  // Derived data
+  const holes = useMemo(() => {
+    if (!data) return []
+    return [...data.holes].sort((a, b) => a.hole_number - b.hole_number)
+  }, [data])
+
+  const currentTripPlayerId = data?.currentTripPlayerId || null
+
+  const playerNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const tp of data?.tripPlayers || []) {
+      map.set(tp.id, getPlayerName(tp))
+    }
+    return map
+  }, [data])
+
+  const playerStrokesMap = useMemo(() => {
+    if (!data) return new Map<string, Map<number, number>>()
+    const map = new Map<string, Map<number, number>>()
+    for (const ch of data.courseHandicaps) {
+      map.set(ch.trip_player_id, getStrokesPerHole(ch.handicap_strokes, data.holes))
+    }
+    return map
+  }, [data])
+
+  // Current player's tee
+  const currentPlayerTee = useMemo(() => {
+    if (!data || !currentTripPlayerId) return undefined
+    const tee = data.playerTees.find(t => t.trip_player_id === currentTripPlayerId)
+    return tee?.tee_name
+  }, [data, currentTripPlayerId])
+
+  // Completed holes (where current player has a score)
+  const completedHoles = useMemo(() => {
+    if (!data || !currentTripPlayerId) return new Set<number>()
+    const set = new Set<number>()
+    for (const hole of holes) {
+      const hasScore = data.roundScores.some(
+        s => s.hole_id === hole.id && s.trip_player_id === currentTripPlayerId
+      )
+      if (hasScore) set.add(hole.hole_number)
+    }
+    return set
+  }, [data, holes, currentTripPlayerId])
+
+  const nextUnscoredHole = useMemo(() => {
+    for (const hole of holes) {
+      if (!completedHoles.has(hole.hole_number)) return hole.hole_number
+    }
+    return null
+  }, [holes, completedHoles])
+
+  // Open a hole for scoring
+  function openHole(holeNumber: number) {
+    if (!data || !currentTripPlayerId) return
+    const hole = holes.find(h => h.hole_number === holeNumber)
+    if (!hole) return
+
+    const initial: Record<string, number> = {}
+
+    // All trip players
+    for (const tp of data.tripPlayers) {
+      const existing = data.roundScores.find(
+        s => s.hole_id === hole.id && s.trip_player_id === tp.id
+      )
+      initial[tp.id] = existing?.gross_score ?? hole.par
+    }
+
+    setHoleScores(initial)
+    setActiveHole(holeNumber)
+  }
+
+  function adjustScore(tripPlayerId: string, delta: number) {
+    if (navigator.vibrate) navigator.vibrate(10)
+    setHoleScores(prev => {
+      const current = prev[tripPlayerId] ?? 4
+      const next = Math.max(1, Math.min(20, current + delta))
+      return { ...prev, [tripPlayerId]: next }
+    })
+  }
+
+  function setScore(tripPlayerId: string, value: number) {
+    if (navigator.vibrate) navigator.vibrate(10)
+    setHoleScores(prev => ({ ...prev, [tripPlayerId]: value }))
+  }
+
+  async function submitHoleScores() {
+    if (navigator.vibrate) navigator.vibrate([20, 50, 20])
+    if (!data || activeHole === null || !currentTripPlayerId) return
+    const hole = holes.find(h => h.hole_number === activeHole)
+    if (!hole) return
+
+    // Build scores array — only include players that have non-default scores or own player
+    const scoresToSubmit = Object.entries(holeScores)
+      .filter(([tpId, score]) => {
+        // Always include own score
+        if (tpId === currentTripPlayerId) return true
+        // Include partner scores only if they were explicitly set (not default par)
+        const existing = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
+        return existing || score !== hole.par
+      })
+      .map(([trip_player_id, gross_score]) => ({ trip_player_id, gross_score }))
+
+    // Optimistic update
+    const optimisticScores: RoundScore[] = scoresToSubmit.map(s => ({
+      id: `optimistic-${s.trip_player_id}-${hole.id}`,
+      course_id: courseId,
+      trip_player_id: s.trip_player_id,
+      hole_id: hole.id,
+      gross_score: s.gross_score,
+      entered_by: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }))
+
+    setData(prev => {
+      if (!prev) return prev
+      const otherScores = prev.roundScores.filter(s => {
+        const isThisHole = s.hole_id === hole.id
+        const isSubmitted = scoresToSubmit.some(sub => sub.trip_player_id === s.trip_player_id)
+        return !(isThisHole && isSubmitted)
+      })
+      return { ...prev, roundScores: [...otherScores, ...optimisticScores] }
+    })
+
+    // Auto-advance
+    const currentHole = activeHole
+    setActiveHole(null)
+    setTimeout(() => {
+      const updatedCompleted = new Set(completedHoles)
+      updatedCompleted.add(currentHole)
+      for (const h of holes) {
+        if (!updatedCompleted.has(h.hole_number)) {
+          openHole(h.hole_number)
+          return
+        }
+      }
+    }, 100)
+
+    // Save in background
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/live/${courseId}/scores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hole_id: hole.id, scores: scoresToSubmit }),
+      })
+
+      if (res.ok) {
+        const result = await res.json()
+        setData(prev => {
+          if (!prev) return prev
+          return { ...prev, roundScores: result.roundScores }
+        })
+      } else {
+        // Revert optimistic
+        setData(prev => {
+          if (!prev) return prev
+          const reverted = prev.roundScores.filter(s => !s.id.startsWith('optimistic-'))
+          return { ...prev, roundScores: reverted }
+        })
+        setError('Failed to save. Tap the hole to retry.')
+      }
+    } catch {
+      setError('Connection lost. Score saved locally.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Build leaderboard from round_scores
+  const leaderboard = useMemo(() => {
+    if (!data) return []
+    return data.tripPlayers.map(tp => {
+      const scores = data.roundScores.filter(s => s.trip_player_id === tp.id)
+      const grossTotal = scores.reduce((sum, s) => sum + s.gross_score, 0)
+      const holesPlayed = scores.length
+
+      // Calculate net
+      const strokesMap = playerStrokesMap.get(tp.id)
+      let netTotal = grossTotal
+      if (strokesMap) {
+        netTotal = scores.reduce((sum, s) => {
+          const hole = holes.find(h => h.id === s.hole_id)
+          const strokes = hole ? (strokesMap.get(hole.hole_number) ?? 0) : 0
+          return sum + (s.gross_score - strokes)
+        }, 0)
+      }
+
+      // vs par for holes played
+      const parForHolesPlayed = scores.reduce((sum, s) => {
+        const hole = holes.find(h => h.id === s.hole_id)
+        return sum + (hole?.par ?? 0)
+      }, 0)
+
+      return {
+        tripPlayerId: tp.id,
+        name: getPlayerName(tp),
+        grossTotal,
+        netTotal,
+        holesPlayed,
+        thru: holesPlayed === 0 ? '-' : `${holesPlayed}`,
+        vsPar: grossTotal - parForHolesPlayed,
+      }
+    }).filter(e => e.holesPlayed > 0)
+  }, [data, holes, playerStrokesMap])
+
+  // Build games info
+  const gamesInfo = useMemo(() => {
+    if (!data) return []
+    return data.roundGames.map(rg => {
+      const results = data.gameResults
+        .filter(gr => gr.round_game_id === rg.id)
+        .map(gr => ({
+          tripPlayerId: gr.trip_player_id,
+          name: playerNameMap.get(gr.trip_player_id) || 'Unknown',
+          points: gr.points,
+          money: gr.money,
+          position: gr.position,
+        }))
+
+      return {
+        id: rg.id,
+        name: rg.game_format?.name || 'Game',
+        icon: rg.game_format?.icon || '🎯',
+        buyIn: rg.buy_in,
+        status: rg.status,
+        results,
+      }
+    })
+  }, [data, playerNameMap])
+
+  // Build side bet hits with names
+  const enrichedHits = useMemo(() => {
+    if (!data) return []
+    return data.sideBetHits.map(hit => ({
+      ...hit,
+      playerName: playerNameMap.get(hit.trip_player_id) || 'Player',
+      holeNumber: holes.find(h => h.id === hit.hole_id)?.hole_number,
+    }))
+  }, [data, playerNameMap, holes])
+
+  // Loading
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-golf-50">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-golf-700 border-t-transparent" />
+          <p className="text-lg font-medium text-golf-800">Loading live mode...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !data) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-red-50 p-4">
+        <div className="rounded-xl bg-white p-8 text-center shadow-lg">
+          <p className="mb-2 text-xl font-bold text-red-700">Error</p>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!data || !currentTripPlayerId) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="rounded-xl bg-white p-8 text-center shadow-lg">
+          <p className="mb-2 text-xl font-bold text-gray-700">Not in this trip</p>
+          <p className="text-gray-500">You need to be a player in this trip to use live scoring.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const activeHoleData = activeHole
+    ? holes.find(h => h.hole_number === activeHole)
+    : null
+
+  const ownPlayerName = playerNameMap.get(currentTripPlayerId) || 'You'
+
+  const partners = data.tripPlayers
+    .filter(tp => tp.id !== currentTripPlayerId)
+    .map(tp => ({
+      tripPlayerId: tp.id,
+      name: getPlayerName(tp),
+      strokes: playerStrokesMap.get(tp.id)?.get(activeHoleData?.hole_number ?? 0) ?? 0,
+      score: holeScores[tp.id] ?? (activeHoleData?.par ?? 4),
+    }))
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-golf-800 px-4 py-3 text-white shadow-md">
+        <div className="mx-auto max-w-lg flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold">{courseName}</h1>
+            <p className="text-sm text-golf-200">
+              Live Scoring &middot; Par {data.course.par}
+            </p>
+          </div>
+          <a
+            href={`/trip/${tripId}`}
+            className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
+          >
+            Trip
+          </a>
+        </div>
+      </header>
+
+      {/* Active hole entry */}
+      {activeHole !== null && activeHoleData && (
+        <HoleView
+          hole={activeHoleData}
+          holes={holes}
+          completedHoles={completedHoles}
+          ownTripPlayerId={currentTripPlayerId}
+          ownPlayerName={ownPlayerName}
+          ownStrokes={playerStrokesMap.get(currentTripPlayerId)?.get(activeHoleData.hole_number) ?? 0}
+          ownScore={holeScores[currentTripPlayerId] ?? activeHoleData.par}
+          partners={partners}
+          playerTee={currentPlayerTee}
+          saving={saving}
+          onAdjustScore={adjustScore}
+          onSetScore={setScore}
+          onSubmit={submitHoleScores}
+          onNavigate={openHole}
+          onClose={() => setActiveHole(null)}
+        />
+      )}
+
+      <div className="mx-auto max-w-lg px-4 py-4">
+        {/* Error banner */}
+        {error && (
+          <div className="mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+            {error}
+            <button onClick={() => setError(null)} className="ml-2 font-bold">×</button>
+          </div>
+        )}
+
+        {/* Scorecard */}
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">Scorecard</h2>
+          <div className="text-sm text-gray-500">
+            {completedHoles.size}/{holes.length} holes
+          </div>
+        </div>
+
+        {[
+          { label: 'Front 9', start: 1, end: 9 },
+          { label: 'Back 9', start: 10, end: 18 },
+        ].map(nine => {
+          const nineHoles = holes.filter(
+            h => h.hole_number >= nine.start && h.hole_number <= nine.end
+          )
+          if (nineHoles.length === 0) return null
+
+          return (
+            <div key={nine.label} className="mb-4">
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
+                {nine.label}
+              </h3>
+              <div className="grid grid-cols-3 gap-2">
+                {nineHoles.map(hole => {
+                  const isComplete = completedHoles.has(hole.hole_number)
+                  const isActive = activeHole === hole.hole_number
+
+                  // Own score for this hole
+                  const ownScore = data.roundScores.find(
+                    s => s.hole_id === hole.id && s.trip_player_id === currentTripPlayerId
+                  )
+
+                  return (
+                    <button
+                      key={hole.id}
+                      onClick={() => openHole(hole.hole_number)}
+                      className={`relative rounded-xl border-2 p-3 text-left transition-all active:scale-95 ${
+                        isActive
+                          ? 'border-golf-600 bg-golf-50 shadow-md'
+                          : isComplete
+                            ? 'border-golf-300 bg-golf-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}
+                    >
+                      {isComplete && (
+                        <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-golf-600 text-xs text-white">
+                          &#10003;
+                        </span>
+                      )}
+                      <div className="text-lg font-bold text-gray-900">{hole.hole_number}</div>
+                      <div className="text-xs text-gray-500">Par {hole.par}</div>
+                      <div className="text-xs text-gray-400">Hdcp {hole.handicap_index}</div>
+
+                      {ownScore && (
+                        <div className="mt-1 border-t border-golf-200 pt-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-600">{ownPlayerName.split(' ')[0]}</span>
+                            <span className={`font-semibold ${
+                              ownScore.gross_score - hole.par < 0
+                                ? 'text-red-600'
+                                : ownScore.gross_score - hole.par > 0
+                                  ? 'text-blue-600'
+                                  : 'text-gray-700'
+                            }`}>
+                              {ownScore.gross_score} ({
+                                ownScore.gross_score - hole.par === 0
+                                  ? 'E'
+                                  : ownScore.gross_score - hole.par > 0
+                                    ? `+${ownScore.gross_score - hole.par}`
+                                    : `${ownScore.gross_score - hole.par}`
+                              })
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Quick start button */}
+        {nextUnscoredHole && activeHole === null && (
+          <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white p-4 shadow-lg z-10">
+            <div className="mx-auto max-w-lg">
+              <button
+                onClick={() => openHole(nextUnscoredHole)}
+                className="w-full rounded-xl bg-golf-700 py-4 text-lg font-bold text-white shadow-lg active:bg-golf-800"
+              >
+                Score Hole {nextUnscoredHole}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* All holes done */}
+        {nextUnscoredHole === null && holes.length > 0 && activeHole === null && (
+          <div className="rounded-xl bg-golf-100 p-6 text-center">
+            <p className="text-lg font-bold text-golf-800">All holes scored!</p>
+            <p className="mt-1 text-sm text-golf-600">Tap any hole to edit scores.</p>
+          </div>
+        )}
+
+        {/* Live Dashboard */}
+        <LiveDashboard
+          leaderboard={leaderboard}
+          games={gamesInfo}
+          feed={data.activityFeed}
+          sideBets={data.sideBets}
+          sideBetHits={enrichedHits}
+          coursePar={data.course.par}
+        />
+
+        {/* Spacer for fixed bottom button */}
+        {nextUnscoredHole && <div className="h-24" />}
+      </div>
+    </div>
+  )
+}

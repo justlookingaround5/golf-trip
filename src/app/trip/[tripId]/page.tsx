@@ -181,6 +181,21 @@ export default async function TripPublicPage({
           </div>
         </div>
 
+        {/* Go Live — today's round */}
+        {(() => {
+          const today = new Date().toISOString().split('T')[0]
+          const todaysCourse = (courses as Course[] ?? []).find(c => c.round_date === today)
+          if (!todaysCourse) return null
+          return (
+            <Link
+              href={`/trip/${tripId}/live/${todaysCourse.id}`}
+              className="flex items-center justify-center gap-2 rounded-xl bg-green-600 py-4 text-lg font-bold text-white shadow-lg active:bg-green-700"
+            >
+              <span>🏌️</span> Go Live — {todaysCourse.name}
+            </Link>
+          )
+        })()}
+
         {/* Navigation Links */}
         <div className="grid grid-cols-2 gap-3">
           <NavLink href={`/trip/${tripId}/leaderboard`} label="Leaderboard" icon="🏆" />
