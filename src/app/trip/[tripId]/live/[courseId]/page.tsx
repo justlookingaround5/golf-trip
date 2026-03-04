@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import LiveScoringClient from './live-scoring-client'
+import NotificationBanner from '@/components/NotificationBanner'
 
 export default async function LiveGamePage({
   params,
@@ -28,10 +29,13 @@ export default async function LiveGamePage({
   }
 
   return (
-    <LiveScoringClient
-      tripId={tripId}
-      courseId={courseId}
-      courseName={course.name}
-    />
+    <>
+      <NotificationBanner />
+      <LiveScoringClient
+        tripId={tripId}
+        courseId={courseId}
+        courseName={course.name}
+      />
+    </>
   )
 }
