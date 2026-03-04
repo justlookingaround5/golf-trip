@@ -5,6 +5,7 @@ import type { Trip, Course, Score, Match, PlayerCourseHandicap, TripPlayer } fro
 import { calculateTeamStandings } from '@/lib/leaderboard'
 import TripLandingClient from './trip-landing-client'
 import PlanningSection from './planning-section'
+import RoundGamePills from '@/components/RoundGamePills'
 
 export default async function TripPublicPage({
   params,
@@ -115,24 +116,47 @@ export default async function TripPublicPage({
     .select('*')
     .in('course_id', (courses ?? []).map((c) => c.id))
 
-  // Fetch games per round
+  // Fetch games per round (enriched with format details + players)
   const courseIds = (courses ?? []).map((c) => c.id)
   const { data: roundGames } = courseIds.length > 0
     ? await supabase
         .from('round_games')
-        .select('id, course_id, buy_in, status, game_format:game_formats(name, icon)')
+        .select(`
+          id, course_id, buy_in, status,
+          game_format:game_formats(name, icon, description, rules_summary, scoring_type, scope, team_based),
+          round_game_players(id, side, trip_player:trip_players(id, player:players(name)))
+        `)
         .in('course_id', courseIds)
         .neq('status', 'cancelled')
     : { data: [] }
 
-  const gamesByCourse: Record<string, { name: string; icon: string; buy_in: number }[]> = {}
+  type EnrichedGame = {
+    name: string; icon: string; buy_in: number
+    description: string | null; rules_summary: string | null
+    scoring_type: string | null; scope: string | null; team_based: boolean
+    players: { name: string; side: string | null }[]
+  }
+  const gamesByCourse: Record<string, EnrichedGame[]> = {}
   for (const g of roundGames ?? []) {
     if (!gamesByCourse[g.course_id]) gamesByCourse[g.course_id] = []
-    const fmt = Array.isArray(g.game_format) ? g.game_format[0] : g.game_format
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fmt: any = Array.isArray(g.game_format) ? g.game_format[0] : g.game_format
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const players = ((g as any).round_game_players ?? []).map((rgp: any) => {
+      const tp = Array.isArray(rgp.trip_player) ? rgp.trip_player[0] : rgp.trip_player
+      const p = tp ? (Array.isArray(tp.player) ? tp.player[0] : tp.player) : null
+      return { name: p?.name || 'Unknown', side: rgp.side as string | null }
+    })
     gamesByCourse[g.course_id].push({
       name: fmt?.name || 'Game',
       icon: fmt?.icon || '🎯',
       buy_in: g.buy_in ?? 0,
+      description: fmt?.description || null,
+      rules_summary: fmt?.rules_summary || null,
+      scoring_type: fmt?.scoring_type || null,
+      scope: fmt?.scope || null,
+      team_based: fmt?.team_based ?? false,
+      players,
     })
   }
 
@@ -308,6 +332,7 @@ export default async function TripPublicPage({
           <NavLink href={`/trip/${tripId}/competition`} label="Ryder Cup" />
           <NavLink href={`/trip/${tripId}/dashboard`} label="Dashboard" />
           <NavLink href={`/trip/${tripId}/head-to-head`} label="Head-to-Head" />
+          <NavLink href={`/trip/${tripId}/games`} label="Games" />
           <NavLink href={`/trip/${tripId}/chat`} label="Trash Talk" />
         </div>
 
@@ -419,17 +444,7 @@ export default async function TripPublicPage({
                       <p className="text-sm text-gray-500">Par {course.par}</p>
                     </div>
                     {games.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {games.map((game, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-1 rounded-full bg-golf-50 border border-golf-200 px-2.5 py-0.5 text-xs font-medium text-golf-800"
-                          >
-                            {game.icon} {game.name}
-                            {game.buy_in > 0 && ` · $${game.buy_in}`}
-                          </span>
-                        ))}
-                      </div>
+                      <RoundGamePills games={games} />
                     )}
                   </div>
                 )
