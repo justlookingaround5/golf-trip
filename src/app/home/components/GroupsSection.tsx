@@ -79,8 +79,7 @@ function CreateGroupForm({ onCreated }: { onCreated: (group: GroupWithRole) => v
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit() {
     if (!name.trim()) return
 
     setSaving(true)
@@ -107,7 +106,7 @@ function CreateGroupForm({ onCreated }: { onCreated: (group: GroupWithRole) => v
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-dashed border-gray-300 bg-white p-4">
+    <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4">
       <h3 className="mb-3 font-semibold text-gray-900">Create a Group</h3>
       <div className="space-y-3">
         <input
@@ -116,7 +115,6 @@ function CreateGroupForm({ onCreated }: { onCreated: (group: GroupWithRole) => v
           value={name}
           onChange={e => setName(e.target.value)}
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
-          required
         />
         <input
           type="text"
@@ -126,14 +124,15 @@ function CreateGroupForm({ onCreated }: { onCreated: (group: GroupWithRole) => v
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           disabled={saving || !name.trim()}
           className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
         >
           {saving ? 'Creating...' : 'Create Group'}
         </button>
       </div>
-    </form>
+    </div>
   )
 }
 
