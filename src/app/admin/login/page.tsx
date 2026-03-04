@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AdminLoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect_to')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -14,10 +16,13 @@ export default function AdminLoginPage() {
   async function handleGoogleSignIn() {
     setError(null)
     const supabase = createClient()
+    const callbackUrl = redirectTo
+      ? `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(redirectTo)}`
+      : `${window.location.origin}/auth/callback`
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl,
       },
     })
     if (oauthError) {
@@ -42,7 +47,7 @@ export default function AdminLoginPage() {
       return
     }
 
-    router.push('/admin')
+    router.push(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/admin')
   }
 
   return (

@@ -57,7 +57,7 @@ export default function JoinByCodePage() {
     if (!res.ok) {
       if (res.status === 401) {
         // Not logged in — redirect to login with return URL
-        router.push(`/auth/login?redirect_to=/join/code`)
+        router.push(`/admin/login?redirect_to=/join/code`)
         return
       }
       setError(data.error || 'Failed to join')
