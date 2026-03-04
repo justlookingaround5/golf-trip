@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { calculateBalances, minimizePayments } from '@/lib/settlement'
+import { calculateBalances, minimizePayments, generatePaymentLinks } from '@/lib/settlement'
 
 /**
  * GET /api/trips/[tripId]/settlement
@@ -40,7 +40,51 @@ export async function GET(
   const balances = calculateBalances(entries || [], playerNames)
   const payments = minimizePayments(balances)
 
-  return NextResponse.json({ balances, payments })
+  // Fetch payment handles for all trip players
+  const { data: tpWithProfiles } = await supabase
+    .from('trip_players')
+    .select('id, player:players(user_id)')
+    .eq('trip_id', tripId)
+
+  // Build map: trip_player_id → user_id
+  const tpToUserId = new Map<string, string>()
+  for (const tp of (tpWithProfiles || [])) {
+    const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
+    if (player?.user_id) tpToUserId.set(tp.id, player.user_id)
+  }
+
+  // Fetch player_profiles for users who have them
+  const userIds = [...new Set(tpToUserId.values())]
+  const profileHandles = new Map<string, { venmo?: string; cashapp?: string; zelle_email?: string }>()
+
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('player_profiles')
+      .select('user_id, venmo_username, cashapp_cashtag, zelle_email')
+      .in('user_id', userIds)
+
+    for (const p of (profiles || [])) {
+      profileHandles.set(p.user_id, {
+        venmo: p.venmo_username || undefined,
+        cashapp: p.cashapp_cashtag || undefined,
+        zelle_email: p.zelle_email || undefined,
+      })
+    }
+  }
+
+  // Populate payment links using the recipient's handles
+  const paymentsWithLinks = payments.map(payment => {
+    const recipientUserId = tpToUserId.get(payment.to_player_id)
+    const handles = recipientUserId ? profileHandles.get(recipientUserId) : undefined
+
+    if (handles) {
+      const links = generatePaymentLinks(payment.amount, payment.to_player, handles)
+      return { ...payment, ...links }
+    }
+    return payment
+  })
+
+  return NextResponse.json({ balances, payments: paymentsWithLinks })
 }
 
 /**
@@ -156,6 +200,12 @@ export async function POST(
       status: txError ? 'wallet_ok_audit_failed' : 'recorded',
     })
   }
+
+  // Mark trip as settled
+  await supabase
+    .from('trips')
+    .update({ settled_at: new Date().toISOString() })
+    .eq('id', tripId)
 
   return NextResponse.json({ results, count: results.length })
 }

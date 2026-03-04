@@ -18,6 +18,7 @@ interface SettlementClientProps {
   }[]
   tripPlayers: { id: string; name: string; player_id?: string }[]
   currentPlayerId?: string | null
+  settledAt?: string | null
 }
 
 export default function SettlementClient({
@@ -28,6 +29,7 @@ export default function SettlementClient({
   expenses,
   tripPlayers,
   currentPlayerId = null,
+  settledAt = null,
 }: SettlementClientProps) {
   const [activeTab, setActiveTab] = useState<'payments' | 'balances' | 'expenses' | 'wallet'>('payments')
 
@@ -61,49 +63,96 @@ export default function SettlementClient({
 
       <div className="mx-auto max-w-lg px-4 py-4">
 
+        {/* Settled banner */}
+        {settledAt && (
+          <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-center">
+            <p className="text-sm font-medium text-green-800">
+              Settled on {new Date(settledAt).toLocaleDateString()}
+            </p>
+          </div>
+        )}
+
         {/* Payments — Who Pays Whom */}
         {activeTab === 'payments' && (
           <div className="space-y-3">
             {payments.length === 0 ? (
               <p className="text-center text-sm text-gray-500 py-8">All settled up!</p>
             ) : (
-              payments.map((p, i) => (
-                <div key={i} className="rounded-lg bg-white border border-gray-200 p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm">
-                      <span className="font-semibold text-gray-900">{p.from_player}</span>
-                      <span className="text-gray-400 mx-2">&rarr;</span>
-                      <span className="font-semibold text-green-700">{p.to_player}</span>
+              <>
+                {payments.map((p, i) => (
+                  <div key={i} className="rounded-lg bg-white border border-gray-200 p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-gray-900">{p.from_player}</span>
+                        <span className="text-gray-400 mx-2">&rarr;</span>
+                        <span className="font-semibold text-green-700">{p.to_player}</span>
+                      </div>
+                      <span className="text-lg font-bold text-gray-900">
+                        ${p.amount.toFixed(2)}
+                      </span>
                     </div>
-                    <span className="text-lg font-bold text-gray-900">
-                      ${p.amount.toFixed(2)}
-                    </span>
+                    <div className="flex gap-2">
+                      {p.venmo_url && (
+                        <a href={p.venmo_url} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 rounded-md bg-blue-600 py-2 text-center text-xs font-medium text-white hover:bg-blue-700">
+                          Venmo
+                        </a>
+                      )}
+                      {p.cashapp_url && (
+                        <a href={p.cashapp_url} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 rounded-md bg-green-600 py-2 text-center text-xs font-medium text-white hover:bg-green-700">
+                          Cash App
+                        </a>
+                      )}
+                      {p.zelle_url && (
+                        <a href={p.zelle_url} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 rounded-md bg-purple-600 py-2 text-center text-xs font-medium text-white hover:bg-purple-700">
+                          Zelle
+                        </a>
+                      )}
+                      {!p.venmo_url && !p.cashapp_url && !p.zelle_url && (
+                        <span className="text-xs text-gray-400">No payment links configured</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    {p.venmo_url && (
-                      <a href={p.venmo_url} target="_blank" rel="noopener noreferrer"
-                        className="flex-1 rounded-md bg-blue-600 py-2 text-center text-xs font-medium text-white hover:bg-blue-700">
-                        Venmo
-                      </a>
-                    )}
-                    {p.cashapp_url && (
-                      <a href={p.cashapp_url} target="_blank" rel="noopener noreferrer"
-                        className="flex-1 rounded-md bg-green-600 py-2 text-center text-xs font-medium text-white hover:bg-green-700">
-                        Cash App
-                      </a>
-                    )}
-                    {p.zelle_url && (
-                      <a href={p.zelle_url} target="_blank" rel="noopener noreferrer"
-                        className="flex-1 rounded-md bg-purple-600 py-2 text-center text-xs font-medium text-white hover:bg-purple-700">
-                        Zelle
-                      </a>
-                    )}
-                    {!p.venmo_url && !p.cashapp_url && !p.zelle_url && (
-                      <span className="text-xs text-gray-400">No payment links configured</span>
-                    )}
-                  </div>
+                ))}
+
+                {/* Export buttons */}
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => {
+                      const total = payments.reduce((sum, p) => sum + p.amount, 0)
+                      const lines = payments.map(p => `${p.from_player} → ${p.to_player}: $${p.amount.toFixed(2)}`)
+                      const text = `${tripName} Settlement\n---\n${lines.join('\n')}\n---\nTotal: $${total.toFixed(2)}`
+                      navigator.clipboard.writeText(text)
+                    }}
+                    className="flex-1 rounded-md border border-gray-300 bg-white py-2 text-center text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Copy to Clipboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      const rows = [['Player', 'Source', 'Amount']]
+                      for (const b of balances) {
+                        for (const entry of b.breakdown) {
+                          rows.push([b.player_name, entry.source, `${entry.amount >= 0 ? '+' : ''}$${entry.amount.toFixed(2)}`])
+                        }
+                      }
+                      const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n')
+                      const blob = new Blob([csv], { type: 'text/csv' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `${tripName.replace(/\s+/g, '_')}_settlement.csv`
+                      a.click()
+                      URL.revokeObjectURL(url)
+                    }}
+                    className="flex-1 rounded-md border border-gray-300 bg-white py-2 text-center text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Download CSV
+                  </button>
                 </div>
-              ))
+              </>
             )}
           </div>
         )}
@@ -173,7 +222,7 @@ export default function SettlementClient({
 
         {/* Wallet */}
         {activeTab === 'wallet' && (
-          <WalletTab tripId={tripId} currentPlayerId={currentPlayerId} />
+          <WalletTab tripId={tripId} currentPlayerId={currentPlayerId} settledAt={settledAt} />
         )}
       </div>
     </div>
@@ -193,7 +242,7 @@ interface WalletData {
   totalOwing: number
 }
 
-function WalletTab({ tripId, currentPlayerId }: { tripId: string; currentPlayerId: string | null }) {
+function WalletTab({ tripId, currentPlayerId, settledAt }: { tripId: string; currentPlayerId: string | null; settledAt?: string | null }) {
   const [walletData, setWalletData] = useState<WalletData | null>(null)
   const [loading, setLoading] = useState(true)
   const [showPayForm, setShowPayForm] = useState(false)
@@ -239,13 +288,9 @@ function WalletTab({ tripId, currentPlayerId }: { tripId: string; currentPlayerI
     setFinalizing(true)
     try {
       await fetch(`/api/trips/${tripId}/settlement`, { method: 'POST' })
-      if (currentPlayerId) {
-        const res = await fetch(`/api/wallet?playerId=${currentPlayerId}`)
-        if (res.ok) setWalletData(await res.json())
-      }
+      // Reload to reflect settled status
+      window.location.reload()
     } catch {
-      // ignore
-    } finally {
       setFinalizing(false)
     }
   }
@@ -273,10 +318,10 @@ function WalletTab({ tripId, currentPlayerId }: { tripId: string; currentPlayerI
       {/* Finalize trip button */}
       <button
         onClick={handleFinalize}
-        disabled={finalizing}
+        disabled={finalizing || !!settledAt}
         className="w-full rounded-md bg-green-700 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {finalizing ? 'Finalizing...' : 'Finalize Trip → Push to Wallet'}
+        {settledAt ? 'Trip Settled' : finalizing ? 'Finalizing...' : 'Finalize Trip → Push to Wallet'}
       </button>
 
       {/* People who owe you */}
@@ -352,6 +397,8 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
   const [category, setCategory] = useState('other')
   const [paidBy, setPaidBy] = useState(tripPlayers[0]?.id || '')
   const [saving, setSaving] = useState(false)
+  const [splitMode, setSplitMode] = useState<'even' | 'custom'>('even')
+  const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set(tripPlayers.map(tp => tp.id)))
 
   if (!open) {
     return (
@@ -362,8 +409,19 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
     )
   }
 
+  function togglePlayer(id: string) {
+    setSelectedPlayers(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   async function handleSubmit() {
     if (!description || !amount || !paidBy) return
+    const splitAmong = splitMode === 'custom' ? [...selectedPlayers] : undefined
+    if (splitMode === 'custom' && selectedPlayers.size < 1) return
     setSaving(true)
     try {
       await fetch(`/api/trips/${tripId}/expenses`, {
@@ -374,6 +432,7 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
           amount: parseFloat(amount),
           category,
           paid_by_trip_player_id: paidBy,
+          split_among: splitAmong,
         }),
       })
       setOpen(false)
@@ -386,6 +445,10 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
       setSaving(false)
     }
   }
+
+  const perPerson = amount && splitMode === 'custom' && selectedPlayers.size > 0
+    ? (parseFloat(amount) / selectedPlayers.size).toFixed(2)
+    : amount ? (parseFloat(amount) / tripPlayers.length).toFixed(2) : null
 
   return (
     <div className="rounded-lg bg-green-50 border border-green-200 p-4 space-y-3">
@@ -422,10 +485,55 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
           <option key={tp.id} value={tp.id}>{tp.name}</option>
         )}
       </select>
+
+      {/* Split mode toggle */}
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => { setSplitMode('even'); setSelectedPlayers(new Set(tripPlayers.map(tp => tp.id))) }}
+            className={`flex-1 rounded-md py-1.5 text-xs font-medium ${
+              splitMode === 'even' ? 'bg-green-700 text-white' : 'bg-white border border-gray-300 text-gray-600'
+            }`}
+          >
+            Split evenly
+          </button>
+          <button
+            type="button"
+            onClick={() => setSplitMode('custom')}
+            className={`flex-1 rounded-md py-1.5 text-xs font-medium ${
+              splitMode === 'custom' ? 'bg-green-700 text-white' : 'bg-white border border-gray-300 text-gray-600'
+            }`}
+          >
+            Custom split
+          </button>
+        </div>
+        {splitMode === 'custom' && (
+          <div className="space-y-1">
+            {tripPlayers.map(tp => (
+              <label key={tp.id} className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={selectedPlayers.has(tp.id)}
+                  onChange={() => togglePlayer(tp.id)}
+                  className="rounded border-gray-300 text-green-700"
+                />
+                {tp.name}
+              </label>
+            ))}
+            {perPerson && (
+              <p className="text-xs text-gray-500">
+                ${perPerson}/person ({selectedPlayers.size} player{selectedPlayers.size !== 1 ? 's' : ''})
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="flex gap-2">
         <button
           onClick={handleSubmit}
-          disabled={saving || !description || !amount || !paidBy}
+          disabled={saving || !description || !amount || !paidBy || (splitMode === 'custom' && selectedPlayers.size < 1)}
           className="flex-1 rounded-md bg-green-700 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {saving ? 'Adding...' : 'Add Expense'}
