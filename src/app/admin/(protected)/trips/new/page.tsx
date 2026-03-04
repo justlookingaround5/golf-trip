@@ -15,8 +15,15 @@ export default function NewTripPage() {
   const [skinsBuyIn, setSkinsBuyIn] = useState(10)
   const [skinsMode, setSkinsMode] = useState<'gross' | 'net' | 'both'>('net')
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit() {
+    if (!name.trim()) {
+      setError('Trip name is required')
+      return
+    }
+    if (year < 2000 || year > 2100) {
+      setError('Year must be between 2000 and 2100')
+      return
+    }
     setSubmitting(true)
     setError(null)
 
@@ -57,7 +64,7 @@ export default function NewTripPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <form className="space-y-5 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div>
           <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700">
             Trip Name <span className="text-red-500">*</span>
@@ -65,7 +72,6 @@ export default function NewTripPage() {
           <input
             id="name"
             type="text"
-            required
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder='e.g., "2025 St. George"'
@@ -80,11 +86,8 @@ export default function NewTripPage() {
           <input
             id="year"
             type="number"
-            required
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            min={2000}
-            max={2100}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
           />
         </div>
@@ -113,7 +116,6 @@ export default function NewTripPage() {
               type="number"
               value={matchBuyIn}
               onChange={(e) => setMatchBuyIn(Number(e.target.value))}
-              min={0}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
             />
           </div>
@@ -127,7 +129,6 @@ export default function NewTripPage() {
               type="number"
               value={skinsBuyIn}
               onChange={(e) => setSkinsBuyIn(Number(e.target.value))}
-              min={0}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
             />
           </div>
@@ -151,7 +152,8 @@ export default function NewTripPage() {
 
         <div className="flex items-center gap-3 pt-2">
           <button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             disabled={submitting}
             className="rounded-md bg-golf-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-golf-800 focus:outline-none focus:ring-2 focus:ring-golf-500 focus:ring-offset-2 disabled:opacity-50"
           >
