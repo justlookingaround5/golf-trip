@@ -526,6 +526,45 @@ export interface CompetitionMatch {
 // Wallet Types
 // ============================================================================
 
+// ============================================================================
+// Social Engagement Types
+// ============================================================================
+
+export type ReactionEmoji = '🔥' | '👏' | '😂' | '💀' | '⛳' | '💰'
+
+export interface ActivityReaction {
+  id: string
+  activity_id: string
+  user_id: string
+  emoji: ReactionEmoji
+  created_at: string
+}
+
+export interface ActivityComment {
+  id: string
+  activity_id: string
+  user_id: string
+  content: string
+  created_at: string
+}
+
+export interface PushSubscriptionRecord {
+  id: string
+  user_id: string
+  endpoint: string
+  p256dh: string
+  auth_key: string
+  created_at: string
+}
+
+export interface TripMessage {
+  id: string
+  trip_id: string
+  user_id: string
+  content: string
+  created_at: string
+}
+
 export interface PlayerWallet {
   id: string
   player_a_id: string

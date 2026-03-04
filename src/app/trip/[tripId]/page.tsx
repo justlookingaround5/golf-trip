@@ -356,6 +356,8 @@ export default async function TripPublicPage({
           <NavLink href={`/trip/${tripId}/settlement`} label="The Bank" />
           <NavLink href={`/trip/${tripId}/competition`} label="Ryder Cup" />
           <NavLink href={`/trip/${tripId}/dashboard`} label="Dashboard" />
+          <NavLink href={`/trip/${tripId}/head-to-head`} label="Head-to-Head" />
+          <NavLink href={`/trip/${tripId}/chat`} label="Trash Talk" />
         </div>
 
         {/* Rounds */}

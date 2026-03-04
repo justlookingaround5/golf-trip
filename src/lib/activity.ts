@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ActivityEventType } from '@/lib/types'
+import { sendPushToTrip } from '@/lib/push'
 
 const DEFAULT_ICONS: Record<ActivityEventType, string> = {
   score_posted: '📝', birdie: '🐦', eagle: '🦅', skin_won: '💰',
@@ -46,6 +47,19 @@ export async function postActivity(params: {
 
   if (error) {
     console.error('Failed to post activity:', error.message)
+    return
+  }
+
+  // Fire-and-forget push notification for notable events
+  const pushEvents: ActivityEventType[] = ['birdie', 'eagle', 'skin_won', 'game_result', 'round_started', 'side_bet_hit']
+  if (pushEvents.includes(params.event_type)) {
+    sendPushToTrip({
+      tripId: params.trip_id,
+      title: params.title,
+      body: params.detail || '',
+      url: `/trip/${params.trip_id}/dashboard`,
+      excludeUserId: params.metadata?.user_id as string | undefined,
+    }).catch(err => console.error('Push notification failed:', err))
   }
 }
 

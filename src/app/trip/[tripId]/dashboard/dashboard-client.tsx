@@ -4,9 +4,11 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import type { Trip, Course, ActivityFeedItem, TripAward } from '@/lib/types'
+import type { Trip, Course, ActivityFeedItem, TripAward, ReactionEmoji } from '@/lib/types'
 import PhotoUpload from '@/components/PhotoUpload'
 import RsvpCard from '@/components/RsvpCard'
+import ActivityReactions from '@/components/ActivityReactions'
+import ActivityComments from '@/components/ActivityComments'
 
 interface DashboardClientProps {
   trip: Trip
@@ -23,7 +25,10 @@ interface DashboardClientProps {
   awards: TripAward[]
   tripPlayers?: { id: string; player?: { name: string } | { name: string }[] }[]
   currentTripPlayerId?: string | null
+  currentUserId?: string | null
   nextRound?: Course | null
+  initialReactions?: Record<string, { emoji: ReactionEmoji; count: number; user_ids: string[] }[]>
+  initialCommentCounts?: Record<string, number>
 }
 
 export default function DashboardClient({
@@ -36,7 +41,10 @@ export default function DashboardClient({
   awards,
   tripPlayers = [],
   currentTripPlayerId = null,
+  currentUserId = null,
   nextRound = null,
+  initialReactions = {},
+  initialCommentCounts = {},
 }: DashboardClientProps) {
   const [feed, setFeed] = useState<ActivityFeedItem[]>(initialFeed)
   const [weather, setWeather] = useState<{
@@ -311,6 +319,16 @@ export default function DashboardClient({
                     <p className="text-xs text-gray-400 mt-0.5">
                       {formatTimeAgo(item.created_at)}
                     </p>
+                    <ActivityReactions
+                      activityId={item.id}
+                      currentUserId={currentUserId}
+                      initialReactions={initialReactions[item.id] || []}
+                    />
+                    <ActivityComments
+                      activityId={item.id}
+                      currentUserId={currentUserId}
+                      commentCount={initialCommentCounts[item.id] || 0}
+                    />
                   </div>
                 </div>
               ))}

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import type { ReactionEmoji } from '@/lib/types'
 import DashboardClient from './dashboard-client'
 
 export default async function TripDashboardPage({
@@ -47,6 +48,40 @@ export default async function TripDashboardPage({
     .eq('trip_id', tripId)
     .order('created_at', { ascending: false })
     .limit(10)
+
+  // Fetch reactions and comment counts for feed items
+  const feedIds = (recentFeed || []).map(f => f.id)
+  let initialReactions: Record<string, { emoji: ReactionEmoji; count: number; user_ids: string[] }[]> = {}
+  let initialCommentCounts: Record<string, number> = {}
+
+  if (feedIds.length > 0) {
+    const { data: reactions } = await supabase
+      .from('activity_reactions')
+      .select('activity_id, emoji, user_id')
+      .in('activity_id', feedIds)
+
+    // Group reactions by activity_id + emoji
+    for (const r of reactions || []) {
+      if (!initialReactions[r.activity_id]) initialReactions[r.activity_id] = []
+      const emoji = r.emoji as ReactionEmoji
+      const existing = initialReactions[r.activity_id].find(x => x.emoji === emoji)
+      if (existing) {
+        existing.count++
+        existing.user_ids.push(r.user_id)
+      } else {
+        initialReactions[r.activity_id].push({ emoji, count: 1, user_ids: [r.user_id] })
+      }
+    }
+
+    const { data: commentCounts } = await supabase
+      .from('activity_comments')
+      .select('activity_id')
+      .in('activity_id', feedIds)
+
+    for (const c of commentCounts || []) {
+      initialCommentCounts[c.activity_id] = (initialCommentCounts[c.activity_id] || 0) + 1
+    }
+  }
 
   const { data: tripStats } = await supabase
     .from('trip_stats')
@@ -114,7 +149,10 @@ export default async function TripDashboardPage({
       awards={awards || []}
       tripPlayers={tripPlayers}
       currentTripPlayerId={currentTripPlayerId}
+      currentUserId={user?.id || null}
       nextRound={nextRound}
+      initialReactions={initialReactions}
+      initialCommentCounts={initialCommentCounts}
     />
   )
 }

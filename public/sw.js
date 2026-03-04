@@ -83,6 +83,43 @@ self.addEventListener('sync', (event) => {
   }
 })
 
+// Push notifications
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+  try {
+    const data = event.data.json()
+    event.waitUntil(
+      self.registration.showNotification(data.title || 'ForeLive', {
+        body: data.body || '',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        vibrate: [100, 50, 100],
+        data: { url: data.url || '/' },
+      })
+    )
+  } catch (e) {
+    // Ignore malformed push payloads
+  }
+})
+
+// Notification click — open or focus the app
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url || '/'
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url)
+          return client.focus()
+        }
+      }
+      return self.clients.openWindow(url)
+    })
+  )
+})
+
 // Also try flushing on message from client
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'FLUSH_QUEUE') {

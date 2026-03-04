@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
+import NotificationBanner from '@/components/NotificationBanner'
 import { getActiveRound } from '@/lib/active-round'
 
 export default async function HomeLayout({
@@ -46,6 +47,7 @@ export default async function HomeLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar profile={profile} activeRound={activeRound} />
+      <NotificationBanner />
       <main className="mx-auto max-w-6xl px-4 py-8">
         {children}
       </main>
