@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 type TripWithRole = {
   id: string
@@ -87,38 +86,20 @@ function CreateGroupForm({ onCreated }: { onCreated: (group: GroupWithRole) => v
     setError(null)
 
     try {
-      const supabase = createClient()
+      const res = await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), description: description.trim() || null }),
+      })
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setError('You must be logged in to create a group.')
-        setSaving(false)
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to create group. Please try again.')
         return
       }
 
-      const { data: group, error: insertError } = await supabase
-        .from('groups')
-        .insert({ name: name.trim(), description: description.trim() || null, created_by: user.id })
-        .select('id, name, description')
-        .single()
-
-      if (insertError || !group) {
-        setError(insertError?.message || 'Failed to create group. Please try again.')
-        setSaving(false)
-        return
-      }
-
-      const { error: memberError } = await supabase
-        .from('group_members')
-        .insert({ group_id: group.id, user_id: user.id, role: 'owner' })
-
-      if (memberError) {
-        setError('Group created but failed to add you as owner. Please contact support.')
-        setSaving(false)
-        return
-      }
-
-      onCreated({ ...group, role: 'owner' })
+      onCreated({ ...data, role: 'owner' })
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
