@@ -47,7 +47,7 @@ export default function Leaderboard({
             onClick={() => setActiveTab(tab.key)}
             className={`flex-1 px-4 py-3 text-center text-sm font-medium transition ${
               activeTab === tab.key
-                ? 'border-b-2 border-green-700 text-green-700'
+                ? 'border-b-2 border-golf-700 text-golf-700'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
@@ -119,7 +119,7 @@ function StandingsTable({
             return (
               <tr
                 key={player.tripPlayerId}
-                className={index === 0 ? 'bg-green-50/50' : ''}
+                className={index === 0 ? 'bg-golf-50/50' : ''}
               >
                 <td className="px-4 py-3 font-medium text-gray-500">
                   {index + 1}
@@ -191,7 +191,7 @@ function MatchPlayTable({ records }: { records: MatchPlayRecord[] }) {
           {records.map((record, index) => (
             <tr
               key={record.tripPlayerId}
-              className={index === 0 ? 'bg-green-50/50' : ''}
+              className={index === 0 ? 'bg-golf-50/50' : ''}
             >
               <td className="px-4 py-3 font-medium text-gray-500">
                 {index + 1}

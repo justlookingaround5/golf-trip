@@ -35,7 +35,7 @@ export default function JoinClient({ token, invite, trip, isLoggedIn }: JoinClie
           </p>
           <a
             href="/admin"
-            className="inline-block rounded-md bg-green-700 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-800"
+            className="inline-block rounded-md bg-golf-700 px-6 py-2.5 text-sm font-medium text-white hover:bg-golf-800"
           >
             Go to Dashboard
           </a>
@@ -98,7 +98,7 @@ export default function JoinClient({ token, invite, trip, isLoggedIn }: JoinClie
           </h1>
           {trip && (
             <div className="mt-3 space-y-1">
-              <p className="text-lg font-semibold text-green-700">{trip.name}</p>
+              <p className="text-lg font-semibold text-golf-700">{trip.name}</p>
               {trip.location && (
                 <p className="text-sm text-gray-600">{trip.location}</p>
               )}
@@ -117,7 +117,7 @@ export default function JoinClient({ token, invite, trip, isLoggedIn }: JoinClie
           <button
             onClick={handleJoin}
             disabled={joining}
-            className="w-full rounded-md bg-green-700 px-4 py-3 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+            className="w-full rounded-md bg-golf-700 px-4 py-3 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
           >
             {joining ? 'Joining...' : 'Join This Trip'}
           </button>

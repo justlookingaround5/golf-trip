@@ -45,22 +45,22 @@ export default function InstallPrompt() {
   if (dismissed) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-green-900 text-white px-4 py-3 shadow-lg">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-golf-900 text-white px-4 py-3 shadow-lg">
       <div className="mx-auto max-w-lg flex items-center justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium">Add Golf Trip to your home screen</p>
-          <p className="text-xs text-green-200">Works offline. No app store needed.</p>
+          <p className="text-sm font-medium">Add ForeLive to your home screen</p>
+          <p className="text-xs text-golf-200">Works offline. No app store needed.</p>
         </div>
         <div className="flex gap-2 ml-3">
           {deferredPrompt && (
             <button
               onClick={handleInstall}
-              className="rounded-md bg-white px-3 py-1.5 text-xs font-bold text-green-900"
+              className="rounded-md bg-white px-3 py-1.5 text-xs font-bold text-golf-900"
             >
               Install
             </button>
           )}
-          <button onClick={dismiss} className="px-2 py-1.5 text-xs text-green-200">
+          <button onClick={dismiss} className="px-2 py-1.5 text-xs text-golf-200">
             Later
           </button>
         </div>

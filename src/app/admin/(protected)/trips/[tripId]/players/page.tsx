@@ -428,7 +428,7 @@ export default function PlayersPage() {
                 setError(null)
                 loadAllPlayers()
               }}
-              className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
+              className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
             >
               Add Player
             </button>
@@ -578,7 +578,7 @@ export default function PlayersPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 text-sm font-medium -mb-px ${
                   activeTab === tab.key
-                    ? 'border-b-2 border-green-700 text-green-700'
+                    ? 'border-b-2 border-golf-700 text-golf-700'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -600,7 +600,7 @@ export default function PlayersPage() {
                   value={profileQuery}
                   onChange={(e) => searchProfiles(e.target.value)}
                   placeholder="Type a name to search..."
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                 />
               </div>
 
@@ -623,7 +623,7 @@ export default function PlayersPage() {
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-sm font-medium text-green-800">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-golf-100 text-sm font-medium text-golf-800">
                             {(profile.display_name || '?')[0].toUpperCase()}
                           </div>
                         )}
@@ -642,7 +642,7 @@ export default function PlayersPage() {
                       <button
                         onClick={() => addFromProfile(profile)}
                         disabled={saving}
-                        className="rounded-md bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-800 disabled:opacity-50"
+                        className="rounded-md bg-golf-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-golf-800 disabled:opacity-50"
                       >
                         {saving ? 'Adding...' : 'Add'}
                       </button>
@@ -673,7 +673,7 @@ export default function PlayersPage() {
                   onChange={(e) => setInviteName(e.target.value)}
                   placeholder="Player's name"
                   required
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                 />
               </div>
               <div>
@@ -687,7 +687,7 @@ export default function PlayersPage() {
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="player@email.com"
                   required
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                 />
               </div>
               <p className="text-xs text-gray-500">
@@ -696,7 +696,7 @@ export default function PlayersPage() {
               <button
                 type="submit"
                 disabled={saving || !inviteName.trim() || !inviteEmail.trim()}
-                className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+                className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
               >
                 {saving ? 'Sending...' : 'Send Invite'}
               </button>
@@ -722,11 +722,11 @@ export default function PlayersPage() {
                   }}
                   placeholder="Search existing or enter new name..."
                   required
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                 />
 
                 {selectedPlayerId && (
-                  <div className="mt-1 text-xs text-green-700">
+                  <div className="mt-1 text-xs text-golf-700">
                     Using existing player record.{' '}
                     <button
                       type="button"
@@ -734,7 +734,7 @@ export default function PlayersPage() {
                         setSelectedPlayerId(null)
                         setManualName('')
                       }}
-                      className="underline hover:text-green-800"
+                      className="underline hover:text-golf-800"
                     >
                       Clear
                     </button>
@@ -749,7 +749,7 @@ export default function PlayersPage() {
                           <button
                             type="button"
                             onClick={() => selectExistingPlayer(player)}
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-green-50"
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-golf-50"
                           >
                             <span className="font-medium text-gray-900">{player.name}</span>
                             {player.handicap_index != null && (
@@ -781,7 +781,7 @@ export default function PlayersPage() {
                         value={manualEmail}
                         onChange={(e) => setManualEmail(e.target.value)}
                         placeholder="player@email.com"
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                       />
                     </div>
                     <div>
@@ -794,7 +794,7 @@ export default function PlayersPage() {
                         value={manualPhone}
                         onChange={(e) => setManualPhone(e.target.value)}
                         placeholder="555-123-4567"
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                       />
                     </div>
                   </div>
@@ -812,7 +812,7 @@ export default function PlayersPage() {
                       step="0.1"
                       min="-10"
                       max="54"
-                      className="w-48 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                      className="w-48 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                     />
                   </div>
                 </>
@@ -841,7 +841,7 @@ export default function PlayersPage() {
               <button
                 type="submit"
                 disabled={saving || (!selectedPlayerId && !manualName.trim())}
-                className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+                className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
               >
                 {saving ? 'Adding...' : 'Add Player'}
               </button>

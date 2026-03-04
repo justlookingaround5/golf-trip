@@ -97,7 +97,7 @@ export default function RsvpCard({ tripId, courseId, courseName, roundDate, trip
               disabled={saving}
               className={`flex-1 rounded-md py-2 text-xs font-medium transition ${
                 myStatus === opt.status
-                  ? 'bg-green-700 text-white ring-2 ring-green-500 ring-offset-1'
+                  ? 'bg-golf-700 text-white ring-2 ring-golf-500 ring-offset-1'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
               }`}
             >

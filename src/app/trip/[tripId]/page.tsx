@@ -144,10 +144,10 @@ export default async function TripPublicPage({
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-green-800 px-4 py-6 text-white shadow-md">
+      <header className="bg-golf-800 px-4 py-6 text-white shadow-md">
         <div className="mx-auto max-w-2xl">
           <h1 className="text-2xl font-bold">{(trip as Trip).name}</h1>
-          <p className="mt-1 text-green-200">
+          <p className="mt-1 text-golf-200">
             {(trip as Trip).location ?? 'Location TBD'} &middot; {(trip as Trip).year}
           </p>
         </div>
@@ -225,7 +225,7 @@ function NavLink({ href, label, icon }: { href: string; label: string; icon: str
   return (
     <Link
       href={href}
-      className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 text-sm font-semibold text-green-700 dark:text-green-400 shadow-sm transition hover:bg-green-50 dark:hover:bg-green-900/30"
+      className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 text-sm font-semibold text-golf-700 dark:text-golf-400 shadow-sm transition hover:bg-golf-50 dark:hover:bg-golf-900/30"
     >
       <span>{icon}</span>
       {label}

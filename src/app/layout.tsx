@@ -17,13 +17,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Golf Trip Tracker",
-  description: "Track scores, games, and payouts for your golf trip",
+  title: "ForeLive",
+  description: "Live scoring, games, and settlements for your golf trip",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Golf Trip",
+    title: "ForeLive",
   },
 };
 
@@ -32,7 +32,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#166534",
+  themeColor: "#1a3260",
 };
 
 export default function RootLayout({

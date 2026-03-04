@@ -1,12 +1,12 @@
 {
-  "name": "Golf Trip Tracker",
-  "short_name": "Golf Trip",
-  "description": "Track scores, games, and payouts for your golf trip",
+  "name": "ForeLive",
+  "short_name": "ForeLive",
+  "description": "Live scoring, games, and settlements for your golf trip",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#166534",
-  "theme_color": "#166534",
+  "background_color": "#1a3260",
+  "theme_color": "#1a3260",
   "icons": [
     {
       "src": "/icons/icon-192.png",

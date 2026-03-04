@@ -118,16 +118,16 @@ export default async function LeaderboardPage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-green-800 px-4 py-4 text-white shadow-md">
+      <header className="bg-golf-800 px-4 py-4 text-white shadow-md">
         <div className="mx-auto max-w-2xl">
           <Link
             href={`/trip/${tripId}`}
-            className="mb-1 inline-block text-sm text-green-300 hover:text-white"
+            className="mb-1 inline-block text-sm text-golf-300 hover:text-gold"
           >
             &larr; Back to {(trip as Trip).name}
           </Link>
           <h1 className="text-xl font-bold">Leaderboard</h1>
-          <p className="text-sm text-green-200">
+          <p className="text-sm text-golf-200">
             {(trip as Trip).name} &middot; {(trip as Trip).year}
           </p>
         </div>

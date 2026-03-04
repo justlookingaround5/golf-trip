@@ -66,11 +66,11 @@ export default async function RoundRecapPage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Header */}
-      <header className="bg-green-900 text-white">
+      <header className="bg-golf-900 text-white">
         <div className="mx-auto max-w-lg px-4 py-8 text-center">
-          <p className="text-green-200 text-sm">{trip?.name} &middot; Round {course.round_number}</p>
+          <p className="text-golf-200 text-sm">{trip?.name} &middot; Round {course.round_number}</p>
           <h1 className="text-3xl font-bold mt-1">{course.name}</h1>
-          <p className="text-green-200 text-sm mt-2">
+          <p className="text-golf-200 text-sm mt-2">
             Par {course.par}
             {course.round_date && ` · ${new Date(course.round_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
           </p>
@@ -81,10 +81,10 @@ export default async function RoundRecapPage({
 
         {/* Low Round Card */}
         {topPlayer && topPlayer.gross_total && (
-          <div className="rounded-xl bg-white border border-green-200 p-5 text-center shadow-sm">
-            <p className="text-xs uppercase tracking-wider text-green-700 font-semibold">Low Round</p>
+          <div className="rounded-xl bg-white border border-golf-200 p-5 text-center shadow-sm">
+            <p className="text-xs uppercase tracking-wider text-golf-700 font-semibold">Low Round</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{getName(topPlayer)}</p>
-            <p className="text-4xl font-bold text-green-700 mt-1">{topPlayer.gross_total}</p>
+            <p className="text-4xl font-bold text-golf-700 mt-1">{topPlayer.gross_total}</p>
             {(() => {
               const diff = topPlayer.gross_total - (topPlayer.par_total ?? 0)
               const diffStr = diff === 0 ? 'Even par' : diff > 0 ? `+${diff}` : `${diff}`
@@ -117,7 +117,7 @@ export default async function RoundRecapPage({
                 return (
                   <div key={stat.id} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-3">
-                      <span className={`w-6 text-center font-bold ${i === 0 ? 'text-green-700 text-lg' : 'text-gray-400'}`}>
+                      <span className={`w-6 text-center font-bold ${i === 0 ? 'text-golf-700 text-lg' : 'text-gray-400'}`}>
                         {i + 1}
                       </span>
                       <div>
@@ -174,7 +174,7 @@ export default async function RoundRecapPage({
                           ? r.trip_player?.player[0] : r.trip_player?.player
                         return (
                           <div key={r.id} className="flex items-center justify-between text-sm">
-                            <span className={r.position === 1 ? 'font-semibold text-green-700' : 'text-gray-700'}>
+                            <span className={r.position === 1 ? 'font-semibold text-golf-700' : 'text-gray-700'}>
                               {r.position === 1 && '🏆 '}{p?.name || 'Unknown'}
                             </span>
                             <span className="text-gray-500">
@@ -211,16 +211,16 @@ export default async function RoundRecapPage({
         )}
 
         {/* Share / Join CTA */}
-        <div className="rounded-xl bg-green-50 border border-green-200 p-5 text-center">
-          <p className="text-sm text-green-800 font-medium">Want in on the next trip?</p>
+        <div className="rounded-xl bg-golf-50 border border-golf-200 p-5 text-center">
+          <p className="text-sm text-golf-800 font-medium">Want in on the next trip?</p>
           {trip?.join_code && (
-            <p className="text-2xl font-mono font-bold text-green-900 mt-2 tracking-widest">
+            <p className="text-2xl font-mono font-bold text-golf-900 mt-2 tracking-widest">
               {trip.join_code}
             </p>
           )}
           <Link
             href="/join/code"
-            className="mt-3 inline-block rounded-md bg-green-700 px-6 py-2 text-sm font-medium text-white hover:bg-green-800"
+            className="mt-3 inline-block rounded-md bg-golf-700 px-6 py-2 text-sm font-medium text-white hover:bg-golf-600"
           >
             Join Trip
           </Link>

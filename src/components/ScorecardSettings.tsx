@@ -72,7 +72,7 @@ export default function ScorecardSettings({ isOpen, onClose, onSave }: Props) {
               onClick={() => toggle(col.key)}
               className={`w-full flex items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition ${
                 selected.has(col.key)
-                  ? 'bg-green-50 border border-green-300'
+                  ? 'bg-golf-50 border border-golf-300'
                   : 'bg-gray-50 border border-gray-200'
               }`}
             >
@@ -80,7 +80,7 @@ export default function ScorecardSettings({ isOpen, onClose, onSave }: Props) {
                 <span className="font-medium text-gray-900">{col.label}</span>
                 <p className="text-xs text-gray-500">{col.desc}</p>
               </div>
-              {selected.has(col.key) && <span className="text-green-600">&#10003;</span>}
+              {selected.has(col.key) && <span className="text-golf-600">&#10003;</span>}
             </button>
           ))}
         </div>
@@ -93,7 +93,7 @@ export default function ScorecardSettings({ isOpen, onClose, onSave }: Props) {
                 onClick={() => setViewMode(m)}
                 className={`flex-1 rounded-md py-2 text-xs font-medium capitalize ${
                   viewMode === m
-                    ? 'bg-green-700 text-white'
+                    ? 'bg-golf-700 text-white'
                     : 'bg-gray-100 text-gray-600'
                 }`}
               >
@@ -104,7 +104,7 @@ export default function ScorecardSettings({ isOpen, onClose, onSave }: Props) {
         </div>
         <button
           onClick={handleSave}
-          className="w-full rounded-md bg-green-700 py-3 font-medium text-white hover:bg-green-800"
+          className="w-full rounded-md bg-golf-700 py-3 font-medium text-white hover:bg-golf-800"
         >
           Save Preferences
         </button>

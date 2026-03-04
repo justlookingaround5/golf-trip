@@ -62,10 +62,10 @@ export default function CompetitionClient({
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-green-800 px-4 py-6 text-white shadow-md">
+      <header className="bg-golf-800 px-4 py-6 text-white shadow-md">
         <div className="mx-auto max-w-2xl">
           <h1 className="text-2xl font-bold">{tripName}</h1>
-          <p className="mt-1 text-green-200">{competitionName}</p>
+          <p className="mt-1 text-golf-200">{competitionName}</p>
         </div>
       </header>
 

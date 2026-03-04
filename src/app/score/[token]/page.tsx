@@ -373,10 +373,10 @@ export default function ScorerPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-green-50">
+      <div className="flex min-h-screen items-center justify-center bg-golf-50">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-green-700 border-t-transparent" />
-          <p className="text-lg font-medium text-green-800">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-golf-700 border-t-transparent" />
+          <p className="text-lg font-medium text-golf-800">
             Loading scorecard...
           </p>
         </div>
@@ -403,10 +403,10 @@ export default function ScorerPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-green-800 px-4 py-3 text-white shadow-md">
+      <header className="sticky top-0 z-20 bg-golf-800 px-4 py-3 text-white shadow-md">
         <div className="mx-auto max-w-lg">
           <h1 className="text-lg font-bold">{data.course.name}</h1>
-          <p className="text-sm text-green-200">
+          <p className="text-sm text-golf-200">
             {MATCH_FORMAT_LABELS[data.match.format]} &middot; Par{' '}
             {data.course.par}
           </p>
@@ -414,7 +414,7 @@ export default function ScorerPage() {
       </header>
 
       {/* Match Status Banner */}
-      <div className="border-b border-green-200 bg-green-50 px-4 py-3">
+      <div className="border-b border-golf-200 bg-golf-50 px-4 py-3">
         <div className="mx-auto max-w-lg">
           {/* Teams */}
           <div className="mb-2 flex items-center justify-between text-sm">
@@ -503,15 +503,15 @@ export default function ScorerPage() {
                       onClick={() => openHole(hole.hole_number)}
                       className={`relative rounded-xl border-2 p-3 text-left transition-all active:scale-95 ${
                         isActive
-                          ? 'border-green-600 bg-green-50 shadow-md'
+                          ? 'border-golf-600 bg-golf-50 shadow-md'
                           : isComplete
-                            ? 'border-green-300 bg-green-50'
+                            ? 'border-golf-300 bg-golf-50'
                             : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
                       {/* Completed checkmark */}
                       {isComplete && (
-                        <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-600 text-xs text-white">
+                        <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-golf-600 text-xs text-white">
                           &#10003;
                         </span>
                       )}
@@ -528,7 +528,7 @@ export default function ScorerPage() {
 
                       {/* Show scores if completed */}
                       {isComplete && holeScoreData.length > 0 && (
-                        <div className="mt-1 border-t border-green-200 pt-1">
+                        <div className="mt-1 border-t border-golf-200 pt-1">
                           {holeScoreData.map((s) => {
                             const mp = allMatchPlayers.find(
                               (m) =>
@@ -582,7 +582,7 @@ export default function ScorerPage() {
             <div className="mx-auto max-w-lg">
               <button
                 onClick={() => openHole(nextUnscoredHole)}
-                className="w-full rounded-xl bg-green-700 py-4 text-lg font-bold text-white shadow-lg active:bg-green-800"
+                className="w-full rounded-xl bg-golf-700 py-4 text-lg font-bold text-white shadow-lg active:bg-golf-800"
               >
                 Score Hole {nextUnscoredHole}
               </button>
@@ -592,11 +592,11 @@ export default function ScorerPage() {
 
         {/* All holes done message */}
         {nextUnscoredHole === null && holes.length > 0 && activeHole === null && (
-          <div className="rounded-xl bg-green-100 p-6 text-center">
-            <p className="text-lg font-bold text-green-800">
+          <div className="rounded-xl bg-golf-100 p-6 text-center">
+            <p className="text-lg font-bold text-golf-800">
               All holes scored!
             </p>
-            <p className="mt-1 text-sm text-green-600">
+            <p className="mt-1 text-sm text-golf-600">
               Tap any hole to edit scores.
             </p>
           </div>
@@ -673,7 +673,7 @@ function HoleEntryView({
       {...swipeHandlers}
     >
       {/* Top bar with hole navigation */}
-      <div className="flex items-center justify-between bg-green-800 px-4 py-2 text-white">
+      <div className="flex items-center justify-between bg-golf-800 px-4 py-2 text-white">
         <button
           onClick={() => activeHole > 1 && openHole(activeHole - 1)}
           disabled={activeHole <= 1}
@@ -683,8 +683,8 @@ function HoleEntryView({
         </button>
         <div className="text-center">
           <span className="text-lg font-bold">Hole {activeHoleData.hole_number}</span>
-          <span className="ml-2 text-sm text-green-200">Par {activeHoleData.par}</span>
-          <span className="ml-2 text-xs text-green-300">Hdcp {activeHoleData.handicap_index}</span>
+          <span className="ml-2 text-sm text-golf-200">Par {activeHoleData.par}</span>
+          <span className="ml-2 text-xs text-golf-300">Hdcp {activeHoleData.handicap_index}</span>
         </div>
         <button
           onClick={() => activeHole < holes.length && openHole(activeHole + 1)}
@@ -696,7 +696,7 @@ function HoleEntryView({
       </div>
 
       {/* Hole dots */}
-      <div className="flex justify-center gap-1 py-2 bg-green-700">
+      <div className="flex justify-center gap-1 py-2 bg-golf-700">
         {holes.map(h => (
           <button
             key={h.id}
@@ -705,8 +705,8 @@ function HoleEntryView({
               h.hole_number === activeHole
                 ? 'bg-white scale-125'
                 : completedHoles.has(h.hole_number)
-                  ? 'bg-green-400'
-                  : 'bg-green-900'
+                  ? 'bg-golf-400'
+                  : 'bg-golf-900'
             }`}
           />
         ))}
@@ -718,7 +718,7 @@ function HoleEntryView({
           {/* Team A */}
           {teamAPlayers.length > 0 && (
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-700">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-golf-700">
                 Team A
               </p>
               {teamAPlayers.map((mp) => (
@@ -740,7 +740,7 @@ function HoleEntryView({
           {/* Team B */}
           {teamBPlayers.length > 0 && (
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-700">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-golf-700">
                 Team B
               </p>
               {teamBPlayers.map((mp) => (
@@ -783,7 +783,7 @@ function HoleEntryView({
         <button
           onClick={submitHoleScores}
           disabled={saving}
-          className="w-full rounded-xl bg-green-700 py-4 text-lg font-bold text-white shadow-lg active:bg-green-800 disabled:opacity-50"
+          className="w-full rounded-xl bg-golf-700 py-4 text-lg font-bold text-white shadow-lg active:bg-golf-800 disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save & Next'}
         </button>
@@ -869,7 +869,7 @@ function PlayerScoreRow({
             onClick={() => onSet(v)}
             className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
               score === v
-                ? 'bg-green-700 text-white'
+                ? 'bg-golf-700 text-white'
                 : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
             }`}
           >

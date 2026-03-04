@@ -156,7 +156,7 @@ export default function MatchScorecard({
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
       {/* Header */}
-      <div className="border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30 px-4 py-3">
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-golf-50 dark:bg-golf-900/30 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">{courseName}</h3>
@@ -287,8 +287,8 @@ export default function MatchScorecard({
                     })}
 
                     {/* Match result row */}
-                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30/50">
-                      <td className="px-2 py-1 text-xs font-medium text-green-700">
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-golf-50 dark:bg-golf-900/30/50">
+                      <td className="px-2 py-1 text-xs font-medium text-golf-700">
                         Result
                       </td>
                       {nine.holes.map((h) => {

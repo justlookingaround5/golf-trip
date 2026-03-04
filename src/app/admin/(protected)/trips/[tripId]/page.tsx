@@ -61,7 +61,7 @@ export default async function TripDetailPage({
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Public Viewer Link</dt>
-            <dd className="mt-1 text-sm text-green-700">
+            <dd className="mt-1 text-sm text-golf-700">
               /trip/{typedTrip.id}
             </dd>
           </div>
@@ -98,7 +98,7 @@ export default async function TripDetailPage({
               <a
                 key={course.id}
                 href={`/admin/trips/${typedTrip.id}/rounds/${course.id}/games`}
-                className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm transition hover:bg-green-50 hover:text-green-700"
+                className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm transition hover:bg-golf-50 hover:text-golf-700"
               >
                 <div>
                   <span className="font-medium text-gray-900">{course.name}</span>
@@ -137,7 +137,7 @@ function ManageLink({ href, label }: { href: string; label: string }) {
   return (
     <a
       href={href}
-      className="flex items-center justify-center rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-green-50 hover:text-green-700"
+      className="flex items-center justify-center rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-golf-50 hover:text-golf-700"
     >
       {label}
     </a>

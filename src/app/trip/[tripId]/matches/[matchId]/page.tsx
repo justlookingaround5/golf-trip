@@ -115,16 +115,16 @@ export default async function MatchDetailPage({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-green-800 px-4 py-4 text-white shadow-md">
+      <header className="bg-golf-800 px-4 py-4 text-white shadow-md">
         <div className="mx-auto max-w-2xl">
           <Link
             href={`/trip/${tripId}/matches`}
-            className="mb-1 inline-block text-sm text-green-300 hover:text-white"
+            className="mb-1 inline-block text-sm text-golf-300 hover:text-gold"
           >
             &larr; All Matches
           </Link>
           <h1 className="text-xl font-bold">{course.name}</h1>
-          <p className="text-sm text-green-200">
+          <p className="text-sm text-golf-200">
             {(trip as Trip).name} &middot; Round {course.round_number}
           </p>
         </div>

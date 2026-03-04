@@ -77,7 +77,7 @@ export default function PhotoUpload({ tripId, courseId, holeNumber, onUpload }: 
       {!preview ? (
         <button
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:border-green-500"
+          className="flex items-center gap-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:border-golf-500"
         >
           <span>📸</span> Photo
         </button>
@@ -98,7 +98,7 @@ export default function PhotoUpload({ tripId, courseId, holeNumber, onUpload }: 
             <button
               onClick={handleUpload}
               disabled={uploading}
-              className="flex-1 rounded-md bg-green-700 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="flex-1 rounded-md bg-golf-700 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               {uploading ? 'Uploading...' : 'Share'}
             </button>

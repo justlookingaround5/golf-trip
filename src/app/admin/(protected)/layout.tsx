@@ -60,15 +60,15 @@ export default async function ProtectedAdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-green-800 text-white shadow-md">
+      <nav className="bg-golf-800 text-white shadow-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/admin" className="text-lg font-bold hover:text-green-200">
-            Golf Trip Admin
+          <Link href="/admin" className="text-lg font-bold hover:text-gold">
+            ForeLive Admin
           </Link>
           <div className="flex items-center gap-3">
             <Link
               href="/admin/profile"
-              className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-green-700"
+              className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-golf-700"
             >
               {profile.avatar_url ? (
                 <Image
@@ -79,7 +79,7 @@ export default async function ProtectedAdminLayout({
                   className="rounded-full"
                 />
               ) : (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-green-600 text-xs font-bold">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-golf-600 text-xs font-bold">
                   {(profile.display_name || '?')[0].toUpperCase()}
                 </div>
               )}

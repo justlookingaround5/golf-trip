@@ -153,7 +153,7 @@ export default function GameSetupClient({
                     {game.status !== 'finalized' && (
                       <button
                         onClick={() => handleCompute(game.id)}
-                        className="rounded-md bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-800"
+                        className="rounded-md bg-golf-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-golf-800"
                       >
                         Compute
                       </button>
@@ -170,12 +170,12 @@ export default function GameSetupClient({
       {!showAdd ? (
         <button
           onClick={() => { setShowAdd(true); selectAllPlayers() }}
-          className="w-full rounded-lg border-2 border-dashed border-gray-300 bg-white py-6 text-center text-sm font-medium text-gray-500 hover:border-green-500 hover:text-green-700"
+          className="w-full rounded-lg border-2 border-dashed border-gray-300 bg-white py-6 text-center text-sm font-medium text-gray-500 hover:border-golf-500 hover:text-golf-700"
         >
           + Add Game to This Round
         </button>
       ) : (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-5 space-y-4">
+        <div className="rounded-lg border border-golf-200 bg-golf-50 p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-900">Add Game</h3>
             <button
@@ -195,7 +195,7 @@ export default function GameSetupClient({
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Game Format
             </label>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-700">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-golf-700">
               Essential
             </p>
             <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -205,7 +205,7 @@ export default function GameSetupClient({
                   onClick={() => setSelectedFormat(f.id)}
                   className={`rounded-lg border-2 p-3 text-left transition ${
                     selectedFormat === f.id
-                      ? 'border-green-600 bg-white shadow-md'
+                      ? 'border-golf-600 bg-white shadow-md'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                 >
@@ -218,7 +218,7 @@ export default function GameSetupClient({
 
             {tier2.length > 0 && (
               <>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-700">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-golf-700">
                   Popular
                 </p>
                 <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -228,7 +228,7 @@ export default function GameSetupClient({
                       onClick={() => setSelectedFormat(f.id)}
                       className={`rounded-lg border-2 p-3 text-left transition ${
                         selectedFormat === f.id
-                          ? 'border-green-600 bg-white shadow-md'
+                          ? 'border-golf-600 bg-white shadow-md'
                           : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
@@ -261,7 +261,7 @@ export default function GameSetupClient({
               <label className="text-sm font-medium text-gray-700">Players</label>
               <button
                 onClick={selectAllPlayers}
-                className="text-xs text-green-700 hover:text-green-900"
+                className="text-xs text-golf-700 hover:text-golf-900"
               >
                 Select All
               </button>
@@ -273,7 +273,7 @@ export default function GameSetupClient({
                   onClick={() => togglePlayer(tp.id)}
                   className={`rounded-md border px-3 py-2 text-left text-sm transition ${
                     selectedPlayers.has(tp.id)
-                      ? 'border-green-600 bg-green-50 font-medium text-green-900'
+                      ? 'border-golf-600 bg-golf-50 font-medium text-golf-900'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -302,7 +302,7 @@ export default function GameSetupClient({
           <button
             onClick={handleAddGame}
             disabled={saving || !selectedFormat || selectedPlayers.size === 0}
-            className="w-full rounded-md bg-green-700 px-4 py-3 font-medium text-white hover:bg-green-800 disabled:opacity-50"
+            className="w-full rounded-md bg-golf-700 px-4 py-3 font-medium text-white hover:bg-golf-800 disabled:opacity-50"
           >
             {saving ? 'Adding...' : `Add ${selectedFormatObj?.name || 'Game'}`}
           </button>

@@ -46,7 +46,7 @@ export default function ConnectionStatus() {
       {online && pending > 0 && (
         <button
           onClick={flushOfflineQueue}
-          className="text-xs text-green-700 dark:text-green-400 font-medium ml-1"
+          className="text-xs text-golf-700 dark:text-golf-400 font-medium ml-1"
         >
           Sync
         </button>

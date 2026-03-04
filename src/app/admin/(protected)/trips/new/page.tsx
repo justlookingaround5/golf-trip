@@ -69,7 +69,7 @@ export default function NewTripPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder='e.g., "2025 St. George"'
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
           />
         </div>
 
@@ -85,7 +85,7 @@ export default function NewTripPage() {
             onChange={(e) => setYear(Number(e.target.value))}
             min={2000}
             max={2100}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
           />
         </div>
 
@@ -99,7 +99,7 @@ export default function NewTripPage() {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder='e.g., "St. George, Utah"'
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
           />
         </div>
 
@@ -114,7 +114,7 @@ export default function NewTripPage() {
               value={matchBuyIn}
               onChange={(e) => setMatchBuyIn(Number(e.target.value))}
               min={0}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
             />
           </div>
 
@@ -128,7 +128,7 @@ export default function NewTripPage() {
               value={skinsBuyIn}
               onChange={(e) => setSkinsBuyIn(Number(e.target.value))}
               min={0}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
             />
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function NewTripPage() {
             id="skinsMode"
             value={skinsMode}
             onChange={(e) => setSkinsMode(e.target.value as 'gross' | 'net' | 'both')}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
           >
             <option value="gross">Gross</option>
             <option value="net">Net</option>
@@ -153,7 +153,7 @@ export default function NewTripPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-md bg-green-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+            className="rounded-md bg-golf-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-golf-800 focus:outline-none focus:ring-2 focus:ring-golf-500 focus:ring-offset-2 disabled:opacity-50"
           >
             {submitting ? 'Creating...' : 'Create Trip'}
           </button>

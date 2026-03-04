@@ -42,9 +42,9 @@ export default async function TripStatsPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-green-900 text-white">
+      <header className="bg-golf-900 text-white">
         <div className="mx-auto max-w-2xl px-4 py-6">
-          <p className="text-green-200 text-sm">{trip.name}</p>
+          <p className="text-golf-200 text-sm">{trip.name}</p>
           <h1 className="text-2xl font-bold">Player Stats</h1>
         </div>
       </header>

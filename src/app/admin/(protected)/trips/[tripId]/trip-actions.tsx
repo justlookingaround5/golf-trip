@@ -119,7 +119,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
             />
           </div>
 
@@ -133,7 +133,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
                 type="number"
                 value={year}
                 onChange={(e) => setYear(Number(e.target.value))}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
               />
             </div>
             <div>
@@ -145,7 +145,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
               />
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
                 value={matchBuyIn}
                 onChange={(e) => setMatchBuyIn(Number(e.target.value))}
                 min={0}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
               />
             </div>
             <div>
@@ -174,7 +174,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
                 value={skinsBuyIn}
                 onChange={(e) => setSkinsBuyIn(Number(e.target.value))}
                 min={0}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
               />
             </div>
             <div>
@@ -185,7 +185,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
                 id="edit-skinsMode"
                 value={skinsMode}
                 onChange={(e) => setSkinsMode(e.target.value as 'gross' | 'net' | 'both')}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
               >
                 <option value="gross">Gross</option>
                 <option value="net">Net</option>
@@ -198,7 +198,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+              className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -240,7 +240,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
           <button
             onClick={handleStatusChange}
             disabled={saving}
-            className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+            className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
           >
             {saving ? 'Updating...' : STATUS_ACTION_LABELS[trip.status]}
           </button>

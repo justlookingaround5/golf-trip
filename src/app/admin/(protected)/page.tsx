@@ -95,7 +95,7 @@ export default async function AdminDashboardPage() {
         <h2 className="text-2xl font-bold text-gray-900">Your Trips</h2>
         <Link
           href="/admin/trips/new"
-          className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800 focus:outline-none focus:ring-2 focus:ring-golf-500 focus:ring-offset-2"
         >
           New Trip
         </Link>

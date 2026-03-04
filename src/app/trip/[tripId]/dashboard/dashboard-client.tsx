@@ -95,17 +95,17 @@ export default function DashboardClient({
     >
       {refreshing && (
         <div className="text-center py-2">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-700 border-t-transparent mx-auto" />
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-golf-700 border-t-transparent mx-auto" />
         </div>
       )}
       {/* Header */}
-      <header className="bg-green-900 text-white">
+      <header className="bg-golf-900 text-white">
         <div className="mx-auto max-w-lg px-4 py-6">
           <h1 className="text-2xl font-bold">{trip.name}</h1>
-          <p className="text-green-200 text-sm mt-1">
+          <p className="text-golf-200 text-sm mt-1">
             {trip.location} &middot; {trip.year}
             {trip.join_code && (
-              <span className="ml-3 rounded bg-green-800 px-2 py-0.5 font-mono text-xs">
+              <span className="ml-3 rounded bg-golf-800 px-2 py-0.5 font-mono text-xs">
                 Code: {trip.join_code}
               </span>
             )}
@@ -117,16 +117,16 @@ export default function DashboardClient({
 
         {/* Today's Round */}
         {todaysRound && (
-          <div className="rounded-xl bg-white border border-green-200 p-4 shadow-sm">
+          <div className="rounded-xl bg-white border border-golf-200 p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-bold text-gray-900">
                 {todaysRound.round_date === today ? "Today's Round" : 'Next Round'}
               </h2>
-              <span className="text-xs bg-green-100 text-green-800 rounded-full px-2 py-0.5">
+              <span className="text-xs bg-golf-100 text-golf-800 rounded-full px-2 py-0.5">
                 R{todaysRound.round_number}
               </span>
             </div>
-            <p className="text-lg font-semibold text-green-900">{todaysRound.name}</p>
+            <p className="text-lg font-semibold text-golf-900">{todaysRound.name}</p>
             <p className="text-sm text-gray-500">
               Par {todaysRound.par}
               {todaysRound.round_date && ` · ${new Date(todaysRound.round_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}
@@ -153,7 +153,7 @@ export default function DashboardClient({
                 {todaysGames.map((game) => (
                   <span
                     key={game.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-200 px-2.5 py-1 text-xs font-medium text-green-800"
+                    className="inline-flex items-center gap-1 rounded-full bg-golf-50 border border-golf-200 px-2.5 py-1 text-xs font-medium text-golf-800"
                   >
                     {game.game_format?.icon} {game.game_format?.name}
                     {game.buy_in > 0 && ` · $${game.buy_in}`}
@@ -165,13 +165,13 @@ export default function DashboardClient({
             <div className="mt-3 flex gap-2">
               <Link
                 href={`/trip/${trip.id}/leaderboard`}
-                className="flex-1 rounded-md bg-green-700 py-2 text-center text-sm font-medium text-white hover:bg-green-800"
+                className="flex-1 rounded-md bg-golf-700 py-2 text-center text-sm font-medium text-white hover:bg-golf-600"
               >
                 Leaderboard
               </Link>
               <Link
                 href={`/trip/${trip.id}/matches`}
-                className="flex-1 rounded-md border border-green-700 py-2 text-center text-sm font-medium text-green-700 hover:bg-green-50"
+                className="flex-1 rounded-md border border-golf-700 py-2 text-center text-sm font-medium text-golf-700 hover:bg-golf-50"
               >
                 Matches
               </Link>
@@ -205,7 +205,7 @@ export default function DashboardClient({
                 return (
                   <div key={stat.id} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <span className={`w-5 text-center font-bold ${i === 0 ? 'text-green-700' : 'text-gray-400'}`}>
+                      <span className={`w-5 text-center font-bold ${i === 0 ? 'text-golf-700' : 'text-gray-400'}`}>
                         {i + 1}
                       </span>
                       <span className="font-medium text-gray-900">{name}</span>
@@ -247,7 +247,7 @@ export default function DashboardClient({
                 <div
                   key={course.id}
                   className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
-                    isToday ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                    isToday ? 'bg-golf-50 border border-golf-200' : 'bg-gray-50'
                   }`}
                 >
                   <div>
@@ -260,7 +260,7 @@ export default function DashboardClient({
                       </span>
                     )}
                   </div>
-                  {isToday && <span className="text-xs font-bold text-green-700">TODAY</span>}
+                  {isToday && <span className="text-xs font-bold text-gold-dark">TODAY</span>}
                   {isPast && <span className="text-xs text-gray-400">&#10003;</span>}
                 </div>
               )

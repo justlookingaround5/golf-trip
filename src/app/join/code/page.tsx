@@ -107,7 +107,7 @@ export default function JoinByCodePage() {
                   if (e.key === 'Enter') lookupCode()
                 }}
                 placeholder="ABCD"
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl font-mono tracking-[0.5em] uppercase focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl font-mono tracking-[0.5em] uppercase focus:border-golf-500 focus:outline-none focus:ring-2 focus:ring-golf-500/20"
                 autoFocus
               />
             </div>
@@ -120,7 +120,7 @@ export default function JoinByCodePage() {
               <button
                 onClick={lookupCode}
                 disabled={loading || code.length !== 4}
-                className="w-full rounded-lg bg-green-600 px-4 py-2.5 font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                className="w-full rounded-lg bg-golf-600 px-4 py-2.5 font-medium text-white hover:bg-golf-700 disabled:opacity-50"
               >
                 {loading ? 'Looking up...' : 'Find Trip'}
               </button>
@@ -137,7 +137,7 @@ export default function JoinByCodePage() {
                 <button
                   onClick={joinTrip}
                   disabled={joining}
-                  className="w-full rounded-lg bg-green-600 px-4 py-2.5 font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                  className="w-full rounded-lg bg-golf-600 px-4 py-2.5 font-medium text-white hover:bg-golf-700 disabled:opacity-50"
                 >
                   {joining ? 'Joining...' : 'Join This Trip'}
                 </button>

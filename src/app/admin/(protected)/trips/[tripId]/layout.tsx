@@ -34,7 +34,7 @@ export default async function TripDetailLayout({
     <div>
       <div className="mb-6">
         <div className="mb-1 text-sm text-gray-500">
-          <Link href="/admin" className="hover:text-green-700 hover:underline">
+          <Link href="/admin" className="hover:text-golf-700 hover:underline">
             Trips
           </Link>
           <span className="mx-2">/</span>
@@ -53,7 +53,7 @@ export default async function TripDetailLayout({
               <Link
                 key={tab.label}
                 href={href}
-                className="whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-sm font-medium text-gray-500 hover:border-green-500 hover:text-green-700"
+                className="whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-sm font-medium text-gray-500 hover:border-golf-500 hover:text-golf-700"
               >
                 {tab.label}
               </Link>

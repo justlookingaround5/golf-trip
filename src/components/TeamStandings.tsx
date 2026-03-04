@@ -17,8 +17,8 @@ export default function TeamStandings({ standings }: TeamStandingsProps) {
 
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-      <div className="border-b border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/30 px-4 py-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-green-800">
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-golf-50 dark:bg-golf-900/30 px-4 py-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-golf-800">
           Team Standings
         </h3>
       </div>
@@ -27,14 +27,14 @@ export default function TeamStandings({ standings }: TeamStandingsProps) {
           <div
             key={team.teamId}
             className={`flex items-center justify-between px-4 py-4 ${
-              index === 0 ? 'bg-green-50/50' : ''
+              index === 0 ? 'bg-golf-50/50' : ''
             }`}
           >
             <div className="flex items-center gap-3">
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
                   index === 0
-                    ? 'bg-green-700 text-white'
+                    ? 'bg-golf-700 text-white'
                     : 'bg-gray-100 text-gray-600'
                 }`}
               >
@@ -53,7 +53,7 @@ export default function TeamStandings({ standings }: TeamStandingsProps) {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-green-700">
+              <p className="text-2xl font-bold text-golf-700">
                 {team.points % 1 === 0 ? team.points : team.points.toFixed(1)}
               </p>
               <p className="text-xs text-gray-500">pts</p>

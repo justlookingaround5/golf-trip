@@ -35,9 +35,9 @@ export default function SettlementClient({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-green-900 text-white">
+      <header className="bg-golf-900 text-white">
         <div className="mx-auto max-w-lg px-4 py-6">
-          <p className="text-green-200 text-sm">{tripName}</p>
+          <p className="text-golf-200 text-sm">{tripName}</p>
           <h1 className="text-2xl font-bold">The Bank</h1>
         </div>
       </header>
@@ -51,7 +51,7 @@ export default function SettlementClient({
               onClick={() => setActiveTab(tab)}
               className={`flex-1 py-3 text-center text-sm font-medium capitalize transition ${
                 activeTab === tab
-                  ? 'border-b-2 border-green-700 text-green-700'
+                  ? 'border-b-2 border-golf-700 text-golf-700'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -85,7 +85,7 @@ export default function SettlementClient({
                       <div className="text-sm">
                         <span className="font-semibold text-gray-900">{p.from_player}</span>
                         <span className="text-gray-400 mx-2">&rarr;</span>
-                        <span className="font-semibold text-green-700">{p.to_player}</span>
+                        <span className="font-semibold text-golf-700">{p.to_player}</span>
                       </div>
                       <span className="text-lg font-bold text-gray-900">
                         ${p.amount.toFixed(2)}
@@ -270,7 +270,7 @@ function WalletTab({ tripId, currentPlayerId, settledAt }: { tripId: string; cur
           from_player_id: currentPlayerId,
           to_player_id: payTarget.other_player_id,
           amount: parseFloat(payAmount),
-          note: 'Paid via Golf Trip app',
+          note: 'Paid via ForeLive',
         }),
       })
       setShowPayForm(false)
@@ -319,7 +319,7 @@ function WalletTab({ tripId, currentPlayerId, settledAt }: { tripId: string; cur
       <button
         onClick={handleFinalize}
         disabled={finalizing || !!settledAt}
-        className="w-full rounded-md bg-green-700 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="w-full rounded-md bg-golf-700 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
         {settledAt ? 'Trip Settled' : finalizing ? 'Finalizing...' : 'Finalize Trip → Push to Wallet'}
       </button>
@@ -403,7 +403,7 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="w-full rounded-lg border-2 border-dashed border-gray-300 py-3 text-sm text-gray-500 hover:border-green-500 hover:text-green-700">
+        className="w-full rounded-lg border-2 border-dashed border-gray-300 py-3 text-sm text-gray-500 hover:border-golf-500 hover:text-golf-700">
         + Add Expense
       </button>
     )
@@ -451,7 +451,7 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
     : amount ? (parseFloat(amount) / tripPlayers.length).toFixed(2) : null
 
   return (
-    <div className="rounded-lg bg-green-50 border border-green-200 p-4 space-y-3">
+    <div className="rounded-lg bg-golf-50 border border-golf-200 p-4 space-y-3">
       <input
         placeholder="What was it for?"
         value={description}
@@ -493,7 +493,7 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
             type="button"
             onClick={() => { setSplitMode('even'); setSelectedPlayers(new Set(tripPlayers.map(tp => tp.id))) }}
             className={`flex-1 rounded-md py-1.5 text-xs font-medium ${
-              splitMode === 'even' ? 'bg-green-700 text-white' : 'bg-white border border-gray-300 text-gray-600'
+              splitMode === 'even' ? 'bg-golf-700 text-white' : 'bg-white border border-gray-300 text-gray-600'
             }`}
           >
             Split evenly
@@ -502,7 +502,7 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
             type="button"
             onClick={() => setSplitMode('custom')}
             className={`flex-1 rounded-md py-1.5 text-xs font-medium ${
-              splitMode === 'custom' ? 'bg-green-700 text-white' : 'bg-white border border-gray-300 text-gray-600'
+              splitMode === 'custom' ? 'bg-golf-700 text-white' : 'bg-white border border-gray-300 text-gray-600'
             }`}
           >
             Custom split
@@ -516,7 +516,7 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
                   type="checkbox"
                   checked={selectedPlayers.has(tp.id)}
                   onChange={() => togglePlayer(tp.id)}
-                  className="rounded border-gray-300 text-green-700"
+                  className="rounded border-gray-300 text-golf-700"
                 />
                 {tp.name}
               </label>
@@ -534,7 +534,7 @@ function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: 
         <button
           onClick={handleSubmit}
           disabled={saving || !description || !amount || !paidBy || (splitMode === 'custom' && selectedPlayers.size < 1)}
-          className="flex-1 rounded-md bg-green-700 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="flex-1 rounded-md bg-golf-700 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {saving ? 'Adding...' : 'Add Expense'}
         </button>

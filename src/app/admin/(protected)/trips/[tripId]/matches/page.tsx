@@ -366,7 +366,7 @@ export default function MatchesPage() {
             {/* Course Header */}
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-800">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-golf-100 text-sm font-bold text-golf-800">
                   R{course.round_number}
                 </span>
                 <div>
@@ -393,7 +393,7 @@ export default function MatchesPage() {
               {!isFormOpen && (
                 <button
                   onClick={() => openForm(course.id)}
-                  className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
+                  className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
                 >
                   Create Match
                 </button>
@@ -416,7 +416,7 @@ export default function MatchesPage() {
                       <div className="mb-2 flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                            <span className="rounded-full bg-golf-100 px-2.5 py-0.5 text-xs font-medium text-golf-800">
                               {MATCH_FORMAT_LABELS[match.format]}
                             </span>
                             <span className="text-xs text-gray-500">
@@ -448,7 +448,7 @@ export default function MatchesPage() {
                             </span>
                           </div>
                           {match.winner_side && (
-                            <p className="mt-1 text-xs text-green-700">
+                            <p className="mt-1 text-xs text-golf-700">
                               Winner:{' '}
                               {match.winner_side === 'tie'
                                 ? 'Tie'
@@ -508,7 +508,7 @@ export default function MatchesPage() {
                           </div>
                           <button
                             onClick={() => handleCopyLink(match)}
-                            className="rounded-md border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100"
+                            className="rounded-md border border-golf-300 bg-golf-50 px-3 py-1.5 text-xs font-medium text-golf-700 hover:bg-golf-100"
                           >
                             {copiedMatchId === match.id
                               ? 'Copied!'
@@ -535,7 +535,7 @@ export default function MatchesPage() {
 
             {/* Create Match Form */}
             {isFormOpen && (
-              <div className="rounded-md border border-green-200 bg-green-50 p-4">
+              <div className="rounded-md border border-golf-200 bg-golf-50 p-4">
                 <h4 className="mb-3 text-sm font-semibold text-gray-900">
                   New Match
                 </h4>
@@ -559,7 +559,7 @@ export default function MatchesPage() {
                           setTeamAIds([])
                           setTeamBIds([])
                         }}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                       >
                         {(
                           Object.entries(MATCH_FORMAT_LABELS) as [
@@ -588,7 +588,7 @@ export default function MatchesPage() {
                         min="0.5"
                         max="100"
                         step="0.5"
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                       />
                     </div>
                   </div>
@@ -608,7 +608,7 @@ export default function MatchesPage() {
                       value={scorerEmail}
                       onChange={(e) => setScorerEmail(e.target.value)}
                       placeholder="scorer@email.com"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                     />
                   </div>
 
@@ -624,7 +624,7 @@ export default function MatchesPage() {
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       {/* Team A Column */}
                       <div>
-                        <p className="mb-1.5 text-xs font-semibold uppercase text-green-800">
+                        <p className="mb-1.5 text-xs font-semibold uppercase text-golf-800">
                           Team A ({teamAIds.length}/{playersPerSide(format)})
                         </p>
                         <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-gray-200 bg-white p-2">
@@ -646,7 +646,7 @@ export default function MatchesPage() {
                                   }
                                   className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm ${
                                     isOnTeamA
-                                      ? 'bg-green-100 font-medium text-green-900'
+                                      ? 'bg-golf-100 font-medium text-golf-900'
                                       : isOnTeamB
                                         ? 'text-gray-300'
                                         : 'text-gray-700 hover:bg-gray-50'
@@ -656,7 +656,7 @@ export default function MatchesPage() {
                                   <span
                                     className={`flex h-4 w-4 items-center justify-center rounded border text-xs ${
                                       isOnTeamA
-                                        ? 'border-green-600 bg-green-600 text-white'
+                                        ? 'border-golf-600 bg-golf-600 text-white'
                                         : 'border-gray-300'
                                     }`}
                                   >
@@ -676,7 +676,7 @@ export default function MatchesPage() {
 
                       {/* Team B Column */}
                       <div>
-                        <p className="mb-1.5 text-xs font-semibold uppercase text-green-800">
+                        <p className="mb-1.5 text-xs font-semibold uppercase text-golf-800">
                           Team B ({teamBIds.length}/{playersPerSide(format)})
                         </p>
                         <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-gray-200 bg-white p-2">
@@ -698,7 +698,7 @@ export default function MatchesPage() {
                                   }
                                   className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm ${
                                     isOnTeamB
-                                      ? 'bg-green-100 font-medium text-green-900'
+                                      ? 'bg-golf-100 font-medium text-golf-900'
                                       : isOnTeamA
                                         ? 'text-gray-300'
                                         : 'text-gray-700 hover:bg-gray-50'
@@ -708,7 +708,7 @@ export default function MatchesPage() {
                                   <span
                                     className={`flex h-4 w-4 items-center justify-center rounded border text-xs ${
                                       isOnTeamB
-                                        ? 'border-green-600 bg-green-600 text-white'
+                                        ? 'border-golf-600 bg-golf-600 text-white'
                                         : 'border-gray-300'
                                     }`}
                                   >
@@ -737,7 +737,7 @@ export default function MatchesPage() {
                         teamAIds.length !== playersPerSide(format) ||
                         teamBIds.length !== playersPerSide(format)
                       }
-                      className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+                      className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
                     >
                       {saving ? 'Creating...' : 'Create Match'}
                     </button>

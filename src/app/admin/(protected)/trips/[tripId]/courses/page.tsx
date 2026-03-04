@@ -366,7 +366,7 @@ export default function CoursesPage() {
           {!showForm && (
             <button
               onClick={openAddForm}
-              className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
+              className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
             >
               Add Course
             </button>
@@ -387,7 +387,7 @@ export default function CoursesPage() {
                   className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-4 py-3"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-800">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-golf-100 text-sm font-bold text-golf-800">
                       R{course.round_number}
                     </span>
                     <div>
@@ -462,7 +462,7 @@ export default function CoursesPage() {
                 }}
                 placeholder="Type to search courses..."
                 required
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
               />
               {!courseDetail && !loadingDetail && !showSearchResults && courseName.length > 0 && (
                 <p className="mt-1 text-xs text-gray-500">
@@ -477,8 +477,8 @@ export default function CoursesPage() {
 
               {/* Search Results Dropdown */}
               {showSearchResults && searchResults.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full rounded-md border border-green-300 bg-white shadow-lg ring-1 ring-green-200">
-                  <div className="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border-b border-green-200">
+                <div className="absolute z-10 mt-1 w-full rounded-md border border-golf-300 bg-white shadow-lg ring-1 ring-golf-200">
+                  <div className="px-3 py-1.5 text-xs font-medium text-golf-700 bg-golf-50 border-b border-golf-200">
                     Click a course to auto-fill details
                   </div>
                   <ul className="max-h-60 overflow-auto py-1">
@@ -487,7 +487,7 @@ export default function CoursesPage() {
                         <button
                           type="button"
                           onClick={() => handleSelectSearchResult(result)}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-green-50 border-b border-gray-100 last:border-0"
+                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-golf-50 border-b border-gray-100 last:border-0"
                         >
                           <span className="font-medium text-gray-900">
                             {result.course_name || result.club_name}
@@ -511,18 +511,18 @@ export default function CoursesPage() {
 
             {/* Course Detail Card */}
             {courseDetail && (
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-4">
+              <div className="rounded-lg border border-golf-200 bg-golf-50 p-4 space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h4 className="font-semibold text-green-900">
+                    <h4 className="font-semibold text-golf-900">
                       {courseDetail.course_name || courseDetail.club_name}
                     </h4>
-                    <p className="text-sm text-green-700">{courseDetail.location?.address}</p>
-                    <p className="text-sm text-green-700">
+                    <p className="text-sm text-golf-700">{courseDetail.location?.address}</p>
+                    <p className="text-sm text-golf-700">
                       {courseDetail.location?.city}, {courseDetail.location?.state}
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-golf-100 px-2 py-0.5 text-xs font-medium text-golf-800">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
                       <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
                     </svg>
@@ -538,7 +538,7 @@ export default function CoursesPage() {
                       onClick={() => handleTeeGenderChange('male')}
                       className={`rounded-md px-3 py-1 text-xs font-medium ${
                         teeGender === 'male'
-                          ? 'bg-green-700 text-white'
+                          ? 'bg-golf-700 text-white'
                           : 'bg-white text-gray-700 border border-gray-300'
                       }`}
                     >
@@ -549,7 +549,7 @@ export default function CoursesPage() {
                       onClick={() => handleTeeGenderChange('female')}
                       className={`rounded-md px-3 py-1 text-xs font-medium ${
                         teeGender === 'female'
-                          ? 'bg-green-700 text-white'
+                          ? 'bg-golf-700 text-white'
                           : 'bg-white text-gray-700 border border-gray-300'
                       }`}
                     >
@@ -561,7 +561,7 @@ export default function CoursesPage() {
                 {/* Tee Box Selection */}
                 {availableTees.length > 0 && (
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase text-green-800">
+                    <p className="mb-2 text-xs font-semibold uppercase text-golf-800">
                       Select Tee Box
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -572,8 +572,8 @@ export default function CoursesPage() {
                           onClick={() => selectTee(tee, idx)}
                           className={`rounded-md border p-3 text-left transition ${
                             selectedTeeIndex === idx
-                              ? 'border-green-600 bg-white ring-2 ring-green-500'
-                              : 'border-gray-200 bg-white hover:border-green-300'
+                              ? 'border-golf-600 bg-white ring-2 ring-golf-500'
+                              : 'border-gray-200 bg-white hover:border-golf-300'
                           }`}
                         >
                           <p className="font-semibold text-gray-900 text-sm">{tee.tee_name}</p>
@@ -601,7 +601,7 @@ export default function CoursesPage() {
                   id="round-number"
                   value={roundNumber}
                   onChange={(e) => setRoundNumber(Number(e.target.value))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                 >
                   {[1, 2, 3, 4].map((n) => (
                     <option key={n} value={n}>
@@ -619,7 +619,7 @@ export default function CoursesPage() {
                   type="date"
                   value={roundDate}
                   onChange={(e) => setRoundDate(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                 />
               </div>
             </div>
@@ -638,7 +638,7 @@ export default function CoursesPage() {
                   placeholder="e.g. 135"
                   min={55}
                   max={155}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                 />
               </div>
               <div>
@@ -654,7 +654,7 @@ export default function CoursesPage() {
                   step="0.1"
                   min={50}
                   max={90}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
                 />
               </div>
             </div>
@@ -712,7 +712,7 @@ export default function CoursesPage() {
                             <select
                               value={h.par}
                               onChange={(e) => updateHolePar(i, Number(e.target.value))}
-                              className="w-12 rounded border border-gray-300 px-0.5 py-0.5 text-center text-xs focus:border-green-500 focus:outline-none"
+                              className="w-12 rounded border border-gray-300 px-0.5 py-0.5 text-center text-xs focus:border-golf-500 focus:outline-none"
                             >
                               <option value={3}>3</option>
                               <option value={4}>4</option>
@@ -731,7 +731,7 @@ export default function CoursesPage() {
                             <select
                               value={h.handicap_index}
                               onChange={(e) => updateHoleHandicap(i, Number(e.target.value))}
-                              className="w-12 rounded border border-gray-300 px-0.5 py-0.5 text-center text-xs focus:border-green-500 focus:outline-none"
+                              className="w-12 rounded border border-gray-300 px-0.5 py-0.5 text-center text-xs focus:border-golf-500 focus:outline-none"
                             >
                               {Array.from({ length: 18 }, (_, n) => (
                                 <option key={n + 1} value={n + 1}>
@@ -785,7 +785,7 @@ export default function CoursesPage() {
                             <select
                               value={h.par}
                               onChange={(e) => updateHolePar(i + 9, Number(e.target.value))}
-                              className="w-12 rounded border border-gray-300 px-0.5 py-0.5 text-center text-xs focus:border-green-500 focus:outline-none"
+                              className="w-12 rounded border border-gray-300 px-0.5 py-0.5 text-center text-xs focus:border-golf-500 focus:outline-none"
                             >
                               <option value={3}>3</option>
                               <option value={4}>4</option>
@@ -804,7 +804,7 @@ export default function CoursesPage() {
                             <select
                               value={h.handicap_index}
                               onChange={(e) => updateHoleHandicap(i + 9, Number(e.target.value))}
-                              className="w-12 rounded border border-gray-300 px-0.5 py-0.5 text-center text-xs focus:border-green-500 focus:outline-none"
+                              className="w-12 rounded border border-gray-300 px-0.5 py-0.5 text-center text-xs focus:border-golf-500 focus:outline-none"
                             >
                               {Array.from({ length: 18 }, (_, n) => (
                                 <option key={n + 1} value={n + 1}>
@@ -827,7 +827,7 @@ export default function CoursesPage() {
               <button
                 type="submit"
                 disabled={saving || !courseName.trim()}
-                className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+                className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
               >
                 {saving
                   ? 'Saving...'

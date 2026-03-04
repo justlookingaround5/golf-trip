@@ -229,7 +229,7 @@ export default function TeamsPage() {
           {!showForm && (
             <button
               onClick={openCreateForm}
-              className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800"
+              className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
             >
               Create Team
             </button>
@@ -326,7 +326,7 @@ export default function TeamsPage() {
                 onChange={(e) => setTeamName(e.target.value)}
                 placeholder='e.g. "Team Tall"'
                 required
-                className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
               />
             </div>
 
@@ -355,7 +355,7 @@ export default function TeamsPage() {
                         <label
                           key={tp.id}
                           className={`flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm ${
-                            isSelected ? 'bg-green-50' : 'hover:bg-white'
+                            isSelected ? 'bg-golf-50' : 'hover:bg-white'
                           } ${assignedToOtherTeam ? 'opacity-50' : ''}`}
                         >
                           <input
@@ -363,7 +363,7 @@ export default function TeamsPage() {
                             checked={isSelected}
                             onChange={() => togglePlayerSelection(tp.id)}
                             disabled={assignedToOtherTeam}
-                            className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                            className="h-4 w-4 rounded border-gray-300 text-golf-600 focus:ring-golf-500"
                           />
                           <span className="font-medium text-gray-900">
                             {tp.player.name}
@@ -398,7 +398,7 @@ export default function TeamsPage() {
               <button
                 type="submit"
                 disabled={saving || !teamName.trim()}
-                className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+                className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
               >
                 {saving
                   ? 'Saving...'

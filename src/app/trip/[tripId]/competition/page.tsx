@@ -40,10 +40,10 @@ export default async function CompetitionPage({
   if (!competition) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <header className="bg-green-800 px-4 py-6 text-white shadow-md">
+        <header className="bg-golf-800 px-4 py-6 text-white shadow-md">
           <div className="mx-auto max-w-2xl">
             <h1 className="text-2xl font-bold">{trip.name}</h1>
-            <p className="mt-1 text-green-200">Team Competition</p>
+            <p className="mt-1 text-golf-200">Team Competition</p>
           </div>
         </header>
         <div className="mx-auto max-w-2xl px-4 py-12 text-center text-gray-500">

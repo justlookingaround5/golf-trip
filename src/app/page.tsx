@@ -21,10 +21,10 @@ export default async function Home() {
       <header className="bg-golf-900 text-white">
         <div className="max-w-4xl mx-auto px-4 py-12 sm:py-16 text-center">
           <div className="text-4xl sm:text-5xl font-bold tracking-tight mb-2">
-            Golf Trip Tracker
+            <span className="text-gold">Fore</span>Live
           </div>
           <p className="text-golf-200 text-lg mt-3">
-            Scores, matches, and payouts for your golf trip
+            Live scoring, games, and settlements for your golf trip
           </p>
         </div>
       </header>
@@ -124,7 +124,7 @@ export default async function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white">
         <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-          <span>Golf Trip Tracker</span>
+          <span>ForeLive</span>
           <Link
             href="/admin/login"
             className="text-golf-700 hover:text-golf-900 font-medium transition-colors"
