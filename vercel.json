@@ -1,8 +1,2 @@
 {
-  "crons": [
-    {
-      "path": "/api/ghin/sync",
-      "schedule": "0 6 * * *"
-    }
-  ]
 }

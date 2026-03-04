@@ -11,6 +11,16 @@ interface NassauBet {
   is_press: boolean
 }
 
+interface GroupNassauBet {
+  name: string
+  start_hole: number
+  end_hole: number
+  player_points: Record<string, number>  // trip_player_id -> points in segment
+  winner: string | null                  // sole leader or null for tie
+  amount: number
+  is_press: boolean
+}
+
 /**
  * Nassau Engine
  *
@@ -23,28 +33,35 @@ interface NassauBet {
  *   press_trigger: number    (default: 2, how many down triggers a press)
  *   press_amount: number|null (null = same as bet_amount)
  *
- * Players: exactly 2, no teams.
+ * Players: 2-4. 2 = head-to-head match play, 3-4 = group (sole low net wins point).
  */
 function compute(input: GameEngineInput): GameEngineResult {
-  const { scores, players, holes, playerStrokes, config } = input
-  const betAmount = (config.bet_amount as number) ?? 5
-  const autoPress = config.auto_press !== false
-  const pressTrigger = (config.press_trigger as number) ?? 2
-  const pressAmount = (config.press_amount as number) ?? betAmount
+  const { players } = input
 
-  if (players.length !== 2) {
+  if (players.length < 2 || players.length > 4) {
     return {
       players: players.map(p => ({
         trip_player_id: p.trip_player_id,
         position: 1,
         points: 0,
         money: 0,
-        details: { error: 'Nassau requires exactly 2 players' },
+        details: { error: 'Nassau requires 2-4 players' },
       })),
       holes: [],
-      summary: 'Error: Nassau requires exactly 2 players',
+      summary: 'Error: Nassau requires 2-4 players',
     }
   }
+
+  // Branch: group (3-4) vs head-to-head (2)
+  if (players.length > 2) {
+    return computeGroup(input)
+  }
+
+  const { scores, holes, playerStrokes, config } = input
+  const betAmount = (config.bet_amount as number) ?? 5
+  const autoPress = config.auto_press !== false
+  const pressTrigger = (config.press_trigger as number) ?? 2
+  const pressAmount = (config.press_amount as number) ?? betAmount
 
   const playerA = players[0].trip_player_id
   const playerB = players[1].trip_player_id
@@ -223,6 +240,206 @@ function compute(input: GameEngineInput): GameEngineResult {
   }
 }
 
+/**
+ * Group Nassau (3-4 players)
+ *
+ * Each hole: sole lowest net score wins 1 point (ties = no points).
+ * Three bets: Front 9, Back 9, Overall.
+ * Sole leader in points for a segment wins bet_amount from each other player.
+ * Auto-press: when any player leads all others by press_trigger points.
+ */
+function computeGroup(input: GameEngineInput): GameEngineResult {
+  const { scores, players, holes, playerStrokes, config } = input
+  const betAmount = (config.bet_amount as number) ?? 5
+  const autoPress = config.auto_press !== false
+  const pressTrigger = (config.press_trigger as number) ?? 2
+  const pressAmount = (config.press_amount as number) ?? betAmount
+  const playerIds = players.map(p => p.trip_player_id)
+  const N = players.length
+
+  // Build hole lookup
+  const holeById = new Map(holes.map(h => [h.id, h]))
+
+  // Calculate net scores per hole per player
+  const holeNets = new Map<number, Map<string, number>>()
+  for (const score of scores) {
+    const hole = holeById.get(score.hole_id)
+    if (!hole) continue
+    const strokesMap = playerStrokes.get(score.trip_player_id)
+    const strokes = strokesMap?.get(hole.hole_number) ?? 0
+    const net = score.gross_score - strokes
+    if (!holeNets.has(hole.hole_number)) {
+      holeNets.set(hole.hole_number, new Map())
+    }
+    holeNets.get(hole.hole_number)!.set(score.trip_player_id, net)
+  }
+
+  // Find sole lowest net score winner for a hole (null if tie)
+  function getHoleWinner(holeNumber: number): string | null {
+    const nets = holeNets.get(holeNumber)
+    if (!nets || nets.size < N) return null
+    let bestScore = Infinity
+    let bestPlayer: string | null = null
+    let tied = false
+    for (const [pid, net] of nets) {
+      if (net < bestScore) {
+        bestScore = net
+        bestPlayer = pid
+        tied = false
+      } else if (net === bestScore) {
+        tied = true
+      }
+    }
+    return tied ? null : bestPlayer
+  }
+
+  // Tally points per player in a hole range
+  function computeSegmentPoints(startHole: number, endHole: number): Record<string, number> {
+    const points: Record<string, number> = {}
+    for (const pid of playerIds) points[pid] = 0
+    for (let h = startHole; h <= endHole; h++) {
+      const winner = getHoleWinner(h)
+      if (winner) points[winner]++
+    }
+    return points
+  }
+
+  // Find sole leader from points map (null if tied for lead)
+  function getSoleLeader(points: Record<string, number>): string | null {
+    let maxPoints = -1
+    let leader: string | null = null
+    let tied = false
+    for (const pid of playerIds) {
+      if (points[pid] > maxPoints) {
+        maxPoints = points[pid]
+        leader = pid
+        tied = false
+      } else if (points[pid] === maxPoints) {
+        tied = true
+      }
+    }
+    return tied ? null : leader
+  }
+
+  // Core bets
+  const bets: GroupNassauBet[] = []
+
+  const frontPoints = computeSegmentPoints(1, 9)
+  bets.push({
+    name: 'Front 9',
+    start_hole: 1,
+    end_hole: 9,
+    player_points: frontPoints,
+    winner: getSoleLeader(frontPoints),
+    amount: betAmount,
+    is_press: false,
+  })
+
+  const backPoints = computeSegmentPoints(10, 18)
+  bets.push({
+    name: 'Back 9',
+    start_hole: 10,
+    end_hole: 18,
+    player_points: backPoints,
+    winner: getSoleLeader(backPoints),
+    amount: betAmount,
+    is_press: false,
+  })
+
+  const overallPoints = computeSegmentPoints(1, 18)
+  bets.push({
+    name: 'Overall',
+    start_hole: 1,
+    end_hole: 18,
+    player_points: overallPoints,
+    winner: getSoleLeader(overallPoints),
+    amount: betAmount,
+    is_press: false,
+  })
+
+  // Auto-presses: when any player leads ALL others by press_trigger points
+  if (autoPress) {
+    function checkPresses(segStart: number, segEnd: number, prefix: string) {
+      const runningPoints: Record<string, number> = {}
+      for (const pid of playerIds) runningPoints[pid] = 0
+
+      for (let h = segStart; h <= segEnd; h++) {
+        const winner = getHoleWinner(h)
+        if (winner) runningPoints[winner]++
+
+        if (h >= segEnd) continue // no press on last hole
+
+        // Check if any player leads all others by pressTrigger
+        for (const pid of playerIds) {
+          const leadsAll = playerIds.every(
+            other => other === pid || runningPoints[pid] - runningPoints[other] >= pressTrigger
+          )
+          if (leadsAll) {
+            const pressStart = h + 1
+            const pressPoints = computeSegmentPoints(pressStart, segEnd)
+            bets.push({
+              name: `Press ${prefix}-${pressStart}`,
+              start_hole: pressStart,
+              end_hole: segEnd,
+              player_points: pressPoints,
+              winner: getSoleLeader(pressPoints),
+              amount: pressAmount,
+              is_press: true,
+            })
+            // Reset running points for next potential press
+            for (const id of playerIds) runningPoints[id] = 0
+            break // only one press per trigger point
+          }
+        }
+      }
+    }
+
+    checkPresses(1, 9, 'F')
+    checkPresses(10, 18, 'B')
+  }
+
+  // Tally money: winner of each bet collects bet amount from each loser
+  const money: Record<string, number> = {}
+  for (const pid of playerIds) money[pid] = 0
+
+  for (const bet of bets) {
+    if (bet.winner) {
+      for (const pid of playerIds) {
+        if (pid === bet.winner) {
+          money[pid] += bet.amount * (N - 1)
+        } else {
+          money[pid] -= bet.amount
+        }
+      }
+    }
+  }
+
+  // Build results
+  const presses = bets.filter(b => b.is_press).length
+  const summary = `Nassau: ${bets.length} bets (${presses} presses). ${playerIds.map(pid => {
+    const m = money[pid]
+    return `${m > 0 ? '+' : ''}${m}`
+  }).join(' / ')}`
+
+  const playerResults = playerIds.map(pid => ({
+    trip_player_id: pid,
+    position: 0,
+    points: overallPoints[pid],
+    money: money[pid],
+    details: { bets, holes_won: overallPoints[pid] },
+  }))
+
+  // Sort by money descending and assign positions
+  playerResults.sort((a, b) => b.money - a.money)
+  playerResults.forEach((r, i) => { r.position = i + 1 })
+
+  return {
+    players: playerResults,
+    holes: bets as unknown as Record<string, unknown>[],
+    summary,
+  }
+}
+
 function validateConfig(config: Record<string, unknown>) {
   const errors: string[] = []
   if (config.bet_amount != null && (typeof config.bet_amount !== 'number' || config.bet_amount < 0)) {
@@ -232,7 +449,7 @@ function validateConfig(config: Record<string, unknown>) {
 }
 
 function validatePlayers(count: number) {
-  if (count !== 2) return { valid: false, error: 'Nassau requires exactly 2 players' }
+  if (count < 2 || count > 4) return { valid: false, error: 'Nassau requires 2-4 players' }
   return { valid: true }
 }
 

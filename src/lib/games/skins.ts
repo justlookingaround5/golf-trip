@@ -24,6 +24,7 @@ function compute(input: GameEngineInput): GameEngineResult {
   const { scores, players, holes, playerStrokes, config } = input
   const mode = (config.mode as string) || 'net'
   const carryOver = config.carry_over !== false
+  const valuePerSkin = (config.value_per_skin as number) ?? 0
 
   // Build hole lookup
   const holeById = new Map(holes.map(h => [h.id, h]))
@@ -122,14 +123,18 @@ function compute(input: GameEngineInput): GameEngineResult {
   const totalSkinsWon = Array.from(playerSkins.values()).reduce((a, b) => a + b, 0)
 
   // Build results sorted by skins won
+  const N = players.length
   const playerResults = players.map(p => {
     const skins = playerSkins.get(p.trip_player_id) || 0
+    // Zero-sum formula: each skin you win pays (N-1) opponents,
+    // each skin others win costs you 1
+    const money = valuePerSkin * (skins * (N - 1) - (totalSkinsWon - skins)) || 0
     return {
       trip_player_id: p.trip_player_id,
       position: 0, // set below
       points: skins,
-      money: 0, // calculated by settlement based on buy-in
-      details: { skins_won: skins, total_skins: totalSkinsWon },
+      money,
+      details: { skins_won: skins, total_skins: totalSkinsWon, value_per_skin: valuePerSkin },
     }
   })
 

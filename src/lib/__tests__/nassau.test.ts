@@ -50,9 +50,11 @@ describe('Nassau Engine', () => {
     expect(bob.money).toBe(0)
   })
 
-  it('requires exactly 2 players', () => {
+  it('requires 2-4 players', () => {
     expect(nassauEngine.validatePlayers(1, {}).valid).toBe(false)
     expect(nassauEngine.validatePlayers(2, {}).valid).toBe(true)
-    expect(nassauEngine.validatePlayers(3, {}).valid).toBe(false)
+    expect(nassauEngine.validatePlayers(3, {}).valid).toBe(true)
+    expect(nassauEngine.validatePlayers(4, {}).valid).toBe(true)
+    expect(nassauEngine.validatePlayers(5, {}).valid).toBe(false)
   })
 })
