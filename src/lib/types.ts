@@ -11,6 +11,29 @@ export interface Trip {
   updated_at: string
   created_by: string | null
   join_code: string | null
+  group_id: string | null
+}
+
+// ============================================================================
+// Groups Types
+// ============================================================================
+
+export type GroupRole = 'owner' | 'admin' | 'member'
+
+export interface Group {
+  id: string
+  name: string
+  description: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export interface GroupMember {
+  id: string
+  group_id: string
+  user_id: string
+  role: GroupRole
+  joined_at: string
 }
 
 export interface Course {

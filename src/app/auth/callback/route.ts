@@ -16,5 +16,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}${redirectTo}`)
   }
 
-  return NextResponse.redirect(`${origin}/admin`)
+  return NextResponse.redirect(`${origin}/home`)
 }
