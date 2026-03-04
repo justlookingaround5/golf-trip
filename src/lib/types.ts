@@ -7,6 +7,7 @@ export interface Trip {
   match_buy_in: number
   skins_buy_in: number
   skins_mode: 'gross' | 'net' | 'both'
+  handicap_mode: 'static' | 'dynamic'
   created_at: string
   updated_at: string
   created_by: string | null
@@ -48,6 +49,9 @@ export interface Course {
   created_at: string
   golf_course_api_id?: number | null
   holes?: Hole[]
+  default_match_format?: string | null
+  default_point_value?: number | null
+  format_config?: Record<string, unknown> | null
 }
 
 export interface Hole {
@@ -157,6 +161,9 @@ export interface RoundScore {
   hole_id: string
   gross_score: number
   entered_by: string | null
+  fairway_hit?: boolean | null
+  gir?: boolean | null
+  putts?: number | null
   created_at: string
   updated_at: string
 }
@@ -560,8 +567,9 @@ export interface PushSubscriptionRecord {
 export interface TripMessage {
   id: string
   trip_id: string
-  user_id: string
+  user_id: string | null
   content: string
+  is_system: boolean
   created_at: string
 }
 

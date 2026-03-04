@@ -14,6 +14,7 @@ import { hammerEngine } from './hammer'
 import { dotsEngine } from './dots'
 import { snakeEngine } from './snake'
 import { rabbitEngine } from './rabbit'
+import { twentyBallEngine } from './twenty-ball'
 
 /** Registry of all available game engines */
 const engines: Record<string, GameEngine> = {}
@@ -38,6 +39,7 @@ register(hammerEngine)
 register(dotsEngine)
 register(snakeEngine)
 register(rabbitEngine)
+register(twentyBallEngine)
 
 /** Get an engine by its key. Returns undefined if not found. */
 export function getEngine(key: string): GameEngine | undefined {

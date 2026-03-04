@@ -6,6 +6,7 @@ import { getStrokesPerHole } from '@/lib/handicap'
 import type { ActivityFeedItem, RoundScore, SideBet, SideBetHit } from '@/lib/types'
 import HoleView from './components/HoleView'
 import LiveDashboard from './components/LiveDashboard'
+import ScoreIndicator from '@/components/ScoreIndicator'
 
 interface HoleData {
   id: string
@@ -101,6 +102,7 @@ export default function LiveScoringClient({
 
   const [activeHole, setActiveHole] = useState<number | null>(null)
   const [holeScores, setHoleScores] = useState<Record<string, number>>({})
+  const [holeStats, setHoleStats] = useState<Record<string, { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }>>({})
   const [saving, setSaving] = useState(false)
 
   // Load data
@@ -251,6 +253,18 @@ export default function LiveScoringClient({
       initial[tp.id] = existing?.gross_score ?? hole.par
     }
 
+    // Load existing stats for current player
+    const existingScore = data.roundScores.find(
+      s => s.hole_id === hole.id && s.trip_player_id === currentTripPlayerId
+    )
+    setHoleStats({
+      [currentTripPlayerId]: {
+        fairway_hit: existingScore?.fairway_hit ?? null,
+        gir: existingScore?.gir ?? null,
+        putts: existingScore?.putts ?? null,
+      }
+    })
+
     setHoleScores(initial)
     setActiveHole(holeNumber)
   }
@@ -269,6 +283,14 @@ export default function LiveScoringClient({
     setHoleScores(prev => ({ ...prev, [tripPlayerId]: value }))
   }
 
+  function updateStats(stats: { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }) {
+    if (!currentTripPlayerId) return
+    setHoleStats(prev => ({
+      ...prev,
+      [currentTripPlayerId]: { ...prev[currentTripPlayerId], ...stats },
+    }))
+  }
+
   async function submitHoleScores() {
     if (navigator.vibrate) navigator.vibrate([20, 50, 20])
     if (!data || activeHole === null || !currentTripPlayerId) return
@@ -284,16 +306,31 @@ export default function LiveScoringClient({
         const existing = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
         return existing || score !== hole.par
       })
-      .map(([trip_player_id, gross_score]) => ({ trip_player_id, gross_score }))
+      .map(([trip_player_id, gross_score]) => {
+        const entry: Record<string, unknown> = { trip_player_id, gross_score }
+        // Attach stats for own player
+        if (trip_player_id === currentTripPlayerId) {
+          const stats = holeStats[currentTripPlayerId]
+          if (stats) {
+            if (stats.fairway_hit !== null && stats.fairway_hit !== undefined) entry.fairway_hit = stats.fairway_hit
+            if (stats.gir !== null && stats.gir !== undefined) entry.gir = stats.gir
+            if (stats.putts !== null && stats.putts !== undefined) entry.putts = stats.putts
+          }
+        }
+        return entry
+      })
 
     // Optimistic update
     const optimisticScores: RoundScore[] = scoresToSubmit.map(s => ({
       id: `optimistic-${s.trip_player_id}-${hole.id}`,
       course_id: courseId,
-      trip_player_id: s.trip_player_id,
+      trip_player_id: s.trip_player_id as string,
       hole_id: hole.id,
-      gross_score: s.gross_score,
+      gross_score: s.gross_score as number,
       entered_by: null,
+      fairway_hit: (s.fairway_hit as boolean) ?? null,
+      gir: (s.gir as boolean) ?? null,
+      putts: (s.putts as number) ?? null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }))
@@ -512,6 +549,10 @@ export default function LiveScoringClient({
           onSubmit={submitHoleScores}
           onNavigate={openHole}
           onClose={() => setActiveHole(null)}
+          fairwayHit={holeStats[currentTripPlayerId]?.fairway_hit}
+          girHit={holeStats[currentTripPlayerId]?.gir}
+          puttsCount={holeStats[currentTripPlayerId]?.putts}
+          onStatsChange={updateStats}
         />
       )}
 
@@ -556,6 +597,9 @@ export default function LiveScoringClient({
                     s => s.hole_id === hole.id && s.trip_player_id === currentTripPlayerId
                   )
 
+                  // Strokes on this hole for current player
+                  const ownStrokesOnHole = playerStrokesMap.get(currentTripPlayerId)?.get(hole.hole_number) ?? 0
+
                   return (
                     <button
                       key={hole.id}
@@ -577,25 +621,18 @@ export default function LiveScoringClient({
                       <div className="text-xs text-gray-500">Par {hole.par}</div>
                       <div className="text-xs text-gray-400">Hdcp {hole.handicap_index}</div>
 
+                      {/* Stroke dots for current player on this hole */}
+                      {ownStrokesOnHole > 0 && (
+                        <div className="text-green-600 text-xs tracking-tight">
+                          {'•'.repeat(ownStrokesOnHole)}
+                        </div>
+                      )}
+
                       {ownScore && (
                         <div className="mt-1 border-t border-golf-200 pt-1">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-gray-600">{ownPlayerName.split(' ')[0]}</span>
-                            <span className={`font-semibold ${
-                              ownScore.gross_score - hole.par < 0
-                                ? 'text-red-600'
-                                : ownScore.gross_score - hole.par > 0
-                                  ? 'text-blue-600'
-                                  : 'text-gray-700'
-                            }`}>
-                              {ownScore.gross_score} ({
-                                ownScore.gross_score - hole.par === 0
-                                  ? 'E'
-                                  : ownScore.gross_score - hole.par > 0
-                                    ? `+${ownScore.gross_score - hole.par}`
-                                    : `${ownScore.gross_score - hole.par}`
-                              })
-                            </span>
+                            <ScoreIndicator score={ownScore.gross_score} par={hole.par} size="xs" />
                           </div>
                         </div>
                       )}

@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { detectScoringEvents } from '@/lib/activity'
 import { getEngine } from '@/lib/games'
 import { getStrokesPerHole } from '@/lib/handicap'
+import { postSystemMessage } from '@/lib/notifications'
 import type { GameEngineInput } from '@/lib/types'
 
 interface ScoreEntry {
@@ -83,6 +84,15 @@ export async function processScoreEvents(
       net_score: netScore,
       client: db,
     })
+
+    // Post system chat messages for notable events
+    const diff = netScore - hole.par
+    const pName = playerNames.get(entry.trip_player_id) || 'Someone'
+    if (diff <= -2) {
+      postSystemMessage(db, tripId, `🦅 ${pName} made EAGLE on Hole ${hole.hole_number}! (${entry.gross_score} on par ${hole.par})`).catch(() => {})
+    } else if (diff === -1) {
+      postSystemMessage(db, tripId, `🐦 ${pName} birdied Hole ${hole.hole_number} (${entry.gross_score} on par ${hole.par})`).catch(() => {})
+    }
   }
 
   // Recompute active round games for this course

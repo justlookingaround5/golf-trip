@@ -5,11 +5,12 @@ import { createClient } from '@/lib/supabase/client'
 
 interface Message {
   id: string
-  user_id: string
+  user_id: string | null
   content: string
   created_at: string
   display_name: string
   avatar_url: string | null
+  is_system?: boolean
 }
 
 interface ChatClientProps {
@@ -39,10 +40,12 @@ export default function ChatClient({
   // Seed profile cache
   useEffect(() => {
     for (const m of initialMessages) {
-      profileCacheRef.current.set(m.user_id, {
-        display_name: m.display_name,
-        avatar_url: m.avatar_url,
-      })
+      if (m.user_id) {
+        profileCacheRef.current.set(m.user_id, {
+          display_name: m.display_name,
+          avatar_url: m.avatar_url,
+        })
+      }
     }
     profileCacheRef.current.set(currentUserId, currentUserProfile)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -61,7 +64,20 @@ export default function ChatClient({
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${tripId}` },
         async (payload) => {
-          const msg = payload.new as { id: string; user_id: string; content: string; created_at: string }
+          const msg = payload.new as { id: string; user_id: string | null; content: string; created_at: string; is_system?: boolean }
+
+          // System messages
+          if (msg.is_system || !msg.user_id) {
+            setMessages(prev => [...prev, {
+              ...msg,
+              user_id: null,
+              is_system: true,
+              display_name: 'ForeLive',
+              avatar_url: null,
+            }])
+            return
+          }
+
           if (msg.user_id === currentUserId) return // Already optimistically added
 
           let profile = profileCacheRef.current.get(msg.user_id)
@@ -128,7 +144,7 @@ export default function ChatClient({
 
     const { data } = await supabase
       .from('trip_messages')
-      .select('id, user_id, content, created_at')
+      .select('id, user_id, content, created_at, is_system')
       .eq('trip_id', tripId)
       .lt('created_at', oldest.created_at)
       .order('created_at', { ascending: false })
@@ -136,7 +152,7 @@ export default function ChatClient({
 
     if (data && data.length > 0) {
       // Fetch profiles for new authors
-      const newUserIds = [...new Set(data.map(m => m.user_id))].filter(
+      const newUserIds = [...new Set(data.filter(m => m.user_id).map(m => m.user_id!))].filter(
         id => !profileCacheRef.current.has(id)
       )
       if (newUserIds.length > 0) {
@@ -154,8 +170,13 @@ export default function ChatClient({
 
       const enriched = data.reverse().map(m => ({
         ...m,
-        display_name: profileCacheRef.current.get(m.user_id)?.display_name || 'Unknown',
-        avatar_url: profileCacheRef.current.get(m.user_id)?.avatar_url || null,
+        is_system: m.is_system ?? false,
+        display_name: m.is_system || !m.user_id
+          ? 'ForeLive'
+          : profileCacheRef.current.get(m.user_id!)?.display_name || 'Unknown',
+        avatar_url: m.is_system || !m.user_id
+          ? null
+          : profileCacheRef.current.get(m.user_id!)?.avatar_url || null,
       }))
 
       setMessages(prev => [...enriched, ...prev])
@@ -188,6 +209,18 @@ export default function ChatClient({
           )}
 
           {messages.map(msg => {
+            // System messages — centered, different style
+            if (msg.is_system || !msg.user_id) {
+              return (
+                <div key={msg.id} className="flex justify-center">
+                  <div className="max-w-[85%] rounded-lg bg-gray-100 px-3 py-1.5 text-center">
+                    <p className="text-xs text-gray-600">{msg.content}</p>
+                    <p className="text-[9px] text-gray-400 mt-0.5">{formatTime(msg.created_at)}</p>
+                  </div>
+                </div>
+              )
+            }
+
             const isOwn = msg.user_id === currentUserId
             return (
               <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>

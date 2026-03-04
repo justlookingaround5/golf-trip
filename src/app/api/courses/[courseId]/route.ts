@@ -48,6 +48,9 @@ export async function PUT(
       ...(body.par !== undefined && { par: body.par }),
       ...(body.round_number !== undefined && { round_number: body.round_number }),
       ...(body.round_date !== undefined && { round_date: body.round_date }),
+      ...(body.default_match_format !== undefined && { default_match_format: body.default_match_format }),
+      ...(body.default_point_value !== undefined && { default_point_value: body.default_point_value }),
+      ...(body.format_config !== undefined && { format_config: body.format_config }),
     })
     .eq('id', courseId)
     .select()

@@ -47,6 +47,7 @@ export async function PUT(
       ...(body.skins_buy_in !== undefined && { skins_buy_in: body.skins_buy_in }),
       ...(body.skins_mode !== undefined && { skins_mode: body.skins_mode }),
       ...(body.status !== undefined && { status: body.status }),
+      ...(body.handicap_mode !== undefined && { handicap_mode: body.handicap_mode }),
     })
     .eq('id', tripId)
     .select()

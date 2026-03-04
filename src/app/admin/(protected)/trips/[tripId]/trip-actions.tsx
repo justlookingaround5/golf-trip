@@ -28,6 +28,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
   const [matchBuyIn, setMatchBuyIn] = useState(trip.match_buy_in)
   const [skinsBuyIn, setSkinsBuyIn] = useState(trip.skins_buy_in)
   const [skinsMode, setSkinsMode] = useState(trip.skins_mode)
+  const [handicapMode, setHandicapMode] = useState(trip.handicap_mode || 'static')
 
   async function handleStatusChange() {
     const nextStatus = STATUS_FLOW[trip.status]
@@ -67,6 +68,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
           match_buy_in: matchBuyIn,
           skins_buy_in: skinsBuyIn,
           skins_mode: skinsMode,
+          handicap_mode: handicapMode,
         }),
       })
       if (!res.ok) {
@@ -150,6 +152,24 @@ export default function TripActions({ trip }: { trip: Trip }) {
             </div>
           </div>
 
+          <div>
+            <label htmlFor="edit-handicapMode" className="mb-1 block text-sm font-medium text-gray-700">
+              Handicap Mode
+            </label>
+            <select
+              id="edit-handicapMode"
+              value={handicapMode}
+              onChange={(e) => setHandicapMode(e.target.value as 'static' | 'dynamic')}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
+            >
+              <option value="static">Static (manual entry)</option>
+              <option value="dynamic">Dynamic (GHIN sync — coming soon)</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-400">
+              Static: players enter handicap manually. Dynamic: auto-syncs from GHIN (not yet available).
+            </p>
+          </div>
+
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label htmlFor="edit-matchBuyIn" className="mb-1 block text-sm font-medium text-gray-700">
@@ -211,6 +231,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
                 setMatchBuyIn(trip.match_buy_in)
                 setSkinsBuyIn(trip.skins_buy_in)
                 setSkinsMode(trip.skins_mode)
+                setHandicapMode(trip.handicap_mode || 'static')
               }}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >

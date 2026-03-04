@@ -13,6 +13,9 @@ function getServiceClient() {
 interface ScoreEntry {
   trip_player_id: string
   gross_score: number
+  fairway_hit?: boolean | null
+  gir?: boolean | null
+  putts?: number | null
 }
 
 export async function POST(
@@ -52,7 +55,7 @@ export async function POST(
 
   const db = getServiceClient()
 
-  // 1. Upsert into round_scores
+  // 1. Upsert into round_scores (including optional stats)
   const roundScoreData = scores.map((entry) => ({
     course_id: courseId,
     trip_player_id: entry.trip_player_id,
@@ -60,6 +63,9 @@ export async function POST(
     gross_score: entry.gross_score,
     entered_by: user.id,
     updated_at: new Date().toISOString(),
+    ...(entry.fairway_hit !== undefined && entry.fairway_hit !== null ? { fairway_hit: entry.fairway_hit } : {}),
+    ...(entry.gir !== undefined && entry.gir !== null ? { gir: entry.gir } : {}),
+    ...(entry.putts !== undefined && entry.putts !== null ? { putts: entry.putts } : {}),
   }))
 
   const { error: roundScoreError } = await db

@@ -34,6 +34,11 @@ interface HoleViewProps {
   onSubmit: () => void
   onNavigate: (holeNumber: number) => void
   onClose: () => void
+  // Hole stats props
+  fairwayHit?: boolean | null
+  girHit?: boolean | null
+  puttsCount?: number | null
+  onStatsChange?: (stats: { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }) => void
 }
 
 export default function HoleView({
@@ -52,6 +57,10 @@ export default function HoleView({
   onSubmit,
   onNavigate,
   onClose,
+  fairwayHit,
+  girHit,
+  puttsCount,
+  onStatsChange,
 }: HoleViewProps) {
   const swipeHandlers = useSwipe({
     onSwipeLeft: () => {
@@ -127,6 +136,10 @@ export default function HoleView({
             isOwn
             onAdjust={(d) => onAdjustScore(ownTripPlayerId, d)}
             onSet={(v) => onSetScore(ownTripPlayerId, v)}
+            fairwayHit={fairwayHit}
+            girHit={girHit}
+            puttsCount={puttsCount}
+            onStatsChange={onStatsChange}
           />
 
           {/* Partners - expandable */}

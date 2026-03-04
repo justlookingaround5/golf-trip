@@ -64,6 +64,10 @@ export default async function TripDetailPage({
             <dd className="mt-1 text-sm capitalize text-gray-900">{typedTrip.skins_mode}</dd>
           </div>
           <div>
+            <dt className="text-sm font-medium text-gray-500">Handicap Mode</dt>
+            <dd className="mt-1 text-sm capitalize text-gray-900">{typedTrip.handicap_mode || 'static'}</dd>
+          </div>
+          <div>
             <dt className="text-sm font-medium text-gray-500">Public Viewer Link</dt>
             <dd className="mt-1 text-sm text-golf-700">
               /trip/{typedTrip.id}
