@@ -346,6 +346,22 @@ export default function GroupDetailPage() {
         </div>
       </div>
 
+      {/* Create Trip for Group */}
+      {isOwner && (
+        <div className="mb-8 rounded-lg border border-dashed border-golf-300 bg-golf-50 p-5">
+          <h3 className="mb-2 font-semibold text-gray-900">Start a New Trip</h3>
+          <p className="mb-3 text-sm text-gray-600">
+            Create a trip for this group — all members will be pre-selected to invite.
+          </p>
+          <Link
+            href={`/admin/trips/new?group_id=${groupId}`}
+            className="inline-block rounded-md bg-golf-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-golf-800"
+          >
+            Create Trip for {group.name}
+          </Link>
+        </div>
+      )}
+
       {/* Linked Trips */}
       {trips.length > 0 && (
         <div>

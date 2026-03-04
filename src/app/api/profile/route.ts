@@ -56,6 +56,7 @@ export async function PUT(request: NextRequest) {
   if (body.home_club !== undefined) updates.home_club = body.home_club
   if (body.home_club_logo_url !== undefined) updates.home_club_logo_url = body.home_club_logo_url
   if (body.preferred_tee !== undefined) updates.preferred_tee = body.preferred_tee
+  if (body.bio !== undefined) updates.bio = body.bio
   if (body.venmo_username !== undefined) updates.venmo_username = body.venmo_username
   if (body.cashapp_cashtag !== undefined) updates.cashapp_cashtag = body.cashapp_cashtag
   if (body.zelle_email !== undefined) updates.zelle_email = body.zelle_email

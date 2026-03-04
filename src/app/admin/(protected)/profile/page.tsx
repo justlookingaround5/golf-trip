@@ -12,6 +12,7 @@ interface Profile {
   home_club: string | null
   home_club_logo_url: string | null
   preferred_tee: string | null
+  bio: string | null
   venmo_username: string | null
   cashapp_cashtag: string | null
   zelle_email: string | null
@@ -40,6 +41,7 @@ export default function ProfilePage() {
   const [homeClub, setHomeClub] = useState('')
   const [homeClubLogoUrl, setHomeClubLogoUrl] = useState('')
   const [preferredTee, setPreferredTee] = useState('')
+  const [bio, setBio] = useState('')
   const [venmoUsername, setVenmoUsername] = useState('')
   const [cashappCashtag, setCashappCashtag] = useState('')
   const [zelleEmail, setZelleEmail] = useState('')
@@ -67,6 +69,7 @@ export default function ProfilePage() {
         setHomeClub(data.home_club || '')
         setHomeClubLogoUrl(data.home_club_logo_url || '')
         setPreferredTee(data.preferred_tee || '')
+        setBio(data.bio || '')
         setVenmoUsername(data.venmo_username || '')
         setCashappCashtag(data.cashapp_cashtag || '')
         setZelleEmail(data.zelle_email || '')
@@ -158,6 +161,7 @@ export default function ProfilePage() {
           home_club: homeClub || null,
           home_club_logo_url: homeClubLogoUrl || null,
           preferred_tee: preferredTee || null,
+          bio: bio || null,
           venmo_username: venmoUsername || null,
           cashapp_cashtag: cashappCashtag || null,
           zelle_email: zelleEmail || null,
@@ -387,6 +391,23 @@ export default function ProfilePage() {
             placeholder="e.g. White, Blue, Gold"
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
           />
+        </div>
+
+        {/* Bio / Trash Talk */}
+        <div>
+          <label htmlFor="bio" className="mb-1 block text-sm font-medium text-gray-700">
+            Bio / Trash Talk
+          </label>
+          <textarea
+            id="bio"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder='e.g., "5-time champion, 0-time humble" or "I let my putter do the talking"'
+            rows={2}
+            maxLength={160}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
+          />
+          <p className="mt-1 text-xs text-gray-500">{bio.length}/160 — Visible to your group on the trip page</p>
         </div>
 
         {/* Payment Methods */}

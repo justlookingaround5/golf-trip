@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import type { Trip } from '@/lib/types'
 import TripActions from './trip-actions'
+import ShareTrip from './share-trip'
 
 export default async function TripDetailPage({
   params,
@@ -33,6 +34,9 @@ export default async function TripDetailPage({
   return (
     <div className="space-y-6">
       <TripActions trip={typedTrip} />
+
+      {/* Share Trip */}
+      <ShareTrip tripId={typedTrip.id} joinCode={typedTrip.join_code} />
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-lg font-semibold text-gray-900">Trip Details</h3>
