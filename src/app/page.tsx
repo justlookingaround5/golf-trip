@@ -26,6 +26,12 @@ export default async function Home() {
           <p className="text-golf-200 text-lg mt-3">
             Live scoring, games, and settlements for your golf trip
           </p>
+          <Link
+            href="/join"
+            className="mt-6 inline-block rounded-lg bg-gold px-6 py-2.5 text-sm font-semibold text-golf-950 hover:bg-gold-dark transition-colors"
+          >
+            Join a Trip
+          </Link>
         </div>
       </header>
 
