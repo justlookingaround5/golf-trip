@@ -78,36 +78,62 @@ function CreateGroupForm({ onCreated }: { onCreated: (group: GroupWithRole) => v
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit() {
     if (!name.trim()) return
 
     setSaving(true)
-    const supabase = createClient()
+    setError(null)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const supabase = createClient()
 
-    const { data: group, error } = await supabase
-      .from('groups')
-      .insert({ name: name.trim(), description: description.trim() || null, created_by: user.id })
-      .select('id, name, description')
-      .single()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setError('You must be logged in to create a group.')
+        setSaving(false)
+        return
+      }
 
-    if (!error && group) {
-      await supabase
+      const { data: group, error: insertError } = await supabase
+        .from('groups')
+        .insert({ name: name.trim(), description: description.trim() || null, created_by: user.id })
+        .select('id, name, description')
+        .single()
+
+      if (insertError || !group) {
+        setError(insertError?.message || 'Failed to create group. Please try again.')
+        setSaving(false)
+        return
+      }
+
+      const { error: memberError } = await supabase
         .from('group_members')
         .insert({ group_id: group.id, user_id: user.id, role: 'owner' })
 
-      onCreated({ ...group, role: 'owner' })
-    }
+      if (memberError) {
+        setError('Group created but failed to add you as owner. Please contact support.')
+        setSaving(false)
+        return
+      }
 
-    setSaving(false)
+      onCreated({ ...group, role: 'owner' })
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4">
       <h3 className="mb-3 font-semibold text-gray-900">Create a Group</h3>
+      {error && (
+        <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
       <div className="space-y-3">
         <input
           type="text"

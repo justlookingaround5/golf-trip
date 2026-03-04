@@ -45,6 +45,7 @@ export default function GroupDetailPage() {
   const [trips, setTrips] = useState<Trip[]>([])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isOwner, setIsOwner] = useState(false)
+  const [isGroupCreator, setIsGroupCreator] = useState(false)
   const [loading, setLoading] = useState(true)
 
   // Search state
@@ -104,6 +105,7 @@ export default function GroupDetailPage() {
 
       const myMembership = enrichedMembers.find(m => m.user_id === user.id)
       setIsOwner(myMembership?.role === 'owner' || myMembership?.role === 'admin')
+      setIsGroupCreator(groupData.created_by === user.id)
 
       // Get trips linked to this group
       const { data: tripData } = await supabase
@@ -200,6 +202,30 @@ export default function GroupDetailPage() {
     } else {
       setMembers(members.filter(m => m.user_id !== member.user_id))
       setMessage({ type: 'success', text: `${member.display_name || 'Member'} removed` })
+    }
+  }
+
+  async function handleToggleRole(member: Member) {
+    if (member.user_id === currentUserId) return
+    setMessage(null)
+
+    const newRole = member.role === 'admin' ? 'member' : 'admin'
+    const { error } = await supabase
+      .from('group_members')
+      .update({ role: newRole })
+      .eq('group_id', groupId)
+      .eq('user_id', member.user_id)
+
+    if (error) {
+      setMessage({ type: 'error', text: error.message })
+    } else {
+      setMembers(members.map(m =>
+        m.user_id === member.user_id ? { ...m, role: newRole } : m
+      ))
+      setMessage({
+        type: 'success',
+        text: `${member.display_name || 'Member'} is now ${newRole === 'admin' ? 'an admin' : 'a member'}`,
+      })
     }
   }
 
@@ -328,10 +354,20 @@ export default function GroupDetailPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                  member.role === 'owner' ? 'bg-golf-100 text-golf-800' : 'bg-gray-100 text-gray-600'
+                  member.role === 'owner' ? 'bg-golf-100 text-golf-800'
+                    : member.role === 'admin' ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100 text-gray-600'
                 }`}>
                   {member.role}
                 </span>
+                {isGroupCreator && member.user_id !== currentUserId && member.role !== 'owner' && (
+                  <button
+                    onClick={() => handleToggleRole(member)}
+                    className="text-xs text-golf-600 hover:text-golf-800"
+                  >
+                    {member.role === 'admin' ? 'Demote' : 'Make Admin'}
+                  </button>
+                )}
                 {isOwner && member.user_id !== currentUserId && (
                   <button
                     onClick={() => handleRemoveMember(member)}
