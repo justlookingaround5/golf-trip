@@ -33,6 +33,7 @@ interface SessionData {
 }
 
 interface CompetitionClientProps {
+  tripId: string
   tripName: string
   competitionName: string
   status: string
@@ -49,6 +50,7 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
 }
 
 export default function CompetitionClient({
+  tripId,
   tripName,
   competitionName,
   status,
@@ -64,8 +66,13 @@ export default function CompetitionClient({
       {/* Header */}
       <header className="bg-golf-800 px-4 py-6 text-white shadow-md">
         <div className="mx-auto max-w-2xl">
-          <h1 className="text-2xl font-bold">{tripName}</h1>
-          <p className="mt-1 text-golf-200">{competitionName}</p>
+          <a
+            href={`/trip/${tripId}`}
+            className="mb-1 inline-block text-sm text-golf-300 hover:text-white"
+          >
+            &larr; Back to {tripName}
+          </a>
+          <h1 className="text-2xl font-bold">{competitionName}</h1>
         </div>
       </header>
 

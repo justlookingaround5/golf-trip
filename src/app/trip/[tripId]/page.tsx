@@ -188,6 +188,19 @@ export default async function TripPublicPage({
     .order('created_at', { ascending: false })
     .limit(8)
 
+  // Check if current user is trip admin/owner
+  const { data: { user } } = await supabase.auth.getUser()
+  let isAdmin = false
+  if (user) {
+    const { data: membership } = await supabase
+      .from('trip_members')
+      .select('role')
+      .eq('trip_id', tripId)
+      .eq('user_id', user.id)
+      .single()
+    isAdmin = membership?.role === 'owner' || membership?.role === 'admin'
+  }
+
   // Compute countdown
   const firstRoundDate = (courses as Course[] ?? [])
     .filter(c => c.round_date)
@@ -343,8 +356,8 @@ export default async function TripPublicPage({
           </div>
         )}
 
-        {/* Collaborative Planning */}
-        {(trip as Trip).status === 'setup' && (
+        {/* Collaborative Planning (admin only) */}
+        {(trip as Trip).status === 'setup' && isAdmin && (
           <PlanningSection tripId={tripId} />
         )}
 

@@ -37,7 +37,12 @@ export default function SettlementClient({
     <div className="min-h-screen bg-gray-50">
       <header className="bg-golf-900 text-white">
         <div className="mx-auto max-w-lg px-4 py-6">
-          <p className="text-golf-200 text-sm">{tripName}</p>
+          <a
+            href={`/trip/${tripId}`}
+            className="mb-1 inline-block text-sm text-golf-300 hover:text-white"
+          >
+            &larr; Back to {tripName}
+          </a>
           <h1 className="text-2xl font-bold">The Bank</h1>
         </div>
       </header>

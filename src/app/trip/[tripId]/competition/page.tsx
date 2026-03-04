@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import CompetitionClient from './competition-client'
 
 export default async function CompetitionPage({
@@ -42,8 +43,13 @@ export default async function CompetitionPage({
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <header className="bg-golf-800 px-4 py-6 text-white shadow-md">
           <div className="mx-auto max-w-2xl">
-            <h1 className="text-2xl font-bold">{trip.name}</h1>
-            <p className="mt-1 text-golf-200">Team Competition</p>
+            <Link
+              href={`/trip/${tripId}`}
+              className="mb-1 inline-block text-sm text-golf-300 hover:text-white"
+            >
+              &larr; Back to {trip.name}
+            </Link>
+            <h1 className="text-2xl font-bold">Team Competition</h1>
           </div>
         </header>
         <div className="mx-auto max-w-2xl px-4 py-12 text-center text-gray-500">
@@ -171,6 +177,7 @@ export default async function CompetitionPage({
 
   return (
     <CompetitionClient
+      tripId={tripId}
       tripName={trip.name}
       competitionName={competition.name}
       status={competition.status}

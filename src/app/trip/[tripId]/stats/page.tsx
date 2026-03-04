@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 
 export default async function TripStatsPage({
   params,
@@ -44,7 +45,12 @@ export default async function TripStatsPage({
     <div className="min-h-screen bg-gray-50">
       <header className="bg-golf-900 text-white">
         <div className="mx-auto max-w-2xl px-4 py-6">
-          <p className="text-golf-200 text-sm">{trip.name}</p>
+          <Link
+            href={`/trip/${tripId}`}
+            className="mb-1 inline-block text-sm text-golf-300 hover:text-white"
+          >
+            &larr; Back to {trip.name}
+          </Link>
           <h1 className="text-2xl font-bold">Player Stats</h1>
         </div>
       </header>

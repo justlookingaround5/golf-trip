@@ -109,6 +109,12 @@ export default function DashboardClient({
       {/* Header */}
       <header className="bg-golf-900 text-white">
         <div className="mx-auto max-w-lg px-4 py-6">
+          <a
+            href={`/trip/${trip.id}`}
+            className="mb-1 inline-block text-sm text-golf-300 hover:text-white"
+          >
+            &larr; Back to {trip.name}
+          </a>
           <h1 className="text-2xl font-bold">{trip.name}</h1>
           <p className="text-golf-200 text-sm mt-1">
             {trip.location} &middot; {trip.year}
