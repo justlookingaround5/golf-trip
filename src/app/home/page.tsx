@@ -327,7 +327,7 @@ export default async function HomePage() {
                 <div>
                   <h3 className="font-bold text-gray-900">Live Scoring</h3>
                   <p className="text-sm text-gray-500">
-                    Score your round in real time on game day. A &ldquo;Go Live&rdquo; button will appear here when a round is scheduled for today.
+                    Score your round in real time on game day. A &ldquo;Live Scoring&rdquo; button will appear here when a round is scheduled for today.
                   </p>
                 </div>
               </div>

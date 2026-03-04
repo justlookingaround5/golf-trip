@@ -63,7 +63,7 @@ export default function UpcomingRounds({ rounds }: { rounds: UpcomingRound[] }) 
                   href={`/trip/${round.trip_id}/live/${round.course_id}`}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-bold text-white shadow-sm active:bg-green-700"
                 >
-                  <span>🏌️</span> Go Live
+                  <span>🏌️</span> Live Scoring
                 </Link>
               )}
             </div>

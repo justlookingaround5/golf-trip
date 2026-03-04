@@ -168,7 +168,7 @@ export default function DashboardClient({
                   href={`/trip/${trip.id}/live/${todaysRound.id}`}
                   className="flex-1 rounded-md bg-green-600 py-2 text-center text-sm font-bold text-white hover:bg-green-700"
                 >
-                  Go Live
+                  Live Scoring
                 </Link>
               )}
               <Link

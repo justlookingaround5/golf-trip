@@ -191,7 +191,7 @@ export default async function TripPublicPage({
                 href={`/trip/${tripId}/live/${todaysCourse.id}`}
                 className="flex items-center justify-center gap-2 rounded-xl bg-green-600 py-4 text-lg font-bold text-white shadow-lg active:bg-green-700"
               >
-                <span>🏌️</span> Go Live — {todaysCourse.name}
+                <span>🏌️</span> Live Scoring — {todaysCourse.name}
               </Link>
             )
           }
