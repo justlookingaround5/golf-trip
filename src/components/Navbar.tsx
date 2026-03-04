@@ -31,8 +31,10 @@ const NAV_LINKS = [
 
 export default function Navbar({
   profile,
+  activeRound,
 }: {
   profile: { display_name: string | null; avatar_url: string | null }
+  activeRound?: { tripId: string; courseId: string; courseName: string } | null
 }) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -67,6 +69,14 @@ export default function Navbar({
               {link.label}
             </Link>
           ))}
+          {activeRound && (
+            <Link
+              href={`/trip/${activeRound.tripId}/live/${activeRound.courseId}`}
+              className="hidden rounded-md bg-green-600 px-2.5 py-1 text-sm font-bold text-white hover:bg-green-700 sm:inline-block"
+            >
+              Live Play
+            </Link>
+          )}
         </div>
 
         {/* Right: Profile + sign out (desktop) + hamburger (mobile) */}
@@ -129,6 +139,15 @@ export default function Navbar({
               {link.label}
             </Link>
           ))}
+          {activeRound && (
+            <Link
+              href={`/trip/${activeRound.tripId}/live/${activeRound.courseId}`}
+              onClick={() => setMenuOpen(false)}
+              className="block rounded-md bg-green-600 px-3 py-2 text-sm font-bold text-white hover:bg-green-700"
+            >
+              Live Play — {activeRound.courseName}
+            </Link>
+          )}
           <div className="mt-2 border-t border-golf-700 pt-2">
             <SignOutButton />
           </div>
