@@ -207,6 +207,12 @@ export default async function TripPublicPage({
       {/* Header */}
       <header className="bg-golf-800 px-4 py-6 text-white shadow-md">
         <div className="mx-auto max-w-2xl">
+          <Link
+            href="/home"
+            className="mb-2 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition-colors"
+          >
+            &larr; Home
+          </Link>
           <h1 className="text-2xl font-bold">{(trip as Trip).name}</h1>
           <p className="mt-1 text-golf-200">
             {(trip as Trip).location ?? 'Location TBD'} &middot; {(trip as Trip).year}
