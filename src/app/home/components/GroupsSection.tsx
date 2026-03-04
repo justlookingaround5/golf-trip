@@ -41,11 +41,10 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function TripCard({ trip }: { trip: TripWithRole }) {
+  const isManager = trip.role === 'owner' || trip.role === 'admin'
+
   return (
-    <Link
-      href={`/trip/${trip.id}`}
-      className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md"
-    >
+    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
       <div className="flex items-start justify-between">
         <div>
           <h4 className="font-semibold text-gray-900">{trip.name}</h4>
@@ -54,7 +53,23 @@ function TripCard({ trip }: { trip: TripWithRole }) {
         </div>
         <StatusBadge status={trip.status} />
       </div>
-    </Link>
+      <div className="mt-3 flex gap-2">
+        <Link
+          href={`/trip/${trip.id}`}
+          className="rounded-md bg-golf-700 px-3 py-1 text-xs font-medium text-white hover:bg-golf-800"
+        >
+          View Trip
+        </Link>
+        {isManager && (
+          <Link
+            href={`/admin/trips/${trip.id}`}
+            className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Manage
+          </Link>
+        )}
+      </div>
+    </div>
   )
 }
 
