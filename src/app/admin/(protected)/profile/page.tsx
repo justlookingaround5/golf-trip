@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import InstallPrompt from '@/components/InstallPrompt'
 
 interface Profile {
   display_name: string | null
@@ -450,6 +451,10 @@ export default function ProfilePage() {
           {saving ? 'Saving...' : 'Save Profile'}
         </button>
       </form>
+
+      <div className="mt-6">
+        <InstallPrompt />
+      </div>
     </div>
   )
 }

@@ -4,7 +4,7 @@ import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import ConnectionStatus from "@/components/ConnectionStatus";
-import InstallPrompt from "@/components/InstallPrompt";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,7 +61,6 @@ export default function RootLayout({
         <ConnectionStatus />
         <ThemeToggle />
         {children}
-        <InstallPrompt />
       </body>
     </html>
   );
