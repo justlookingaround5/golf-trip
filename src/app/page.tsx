@@ -109,13 +109,13 @@ export default async function Home() {
               No trips yet
             </h2>
             <p className="text-gray-500 mb-6">
-              Get started by creating a trip in the admin area.
+              Set up your courses, players, and games.
             </p>
             <Link
               href="/admin/login"
               className="inline-block bg-golf-700 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-golf-800 transition-colors"
             >
-              Go to Admin
+              Plan Your Round
             </Link>
           </section>
         )}
