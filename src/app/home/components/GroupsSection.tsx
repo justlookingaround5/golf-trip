@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type TripWithRole = {
@@ -100,8 +101,6 @@ function CreateGroupForm({ onCreated }: { onCreated: (group: GroupWithRole) => v
         .insert({ group_id: group.id, user_id: user.id, role: 'owner' })
 
       onCreated({ ...group, role: 'owner' })
-      setName('')
-      setDescription('')
     }
 
     setSaving(false)
@@ -149,6 +148,7 @@ export default function GroupsSection({
   groupMembersMap: Record<string, GroupMemberInfo[]>
   userId: string
 }) {
+  const router = useRouter()
   const [groups, setGroups] = useState(initialGroups)
   const [showCreateForm, setShowCreateForm] = useState(false)
 
@@ -171,8 +171,7 @@ export default function GroupsSection({
         <div className="mb-6">
           <CreateGroupForm
             onCreated={(group) => {
-              setGroups([...groups, group])
-              setShowCreateForm(false)
+              router.push(`/admin/groups/${group.id}`)
             }}
           />
         </div>
@@ -188,14 +187,19 @@ export default function GroupsSection({
               <div key={group.id} className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                 <div className="mb-3 flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{group.name}</h3>
+                    <Link href={`/admin/groups/${group.id}`} className="text-lg font-semibold text-gray-900 hover:text-golf-700">
+                      {group.name}
+                    </Link>
                     {group.description && (
                       <p className="text-sm text-gray-500">{group.description}</p>
                     )}
                   </div>
-                  <span className="inline-block rounded-full bg-golf-100 px-2.5 py-0.5 text-xs font-medium capitalize text-golf-800">
-                    {group.role}
-                  </span>
+                  <Link
+                    href={`/admin/groups/${group.id}`}
+                    className="inline-block rounded-full bg-golf-100 px-2.5 py-0.5 text-xs font-medium text-golf-800 hover:bg-golf-200"
+                  >
+                    Manage
+                  </Link>
                 </div>
 
                 <div className="mb-4 flex flex-wrap gap-1.5">
