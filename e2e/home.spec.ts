@@ -1,31 +1,24 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Home Page (authenticated)', () => {
-  test.skip(() => !process.env.TEST_USER_EMAIL, 'Skipped: no test credentials')
-
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/admin/login')
-    await page.fill('input[type="email"]', process.env.TEST_USER_EMAIL!)
-    await page.fill('input[type="password"]', process.env.TEST_USER_PASSWORD!)
-    await page.click('button[type="submit"]')
-    await page.waitForURL(/home/, { timeout: 10000 })
-  })
-
   test('shows welcome header and action buttons', async ({ page }) => {
-    await expect(page.locator('text=Welcome back')).toBeVisible()
-    await expect(page.locator('a:has-text("Quick Round")')).toBeVisible()
-    await expect(page.locator('a:has-text("New Trip")')).toBeVisible()
+    await page.goto('/home')
+    await expect(page.locator('text=Welcome back')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('a[href="/quick-round"]')).toBeVisible()
+    await expect(page.locator('a[href="/admin/trips/new"]')).toBeVisible()
   })
 
   test('Quick Round button links to /quick-round', async ({ page }) => {
-    const quickRoundLink = page.locator('a:has-text("Quick Round")')
-    await expect(quickRoundLink).toHaveAttribute('href', '/quick-round')
+    await page.goto('/home')
+    await expect(page.locator('text=Welcome back')).toBeVisible({ timeout: 10000 })
+    const quickRoundLink = page.locator('a[href="/quick-round"]')
+    await expect(quickRoundLink).toBeVisible()
+    await expect(quickRoundLink).toContainText('Quick Round')
   })
 
-  test('displays leaderboard or stats section', async ({ page }) => {
-    // Page should load without errors and show some content
-    await expect(page.locator('body')).toBeVisible()
-    // At minimum the page should have rendered fully (no loading spinners stuck)
+  test('displays page content without errors', async ({ page }) => {
+    await page.goto('/home')
     await page.waitForLoadState('networkidle')
+    await expect(page.locator('body')).toBeVisible()
   })
 })

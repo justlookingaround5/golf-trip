@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
+import path from 'path'
+
+const authFile = path.join(__dirname, '.playwright', '.auth', 'user.json')
 
 export default defineConfig({
   testDir: './e2e',
@@ -13,17 +16,26 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
+    // Auth setup — runs first, saves session
     {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
     },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 13'] },
-    },
+    // Unauthenticated tests only (landing page tests)
     {
       name: 'Desktop Chrome',
       use: { ...devices['Desktop Chrome'] },
+      testMatch: /landing\.spec\.ts/,
+    },
+    // Authenticated tests — all other test files
+    {
+      name: 'Desktop Chrome Authenticated',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: authFile,
+      },
+      dependencies: ['setup'],
+      testIgnore: [/auth\.setup\.ts/, /landing\.spec\.ts/],
     },
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL

@@ -23,7 +23,18 @@ test.describe('Landing Page', () => {
 
   test('redirects /home to login when not authenticated', async ({ page }) => {
     await page.goto('/home')
-    // Should redirect to login page
+    await page.waitForURL(/login/, { timeout: 5000 })
+    await expect(page.url()).toContain('login')
+  })
+
+  test('redirects /quick-round to login when not authenticated', async ({ page }) => {
+    await page.goto('/quick-round')
+    await page.waitForURL(/login/, { timeout: 5000 })
+    await expect(page.url()).toContain('login')
+  })
+
+  test('redirects live scoring to login when not authenticated', async ({ page }) => {
+    await page.goto('/trip/00000000-0000-0000-0000-000000000000/live/00000000-0000-0000-0000-000000000000')
     await page.waitForURL(/login/, { timeout: 5000 })
     await expect(page.url()).toContain('login')
   })
