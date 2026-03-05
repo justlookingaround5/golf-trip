@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import ThemeToggle from "@/components/ThemeToggle";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import ConnectionStatus from "@/components/ConnectionStatus";
+import PostHogProvider from "@/components/PostHogProvider";
 
 
 const geistSans = Geist({
@@ -57,10 +59,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ServiceWorkerRegistrar />
-        <ConnectionStatus />
-        <ThemeToggle />
-        {children}
+        <PostHogProvider>
+          <ServiceWorkerRegistrar />
+          <ConnectionStatus />
+          <ThemeToggle />
+          {children}
+          <Analytics />
+        </PostHogProvider>
       </body>
     </html>
   );

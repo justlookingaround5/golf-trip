@@ -9,7 +9,7 @@ export default async function QuickRoundPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/auth/login')
+    redirect('/admin/login')
   }
 
   // Get user's display name to pre-fill the first player slot

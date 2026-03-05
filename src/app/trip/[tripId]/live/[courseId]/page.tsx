@@ -13,7 +13,7 @@ export default async function LiveGamePage({
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect('/auth/login')
+    redirect('/admin/login')
   }
 
   // Verify course belongs to trip
