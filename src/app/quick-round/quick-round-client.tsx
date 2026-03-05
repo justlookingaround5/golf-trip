@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import posthog from 'posthog-js'
 
 interface CourseResult {
   id: number
@@ -81,6 +82,7 @@ export default function QuickRoundClient({ userName }: { userName: string }) {
     setCourseQuery(course.course_name || course.club_name)
     setCourseResults([])
     setUseManual(false)
+    posthog.capture('course_selected', { course_name: course.course_name || course.club_name, source: 'search' })
   }
 
   function useManualCourse() {
@@ -88,11 +90,13 @@ export default function QuickRoundClient({ userName }: { userName: string }) {
     setManualCourse(courseQuery)
     setCourseResults([])
     setSelectedCourse(null)
+    posthog.capture('course_selected', { course_name: courseQuery, source: 'manual' })
   }
 
   function addPlayer() {
     if (players.length >= 4) return
     setPlayers([...players, { name: '', handicap: '' }])
+    posthog.capture('player_added', { player_count: players.length + 1 })
   }
 
   function removePlayer(index: number) {
@@ -142,9 +146,16 @@ export default function QuickRoundClient({ userName }: { userName: string }) {
       }
 
       const { tripId, courseId } = await res.json()
+      posthog.capture('quick_round_started', {
+        course_name: courseName.trim(),
+        player_count: players.length,
+        used_api_course: !!selectedCourse,
+      })
       router.push(`/trip/${tripId}/live/${courseId}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      const msg = err instanceof Error ? err.message : 'Something went wrong'
+      posthog.capture('quick_round_error', { error: msg })
+      setError(msg)
       setSubmitting(false)
     }
   }

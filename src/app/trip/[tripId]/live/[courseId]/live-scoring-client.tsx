@@ -7,6 +7,7 @@ import type { ActivityFeedItem, RoundScore, SideBet, SideBetHit } from '@/lib/ty
 import HoleView from './components/HoleView'
 import LiveDashboard from './components/LiveDashboard'
 import ScoreIndicator from '@/components/ScoreIndicator'
+import posthog from 'posthog-js'
 
 interface HoleData {
   id: string
@@ -375,6 +376,14 @@ export default function LiveScoringClient({
           if (!prev) return prev
           return { ...prev, roundScores: result.roundScores }
         })
+        posthog.capture('score_saved', { hole_number: currentHole, course_id: courseId })
+
+        // Check if all holes are now scored
+        const updatedCompleted = new Set(completedHoles)
+        updatedCompleted.add(currentHole)
+        if (updatedCompleted.size === holes.length && holes.length > 0) {
+          posthog.capture('round_completed', { course_id: courseId, total_holes: holes.length })
+        }
       } else {
         // Revert optimistic
         setData(prev => {
@@ -382,9 +391,11 @@ export default function LiveScoringClient({
           const reverted = prev.roundScores.filter(s => !s.id.startsWith('optimistic-'))
           return { ...prev, roundScores: reverted }
         })
+        posthog.capture('score_save_failed', { hole_number: currentHole, type: 'api_error' })
         setError('Failed to save. Tap the hole to retry.')
       }
     } catch {
+      posthog.capture('score_save_failed', { hole_number: currentHole, type: 'network_error' })
       setError('Connection lost. Score saved locally.')
     } finally {
       setSaving(false)
