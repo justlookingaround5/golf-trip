@@ -1,0 +1,435 @@
+=== OSM Golf Course Scraper ===
+Target: up to 2500 courses
+Delay between OSM requests: 1500ms
+
+Phase 1: Discovering courses...
+  Searched "Country Club" — 17 unique courses found  Searched "Golf Club" — 34 unique courses found  Searched "Golf Course" — 56 unique courses found  Searched "Golf Links" — 72 unique courses found  Searched "Golf Resort" — 85 unique courses found  Searched "National Golf" — 108 unique courses found  Searched "Golf & Country" — 114 unique courses found  Searched "Pebble Beach" — 115 unique courses found  Searched "TPC" — 137 unique courses found  Searched "Pinehurst" — 149 unique courses found  Searched "Torrey Pines" — 151 unique courses found  Searched "Bethpage" — 157 unique courses found  Searched "Whistling Straits" — 159 unique courses found  Searched "Kiawah" — 176 unique courses found  Searched "Bandon" — 182 unique courses found  Searched "Sawgrass" — 190 unique courses found  Searched "Harbour Town" — 192 unique courses found  Searched "Valhalla" — 192 unique courses found  Searched "Merion" — 194 unique courses found  Searched "Winged Foot" — 196 unique courses found  Searched "Oakmont" — 204 unique courses found  Searched "Shinnecock" — 205 unique courses found  Searched "Congressional" — 207 unique courses found  Searched "Baltusrol" — 210 unique courses found  Searched "Muirfield" — 212 unique courses found  Searched "Medinah" — 215 unique courses found  Searched "Hazeltine" — 215 unique courses found  Searched "Chambers Bay" — 216 unique courses found  Searched "Erin Hills" — 217 unique courses found  Searched "Quail Hollow" — 223 unique courses found  Searched "Bay Hill" — 227 unique courses found  Searched "Scottsdale" — 230 unique courses found  Searched "Myrtle Beach" — 236 unique courses found  Searched "Palm Springs" — 237 unique courses found  Searched "Hilton Head" — 244 unique courses found  Searched "Orlando golf" — 246 unique courses found  Searched "San Diego golf" — 246 unique courses found  Searched "Phoenix golf" — 247 unique courses found  Searched "Las Vegas golf" — 249 unique courses found  Searched "Charleston golf" — 254 unique courses found  Searched "Savannah golf" — 260 unique courses found  Searched "Austin golf" — 266 unique courses found  Searched "Denver golf" — 267 unique courses found  Searched "Portland golf" — 272 unique courses found  Searched "Seattle golf" — 274 unique courses found  Searched "Atlanta golf" — 277 unique courses found  Searched "Nashville golf" — 279 unique courses found  Searched "Chicago golf" — 280 unique courses found  Searched "Detroit golf" — 280 unique courses found  Searched "Minneapolis golf" — 282 unique courses found  Searched "St Louis golf" — 282 unique courses found  Searched "Dallas golf" — 285 unique courses found  Searched "Houston golf" — 294 unique courses found  Searched "Miami golf" — 303 unique courses found  Searched "Tampa golf" — 305 unique courses found  Searched "Raleigh golf" — 306 unique courses found  Searched "Charlotte golf" — 308 unique courses found  Searched "Boston golf" — 309 unique courses found  Searched "New York golf" — 309 unique courses found  Searched "Philadelphia golf" — 310 unique courses found  Searched "Pittsburgh golf" — 313 unique courses found  Searched "Cleveland golf" — 318 unique courses found  Searched "Cincinnati golf" — 318 unique courses found  Searched "Indianapolis golf" — 319 unique courses found  Searched "Milwaukee golf" — 319 unique courses found  Searched "Kansas City golf" — 320 unique courses found  Searched "Salt Lake golf" — 320 unique courses found  Searched "Alabama golf" — 320 unique courses found  Searched "Arizona golf" — 322 unique courses found  Searched "California CC" — 322 unique courses found  Searched "Colorado golf" — 324 unique courses found  Searched "Connecticut CC" — 324 unique courses found  Searched "Florida CC" — 324 unique courses found  Searched "Georgia golf" — 330 unique courses found  Searched "Hawaii golf" — 335 unique courses found  Searched "Idaho golf" — 336 unique courses found  Searched "Illinois CC" — 336 unique courses found  Searched "Iowa golf" — 337 unique courses found  Searched "Kentucky golf" — 338 unique courses found  Searched "Louisiana golf" — 339 unique courses found  Searched "Maine golf" — 341 unique courses found  Searched "Maryland golf" — 344 unique courses found  Searched "Massachusetts CC" — 344 unique courses found  Searched "Michigan CC" — 344 unique courses found  Searched "Minnesota golf" — 346 unique courses found  Searched "Mississippi golf" — 349 unique courses found  Searched "Missouri golf" — 352 unique courses found  Searched "Montana golf" — 353 unique courses found  Searched "Nebraska golf" — 353 unique courses found  Searched "Nevada golf" — 353 unique courses found  Searched "New Hampshire golf" — 353 unique courses found  Searched "New Jersey CC" — 353 unique courses found  Searched "New Mexico golf" — 354 unique courses found  Searched "North Carolina CC" — 357 unique courses found  Searched "Ohio CC" — 358 unique courses found  Searched "Oklahoma golf" — 359 unique courses found  Searched "Oregon golf" — 363 unique courses found  Searched "Pennsylvania CC" — 363 unique courses found  Searched "South Carolina golf" — 363 unique courses found  Searched "Tennessee golf" — 369 unique courses found  Searched "Texas CC" — 369 unique courses found  Searched "Utah golf" — 369 unique courses found  Searched "Vermont golf" — 369 unique courses found  Searched "Virginia CC" — 369 unique courses found  Searched "Washington golf" — 381 unique courses found  Searched "Wisconsin golf" — 381 unique courses found  Searched "Wyoming golf" — 381 unique courses found  Searched "Municipal Golf" — 401 unique courses found  Searched "Public Golf" — 410 unique courses found  Searched "City Golf" — 423 unique courses found  Searched "Parks Golf" — 424 unique courses found
+  Total unique courses discovered: 424
+
+Phase 2: Checking existing cache...
+  Already cached: 10
+  To process: 414
+
+Phase 3: Fetching OSM data...
+  [0.2%] ⬜ Dearborn Country Club (IN) — no OSM data
+  [0.5%] ⬜ Inverness Country Club (AL) — no OSM data
+  [0.7%] ⬜ Stillmeadow Country Club (OH) — no OSM data
+  [1.0%] ⬜ Enterprise Country Club (AL) — no OSM data
+  [1.2%] ⬜ Prattville Country Club (AL) — no OSM data
+  [1.4%] ⬜ Pikeville Country Club (AL) — no OSM data
+  [1.7%] ✅ Losantiville Country Club (OH) — 18 holes
+  [1.9%] ✅ Club West Golf Club (AZ) — 18 holes
+  [2.2%] ⬜ Legacy Golf Club (KY) — no OSM data
+  [2.4%] ⬜ Battlefield Golf Club (KY) — no OSM data
+  [2.7%] ⬜ Wyoming Golf Club (OH) — no OSM data
+  [2.9%] ⬜ Cottonwood Golf Club (AL) — no OSM data
+  [3.1%] ⬜ Traditions Golf Club (KY) — no OSM data
+  [3.4%] ✅ Colonial Golf Club (AL) — 18 holes
+  [3.6%] ✅ Rosewood Golf Club (KY) — 18 holes
+  [3.9%] ✅ Valhalla Golf Club (KY) — 29 holes
+  [4.1%] ⬜ Hartwell Golf Club (OH) — no OSM data
+  [4.3%] ✅ Oasis Golf Club (OH) — 18 holes
+  [4.6%] ✅ Farmlinks Golf Club (AL) — 18 holes
+  [4.8%] ✅ Canebrake Golf Club (AL) — 18 holes
+  [5.1%] ⬜ Montevallo Golf Club (AL) — no OSM data
+  [5.3%] ⬜ Thoroughbred Golf Club (KY) — no OSM data
+  [5.6%] ⬜ Northstar Golf Club (OH) — no OSM data
+  [5.8%] ✅ Lakeside Golf Club (KY) — 18 holes
+  [6.0%] ✅ Mill Creek Golf Course (South Course) (OH) — 36 holes
+  [6.3%] ⬜ Mill Creek Golf Course (North Course) (OH) — no OSM data
+  [6.5%] ⬜ Bryden Canyon Golf Course - Green Course (ID) — no OSM data
+  [6.8%] ✅ Timberline Golf Course (AL) — 18 holes
+  [7.0%] ✅ Roebuck Golf Course (AL) — 18 holes
+  [7.2%] ✅ Hilltop Golf Course (OH) — 18 holes
+  [7.5%] ✅ Berksdale Golf Course (AR) — 20 holes
+  [7.7%] ✅ Highlands Golf Course (AR) — 19 holes
+  [8.0%] ✅ Vineyard Golf Course (OH) — 18 holes
+  [8.2%] ⬜ Woodland Golf Course (OH) — no OSM data
+  [8.5%] ✅ Ballantrae Golf Course (AL) — 18 holes
+  [8.7%] ⬜ Lakewinds Golf Course (AL) — no OSM data
+  [8.9%] ⬜ Seneca Golf Course (KY) — no OSM data
+  [9.2%] ⬜ Lakewood Golf Course (AL) — no OSM data
+  [9.4%] ⬜ Heritage Golf Course (AL) — no OSM data
+  [9.7%] ⬜ Lindsey Golf Course (KY) — no OSM data
+  [9.9%] ✅ Rebsamen Golf Course (AR) — 39 holes
+  [10.1%] ⬜ California Golf Course (OH) — no OSM data
+  [10.4%] ⬜ Reeves Golf Course (OH) — no OSM data
+  [10.6%] ✅ Fairway Golf Course (KY) — 18 holes
+  [10.9%] ⬜ Hillcrest Golf Course (KY) — no OSM data
+  [11.1%] ⬜ Crosswinds Golf Course (KY) — no OSM data
+  [11.4%] ✅ Alburg Golf Links (VT) — 19 holes
+  [11.6%] ✅ National Golf Links (OH) — 18 holes
+  [11.8%] ⬜ Boomerang Golf Links (CO) — no OSM data
+  [12.1%] ⬜ Sound Golf Links (NC) — no OSM data
+  [12.3%] ⬜ Swinomish Golf Links (WA) — no OSM data
+  [12.6%] ⬜ Foster Golf Links (WA) — no OSM data
+  [12.8%] ⬜ Links Golf Club (NJ) — no OSM data
+  [13.0%] ⬜ Cleburne Golf Links (TX) — no OSM data
+  [13.3%] ⬜ Mcnarosa Golf Links (TX) — no OSM data
+  [13.5%] ⬜ Glengarry Golf Links (PA) — no OSM data
+  [13.8%] ✅ Coldwater Golf Links (IA) — 18 holes
+  [14.0%] ✅ Salishan Golf Links (OR) — 18 holes
+  [14.3%] ⬜ Florence Golf Links (OR) — no OSM data
+  [14.5%] ⬜ Gearhart Golf Links (OR) — no OSM data
+  [14.7%] ✅ Highland Golf Links (MA) — 9 holes
+  [15.0%] ⬜ Acorns Golf Links (IL) — no OSM data
+  [15.2%] ✅ Sunbird Golf Resort (AZ) — 18 holes
+  [15.5%] ⬜ Sedona Golf Resort (AZ) — no OSM data
+  [15.7%] ⬜ Cocopah Golf Resort (AZ) — no OSM data
+  [15.9%] ✅ Legacy Golf Resort (AZ) — 33 holes
+  [16.2%] ✅ Arizona Golf Resort (AZ) — 29 holes
+  [16.4%] ✅ Viewpoint Golf Resort (AZ) — 27 holes
+  [16.7%] ⬜ Paradise Golf Resort (UT) — no OSM data
+  [16.9%] ⬜ Toftrees Golf Resort (PA) — no OSM data
+  [17.1%] ⬜ Peninsula Golf Resort (KY) — no OSM data
+  [17.4%] ⬜ Tagalong Golf & Resort (WI) — no OSM data
+  [17.6%] ⬜ Ingleside Golf Resort (VA) — no OSM data
+  [17.9%] ⬜ Belvedere Golf Resort (AR) — no OSM data
+  [18.1%] ✅ Cronins Golf Resort (NY) — 18 holes
+  [18.4%] ⬜ Lbi National Golf & Resort (NJ) — no OSM data
+  [18.6%] ⬜ Gettysburg National Golf Club (PA) — no OSM data
+  [18.8%] ⬜ Amelia National Golf Club (FL) — no OSM data
+  [19.1%] ✅ Blackstone National Golf Club (MA) — 18 holes
+  [19.3%] ⬜ Nashville National Golf Links (TN) — no OSM data
+  [19.6%] ⬜ Atlantic National Golf Club (FL) — no OSM data
+  [19.8%] ⬜ Linfield National Golf Club (PA) — no OSM data
+  [20.0%] ⬜ Somers National Golf Club (NY) — no OSM data
+  [20.3%] ⬜ Bonita National Golf Club 2015 (FL) — no OSM data
+  [20.5%] ✅ Reston National Golf Course (VA) — 31 holes
+  [20.8%] ✅ Baker National Golf Course (MN) — 27 holes
+  [21.0%] ⬜ Highland National Golf Course (MN) — no OSM data
+  [21.3%] ✅ Hazeltine National Golf Club (MN) — 28 holes
+  [21.5%] ⬜ Grand National Golf Club (MN) — no OSM data
+  [21.7%] ⬜ Riverwood National Golf Course (MN) — no OSM data
+  [22.0%] ✅ Pezhekee National Golf Course (MN) — 18 holes
+  [22.2%] ⬜ Lynx National Golf Course (MN) — no OSM data
+  [22.5%] ⬜ Montgomery National Golf Club (MN) — no OSM data
+  [22.7%] ⬜ Minnesota National Golf Course (MN) — no OSM data
+  [22.9%] ⬜ Galloway National Golf Club (NJ) — no OSM data
+  [23.2%] ✅ Washington National Golf Club (WA) — 18 holes
+  [23.4%] ✅ Colorado National Golf Club (CO) — 18 holes
+  [23.7%] ✅ Angeles National Golf Club (CA) — 18 holes
+  [23.9%] ⬜ Woodward Golf & Country Club (AL) — no OSM data
+  [24.2%] ⬜ Wynlakes Golf & Country Club (AL) — no OSM data
+  [24.4%] ✅ Hopkinsville Golf & Country Club (KY) — 18 holes
+  [24.6%] ⬜ Providence Golf & Country Club (KY) — no OSM data
+  [24.9%] ⬜ Breckinridge Golf & Country Club (KY) — no OSM data
+  [25.1%] ✅ Glenoaks Golf & Country Club (KY) — 18 holes
+  [25.4%] ✅ Pebble Beach Gl (CA) — 33 holes
+  [25.6%] ⬜ Tpc Rivers Bend (OH) — no OSM data
+  [25.8%] ⬜ Tpc Louisiana (LA) — no OSM data
+  [26.1%] ⬜ Tpc Boston (MA) — no OSM data
+  [26.3%] ⬜ Stonebrae (Tpc) (CA) — no OSM data
+  [26.6%] ⬜ Tpc At Piper Glen (NC) — no OSM data
+  [26.8%] ⬜ Tpc Twin Cities (MN) — no OSM data
+  [27.1%] ⬜ Tpc Las Vegas (NV) — no OSM data
+  [27.3%] ✅ Tpc Summerlin (NV) — 30 holes
+  [27.5%] ✅ Harding Park (Tpc) Gc (CA) — 38 holes
+  [27.8%] ⬜ Tpc At Southwind (TN) — no OSM data
+  [28.0%] ⬜ Tpc At Craig Ranch (TX) — no OSM data
+  [28.3%] ⬜ Tpc Jasna Polana (NJ) — no OSM data
+  [28.5%] ✅ Tpc At Deere Run (IL) — 18 holes
+  [28.7%] ⬜ Tpc Potomac At Avenel Farm (MD) — no OSM data
+  [29.0%] ⬜ Tpc Colorado (CO) — no OSM data
+  [29.2%] ⬜ Tpc Of Myrtle Beach (SC) — no OSM data
+  [29.5%] ✅ Tpc Michigan (MI) — 1 holes
+  [29.7%] ✅ Tpc River Highlands (CT) — 18 holes
+  [30.0%] ⬜ Tpc Treviso Bay (FL) — no OSM data
+  [30.2%] ⬜ Tpc Tampa Bay (FL) — no OSM data
+  [30.4%] ✅ Stadium (AZ) — 33 holes
+  [30.7%] ⬜ Champions (AZ) — no OSM data
+  [30.9%] ✅ Pinehurst Golf Course (ID) — 9 holes
+  [31.2%] ✅ No. 8 (NC) — 51 holes
+  [31.4%] ⬜ No. 6 (NC) — no OSM data
+  [31.6%] ⬜ No. 1 (NC) — no OSM data
+  [31.9%] ✅ No. 5 (NC) — 51 holes
+  [32.1%] ⬜ No. 9 (NC) — no OSM data
+  [32.4%] ⬜ No. 3 (NC) — no OSM data
+  [32.6%] ✅ No. 2 (NC) — 51 holes
+  [32.9%] ⬜ No. 7 (NC) — no OSM data
+  [33.1%] ✅ No. 4 (NC) — 51 holes
+  [33.3%] ✅ Pfluger 9 (CO) — 2 holes
+  [33.6%] ⬜ Maxwell Course (CO) — no OSM data
+  [33.8%] ✅ South (CA) — 36 holes
+  [34.1%] ⬜ North (CA) — no OSM data
+  [34.3%] ✅ Bethpage State Park (NY) — 84 holes
+  [34.5%] ✅ Yellow (NY) — 84 holes
+  [34.8%] ⬜ Blue (NY) — no OSM data
+  [35.0%] ⬜ Black (NY) — no OSM data
+  [35.3%] ⬜ Green (NY) — no OSM data
+  [35.5%] ⬜ Red (NY) — no OSM data
+  [35.7%] ⬜ Straits (WI) — no OSM data
+  [36.0%] ✅ Irish (WI) — 18 holes
+  [36.2%] ⬜ Cassique Family (SC) — no OSM data
+  [36.5%] ⬜ Cassique Nip-N-Tuck (SC) — no OSM data
+  [36.7%] ⬜ Oak Point (SC) — no OSM data
+  [37.0%] ⬜ Cougar Point (SC) — no OSM data
+  [37.2%] ✅ Turtle Point (SC) — 20 holes
+  [37.4%] ⬜ Cassique Pulpit (SC) — no OSM data
+  [37.7%] ⬜ Ocean Course (SC) — no OSM data
+  [37.9%] ✅ Osprey Point (SC) — 20 holes
+  [38.2%] ⬜ River Course (SC) — no OSM data
+  [38.4%] ⬜ Turtle Point (SC) — no OSM data
+  [38.6%] ⬜ Ocean Course (SC) — no OSM data
+  [38.9%] ✅ Oak Point (SC) — 20 holes
+  [39.1%] ✅ Osprey Point (SC) — 20 holes
+  [39.4%] ⬜ Cassique Pulpit (SC) — no OSM data
+  [39.6%] ⬜ River Course (SC) — no OSM data
+  [39.9%] ⬜ Cassique Nip-N-Tuck (SC) — no OSM data
+  [40.1%] ✅ Cougar Point (SC) — 20 holes
+  [40.3%] ✅ Bandon Golf Club (CO) — 17 holes
+  [40.6%] ⬜ Bandon Trails (OR) — no OSM data
+  [40.8%] ✅ Bandon Dunes (OR) — 68 holes
+  [41.1%] ✅ Bandon Crossings (OR) — 18 holes
+  [41.3%] ⬜ Pacific Dunes (OR) — no OSM data
+  [41.5%] ✅ Old Macdonald (OR) — 68 holes
+  [41.8%] ⬜ South/East Course (FL) — no OSM data
+  [42.0%] ✅ Stadium Course (FL) — 36 holes
+  [42.3%] ⬜ South/South Course (FL) — no OSM data
+  [42.5%] ✅ East/West Course (FL) — 22 holes
+  [42.8%] ⬜ West/South Course (FL) — no OSM data
+  [43.0%] ⬜ Dye'S Valley Course (FL) — no OSM data
+  [43.2%] ⬜ Turnberry - Sawgrass (FL) — no OSM data
+  [43.5%] ⬜ Sawgrass - Gleneagles (FL) — no OSM data
+  [43.7%] ✅ Harbour Town Golf Links (SC) — 28 holes
+  [44.0%] ⬜ Harbour Town Golf Links (SC) — no OSM data
+  [44.2%] ⬜ East (PA) — no OSM data
+  [44.4%] ⬜ West (PA) — no OSM data
+  [44.7%] ✅ West (NY) — 31 holes
+  [44.9%] ⬜ East (NY) — no OSM data
+  [45.2%] ⬜ Oakmont Country Club (CA) — no OSM data
+  [45.4%] ✅ Oakmont Green Golf Club (MD) — 18 holes
+  [45.7%] ✅ Oakmont Country Club (TX) — 18 holes
+  [45.9%] ⬜ Oakmont Country Club (PA) — no OSM data
+  [46.1%] ⬜ Sugarloaf (The Club At) (CA) — no OSM data
+  [46.4%] ⬜ Valley Of The Moon Club (CA) — no OSM data
+  [46.6%] ⬜ South Nine Holes (CA) — no OSM data
+  [46.9%] ⬜ North Nine Holes (CA) — no OSM data
+  [47.1%] ⬜ Shinnecock Hills Golf Club (NY) — no OSM data
+  [47.3%] ⬜ Blue Course (2010) (MD) — no OSM data
+  [47.6%] ✅ Gold Course (MD) — 38 holes
+  [47.8%] ✅ Upper Course (NJ) — 18 holes
+  [48.1%] ⬜ New (NJ) — no OSM data
+  [48.3%] ⬜ Lower Course (NJ) — no OSM data
+  [48.6%] ⬜ The Country Club At Muirfield (OH) — no OSM data
+  [48.8%] ✅ Muirfield Village Golf Club (OH) — 32 holes
+  [49.0%] ✅ #1 (IL) — 54 holes
+  [49.3%] ✅ #3 (IL) — 54 holes
+  [49.5%] ⬜ #2 (IL) — no OSM data
+  [49.8%] ⬜ Chambers Bay Golf Club (WA) — no OSM data
+  [50.0%] ⬜ Erin Hills (WI) — no OSM data
+  [50.2%] ⬜ Quail Hollow Club (NC) — no OSM data
+  [50.5%] ⬜ Quail Hollow Golf Course (MS) — no OSM data
+  [50.7%] ⬜ Quail Hollow Golf Course (ID) — no OSM data
+  [51.0%] ✅ Quail Hollow Golf & Cc (MA) — 16 holes
+  [51.2%] ⬜ Weiskopf/Morrish (OH) — no OSM data
+  [51.4%] ⬜ Devlin/Von Hagge (OH) — no OSM data
+  [51.7%] ✅ Champion/Charger (FL) — 18 holes
+  [51.9%] ⬜ Charger/Challenger (FL) — no OSM data
+  [52.2%] ✅ Charger Course (FL) — 18 holes
+  [52.4%] ⬜ Challenger/Champion (FL) — no OSM data
+  [52.7%] ✅ Scottsdale Silverado Golf Club (AZ) — 35 holes
+  [52.9%] ⬜ Mine Shaft Course (AZ) — no OSM data
+  [53.1%] ✅ The Other Course (AZ) — 18 holes
+  [53.4%] ✅ Southcreek (SC) — 29 holes
+  [53.6%] ⬜ King'S North (SC) — no OSM data
+  [53.9%] ⬜ West (SC) — no OSM data
+  [54.1%] ⬜ West (SC) — no OSM data
+  [54.3%] ✅ King'S North (SC) — 29 holes
+  [54.6%] ⬜ Southcreek (SC) — no OSM data
+  [54.8%] ✅ Palm (CA) — 23 holes
+  [55.1%] ⬜ Hilton Head National Golf Club (SC) — no OSM data
+  [55.3%] ⬜ Country Club Of Hilton Head (SC) — no OSM data
+  [55.6%] ⬜ Golf Club At Hilton Head Lakes, The (SC) — no OSM data
+  [55.8%] ⬜ Golf Club At Hilton Head Lakes, The (SC) — no OSM data
+  [56.0%] ✅ Okatie Creek Golf Club (SC) — 22 holes
+  [56.3%] ⬜ Argent Lakes Golf Club (SC) — no OSM data
+  [56.5%] ✅ Hidden Cypress Golf Club (SC) — 22 holes
+  [56.8%] ⬜ Ritz Carlton Golf Club - Orlando (FL) — no OSM data
+  [57.0%] ✅ Tranquilo Golf Club At Four Seasons Orlando (FL) — 17 holes
+  [57.2%] ✅ Raven Golf Club-Phoenix (AZ) — 28 holes
+  [57.5%] ⬜ Las Vegas Golf Club (NV) — no OSM data
+  [57.7%] ✅ Las Vegas National Golf Club (NV) — 20 holes
+  [58.0%] ⬜ Charleston Municipal Golf Course (SC) — no OSM data
+  [58.2%] ⬜ Charleston Municipal Golf Course (SC) — no OSM data
+  [58.5%] ✅ South (NJ) — 36 holes
+  [58.7%] ⬜ North (NJ) — no OSM data
+  [58.9%] ✅ Charleston Pines (NY) — 36 holes
+  [59.2%] ⬜ Savannah Golf Club (GA) — no OSM data
+  [59.4%] ✅ Southbridge Savannah Golf Club (GA) — 16 holes
+  [59.7%] ⬜ Savannah Oaks Golf Course (MN) — no OSM data
+  [59.9%] ⬜ Monticello Golf Club (SC) — no OSM data
+  [60.1%] ⬜ Monticello Golf Club (SC) — no OSM data
+  [60.4%] ⬜ Tara Golf Club (SC) — no OSM data
+  [60.6%] ✅ Austin Golf Club (TX) — 18 holes
+  [60.9%] ⬜ Stephen F Austin Golf Club (TX) — no OSM data
+  [61.1%] ⬜ Austin Bayou Golf Course (TX) — no OSM data
+  [61.4%] ⬜ Riverside Golf Club (Austin) (TX) — no OSM data
+  [61.6%] ⬜ River Oaks Golf Club- Austin (MN) — no OSM data
+  [61.8%] ✅ Jimmie Austin Ou Golf Club (OK) — 18 holes
+  [62.1%] ⬜ University Of Denver Golf Club (CO) — no OSM data
+  [62.3%] ⬜ Portland Golf Club (IN) — no OSM data
+  [62.6%] ✅ Portland Golf Club (OR) — 18 holes
+  [62.8%] ⬜ Portland Golf Club (CT) — no OSM data
+  [63.0%] ✅ Portland West Golf Course (CT) — 36 holes
+  [63.3%] ✅ South Portland Municipal Golf Course (ME) — 9 holes
+  [63.5%] ⬜ Seattle Golf Club (WA) — no OSM data
+  [63.8%] ✅ West Seattle Golf Course (WA) — 18 holes
+  [64.0%] ⬜ Olde Atlanta Golf Club (GA) — no OSM data
+  [64.3%] ⬜ Atlanta National Golf Club (GA) — no OSM data
+  [64.5%] ✅ Wolf Creek Golf Club - Atlanta (GA) — 18 holes
+  [64.7%] ⬜ Nashville Golf Course (IL) — no OSM data
+  [65.0%] ⬜ Nashville Golf & Athletic Club (TN) — no OSM data
+  [65.2%] ✅ Chicago Golf Club (IL) — 18 holes
+  [65.5%] ✅ Minneapolis Golf Club (MN) — 22 holes
+  [65.7%] ⬜ Minneapolis Golf Course (KS) — no OSM data
+  [65.9%] ✅ Dallas Golf Club (OR) — 9 holes
+  [66.2%] ✅ Dallas National Golf Club (TX) — 18 holes
+  [66.4%] ⬜ The Golf Club Of Dallas (TX) — no OSM data
+  [66.7%] ⬜ World Houston Golf Course (TX) — no OSM data
+  [66.9%] ✅ Houston Oaks Golf Course (KY) — 18 holes
+  [67.1%] ✅ Houston National Golf Club (TX) — 18 holes
+  [67.4%] ⬜ Houston Springs Golf Club (GA) — no OSM data
+  [67.6%] ✅ Salado Del Rio (TX) — 43 holes
+  [67.9%] ✅ La Loma Course (TX) — 43 holes
+  [68.1%] ✅ Sterling Country Club (TX) — 18 holes
+  [68.4%] ✅ Member (TX) — 34 holes
+  [68.6%] ✅ Tournament (TX) — 34 holes
+  [68.8%] ⬜ Miami Golf & Cc (OK) — no OSM data
+  [69.1%] ⬜ Little Miami Golf Center (OH) — no OSM data
+  [69.3%] ✅ Miami Whitewater Golf Course (OH) — 18 holes
+  [69.6%] ⬜ Miami View Golf Club (OH) — no OSM data
+  [69.8%] ⬜ Miami Valley Golf Club (OH) — no OSM data
+  [70.0%] ⬜ Miami Shores Golf Course (OH) — no OSM data
+  [70.3%] ⬜ Miami Lakes Golf Club (FL) — no OSM data
+  [70.5%] ✅ Miami Beach Golf Club (FL) — 18 holes
+  [70.8%] ✅ Miami Springs Golf & Country Club (FL) — 18 holes
+  [71.0%] ⬜ Tampa Bay Golf & Country Club (FL) — no OSM data
+  [71.3%] ⬜ Tampa Palms Golf & Country Club (FL) — no OSM data
+  [71.5%] ⬜ Raleigh Hills Golf Course (IA) — no OSM data
+  [71.7%] ⬜ Port Charlotte  Golf Club (FL) — no OSM data
+  [72.0%] ⬜ Charlotte Harbor National Golf Club (FL) — no OSM data
+  [72.2%] ⬜ Boston Golf Club (MA) — no OSM data
+  [72.5%] ⬜ Trump National Golf Club - Philadelphia (NJ) — no OSM data
+  [72.7%] ⬜ Pittsburgh National Golf Club (PA) — no OSM data
+  [72.9%] ⬜ Championship Course (PA) — no OSM data
+  [73.2%] ⬜ Fox Course (PA) — no OSM data
+  [73.4%] ✅ Grover Cleveland Golf Course (NY) — 18 holes
+  [73.7%] ⬜ C/B (FL) — no OSM data
+  [73.9%] ⬜ B/A (FL) — no OSM data
+  [74.2%] ⬜ A/C (FL) — no OSM data
+  [74.4%] ⬜ Sleepy Hollow Golf Course (Cleveland Metropark) (OH) — no OSM data
+  [74.6%] ⬜ Sunrise Golf Club (Indianapolis) (IN) — no OSM data
+  [74.9%] ✅ The National Golf Club Of Kansas City (MO) — 2 holes
+  [75.1%] ⬜ Arizona City Golf Course (AZ) — no OSM data
+  [75.4%] ⬜ Arizona Grand Golf Course (AZ) — no OSM data
+  [75.6%] ⬜ Colorado Golf Club (CO) — no OSM data
+  [75.8%] ⬜ Rio Colorado Golf Course (TX) — no OSM data
+  [76.1%] ✅ University Of Georgia Golf Course (GA) — 1 holes
+  [76.3%] ✅ Georgia National Golf Club (GA) — 18 holes
+  [76.6%] ⬜ Georgia Southern University Golf Course (GA) — no OSM data
+  [76.8%] ⬜ Golf Club Of South Georgia (GA) — no OSM data
+  [77.1%] ✅ Creekside (GA) — 31 holes
+  [77.3%] ✅ Lakeside (GA) — 31 holes
+  [77.5%] ⬜ A/B (HI) — no OSM data
+  [77.8%] ✅ B/C (HI) — 16 holes
+  [78.0%] ⬜ C/A (HI) — no OSM data
+  [78.3%] ✅ Executive Course (HI) — 36 holes
+  [78.5%] ⬜ Championship Course (HI) — no OSM data
+  [78.7%] ⬜ University Of Idaho Golf Course (ID) — no OSM data
+  [79.0%] ✅ Minn-Iowa Golf Club (MN) — 9 holes
+  [79.2%] ⬜ Kentucky Dam Village Golf Course (KY) — no OSM data
+  [79.5%] ✅ National Golf Club Of Louisiana (LA) — 18 holes
+  [79.7%] ⬜ Maine Golf Center Freeport (ME) — no OSM data
+  [80.0%] ⬜ Maine Valley Golf Club (KY) — no OSM data
+  [80.2%] ⬜ Maryland Golf & Country Club (MD) — no OSM data
+  [80.4%] ⬜ University Of Maryland Golf Course (MD) — no OSM data
+  [80.7%] ✅ Maryland National Golf Club (MD) — 18 holes
+  [80.9%] ✅ University Of Minnesota, Les Bolstad Golf Course (MN) — 35 holes
+  [81.2%] ⬜ "33" Course (MN) — no OSM data
+  [81.4%] ⬜ Mississippi Dunes Golf Links (MN) — no OSM data
+  [81.6%] ⬜ Lowlands (MN) — no OSM data
+  [81.9%] ⬜ Highlands (MN) — no OSM data
+  [82.1%] ⬜ Missouri Bluffs Golf Club (MO) — no OSM data
+  [82.4%] ✅ Logan Missouri Valley Golf Course (IA) — 9 holes
+  [82.6%] ⬜ The Miners' Golf Course At Missouri S&T (MO) — no OSM data
+  [82.9%] ✅ University Of Montana Golf Course (MT) — 9 holes
+  [83.1%] ✅ New Mexico Tech Golf Course (NM) — 18 holes
+  [83.3%] ⬜ Dogwood (NC) — no OSM data
+  [83.6%] ⬜ Cardinal (NC) — no OSM data
+  [83.8%] ✅ Inside/Outside Course (NC) — 37 holes
+  [84.1%] ✅ Switzerland Of Ohio Cc (OH) — 9 holes
+  [84.3%] ⬜ The Golf Club Of Oklahoma (OK) — no OSM data
+  [84.5%] ⬜ The Oregon Golf Club (OR) — no OSM data
+  [84.8%] ⬜ Oregon City Golf Club (OR) — no OSM data
+  [85.0%] ⬜ Oregon Trail Golf Course (NE) — no OSM data
+  [85.3%] ⬜ The Golf Club Of Oregon (OR) — no OSM data
+  [85.5%] ⬜ Tennessee Hills Golf Club (TN) — no OSM data
+  [85.7%] ✅ Tennessee River Golf Club (TN) — 18 holes
+  [86.0%] ⬜ Tennessee National Golf Club (TN) — no OSM data
+  [86.2%] ⬜ The Golf Club Of Tennessee (TN) — no OSM data
+  [86.5%] ⬜ Lakes (TN) — no OSM data
+  [86.7%] ⬜ Links (TN) — no OSM data
+  [87.0%] ⬜ Washington Golf Course (OH) — no OSM data
+  [87.2%] ⬜ Washington Golf Club (CT) — no OSM data
+  [87.4%] ✅ Washington Golf & Country Club (VA) — 18 holes
+  [87.7%] ✅ Chester L. Washington Golf Course (CA) — 18 holes
+  [87.9%] ⬜ Washington Golf And Country Club (IA) — no OSM data
+  [88.2%] ⬜ Washington County Golf Course (WI) — no OSM data
+  [88.4%] ⬜ Washington County Golf Club (CO) — no OSM data
+  [88.6%] ⬜ Mount Washington (NH) — no OSM data
+  [88.9%] ⬜ Winter Course (VA) — no OSM data
+  [89.1%] ✅ Riverview Course (VA) — 20 holes
+  [89.4%] ✅ Mount Pleasant (NH) — 27 holes
+  [89.6%] ⬜ Championship Course (VA) — no OSM data
+  [89.9%] ⬜ Augusta Municipal Golf Course (GA) — no OSM data
+  [90.1%] ⬜ Hebert Municipal Golf Course (LA) — no OSM data
+  [90.3%] ⬜ Rolla Municipal Golf Course (ND) — no OSM data
+  [90.6%] ✅ Hillcrest Municipal Golf Course (ND) — 18 holes
+  [90.8%] ⬜ Osage Municipal Golf Course (KS) — no OSM data
+  [91.1%] ⬜ Muscatine Municipal Golf Course (IA) — no OSM data
+  [91.3%] ✅ Lakeside Municipal Golf Course (IA) — 18 holes
+  [91.5%] ⬜ Spencer Municipal Golf Course (IA) — no OSM data
+  [91.8%] ⬜ Williston Municipal Golf Course (ND) — no OSM data
+  [92.0%] ⬜ Peru Municipal Golf Course (IN) — no OSM data
+  [92.3%] ⬜ Salina Municipal Golf Course (KS) — no OSM data
+  [92.5%] ✅ Blacksburg Municipal Golf Course (VA) — 9 holes
+  [92.8%] ✅ Eveleth Municipal Golf Course (MN) — 9 holes
+  [93.0%] ⬜ Hibbing Municipal Golf Course (MN) — no OSM data
+  [93.2%] ⬜ Ortonville Municipal Golf Course (MN) — no OSM data
+  [93.5%] ⬜ Blackduck Municipal Golf Club (MN) — no OSM data
+  [93.7%] ⬜ Pierz Municipal Golf Course (MN) — no OSM data
+  [94.0%] ⬜ Sedan Municipal Golf Course (KS) — no OSM data
+  [94.2%] ⬜ Hillsboro Municipal Golf Course (KS) — no OSM data
+  [94.4%] ⬜ Forewinds Municipal Golf Course (KS) — no OSM data
+  [94.7%] ✅ Allenmore Public Golf Course (WA) — 18 holes
+  [94.9%] ⬜ Lake Oswego Public Golf Course (OR) — no OSM data
+  [95.2%] ⬜ High Cliff Public Golf Course (WI) — no OSM data
+  [95.4%] ✅ Fort Snelling Public Golf Course (MN) — 9 holes
+  [95.7%] ⬜ Applewood Hills Public Golf Course (MN) — no OSM data
+  [95.9%] ⬜ River Crest Public Golf Course (MN) — no OSM data
+  [96.1%] ⬜ Royal City Public Golf Course (WA) — no OSM data
+  [96.4%] ⬜ St. Marys Public Golf Course (KS) — no OSM data
+  [96.6%] ⬜ Saginaw Valley Public Golf Course (MI) — no OSM data
+  [96.9%] ⬜ Lake City Golf (MN) — no OSM data
+  [97.1%] ✅ Azalea City Golf Course (AL) — 18 holes
+  [97.3%] ⬜ Garden City Golf Club (NY) — no OSM data
+  [97.6%] ✅ Star City Golf Course (ND) — 9 holes
+  [97.8%] ⬜ Emmett City Golf Course (ID) — no OSM data
+  [98.1%] ⬜ Boulder City Golf Club (NV) — no OSM data
+  [98.3%] ✅ Capitol City Golf Course (WA) — 18 holes
+  [98.6%] ⬜ Junction City Golf & Fitness (KS) — no OSM data
+  [98.8%] ⬜ Rose City Golf Club (OR) — no OSM data
+  [99.0%] ⬜ King City Golf Club (OR) — no OSM data
+  [99.3%] ⬜ The City Golf Club (MA) — no OSM data
+  [99.5%] ✅ Whaling City Golf Course (MA) — 24 holes
+  [99.8%] ⬜ National City Golf Course (CA) — no OSM data
+  [100.0%] ⬜ Jw Parks Golf Course (ME) — no OSM data
+
+=== Summary ===
+Courses with OSM data: 145
+Courses without OSM data: 269
+Errors: 0
+Previously cached: 10
+Hit rate: 35.0%
+Done!
