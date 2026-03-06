@@ -19,12 +19,13 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { courseName, courseApiId, latitude, longitude, players } = body as {
+  const { courseName, courseApiId, latitude, longitude, players, games } = body as {
     courseName: string
     courseApiId?: number | null
     latitude?: number | null
     longitude?: number | null
     players: PlayerInput[]
+    games?: { formatId: string; buyIn: number }[]
   }
 
   if (!courseName) {
@@ -223,6 +224,19 @@ export async function POST(request: NextRequest) {
         { onConflict: 'trip_player_id,course_id' }
       )
     }
+  }
+
+  // 7. Create selected games with buy-ins
+  if (games && games.length > 0) {
+    const roundGames = games.map(g => ({
+      trip_id: trip.id,
+      course_id: course.id,
+      game_format_id: g.formatId,
+      buy_in: g.buyIn || 0,
+      status: 'active',
+      created_by: user.id,
+    }))
+    await supabase.from('round_games').insert(roundGames)
   }
 
   return NextResponse.json({ tripId: trip.id, courseId: course.id }, { status: 201 })

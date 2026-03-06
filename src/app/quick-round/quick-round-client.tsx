@@ -22,7 +22,17 @@ interface PlayerSlot {
   handicap: string
 }
 
-export default function QuickRoundClient({ userName }: { userName: string }) {
+interface GameFormat {
+  id: string
+  name: string
+  description: string
+  icon: string
+  min_players: number
+  max_players: number
+  team_based: boolean
+}
+
+export default function QuickRoundClient({ userName, gameFormats }: { userName: string; gameFormats: GameFormat[] }) {
   const router = useRouter()
 
   // Course search state
@@ -38,6 +48,9 @@ export default function QuickRoundClient({ userName }: { userName: string }) {
   const [players, setPlayers] = useState<PlayerSlot[]>([
     { name: userName, handicap: '' },
   ])
+
+  // Game selection state: gameId -> buy-in amount
+  const [selectedGames, setSelectedGames] = useState<Map<string, number>>(new Map())
 
   // Submit state
   const [submitting, setSubmitting] = useState(false)
@@ -112,6 +125,27 @@ export default function QuickRoundClient({ userName }: { userName: string }) {
     setPlayers(updated)
   }
 
+  const availableGames = gameFormats.filter(
+    g => players.length >= g.min_players && players.length <= g.max_players
+  )
+
+  function toggleGame(id: string) {
+    setSelectedGames(prev => {
+      const next = new Map(prev)
+      if (next.has(id)) next.delete(id)
+      else next.set(id, 0)
+      return next
+    })
+  }
+
+  function setGameBuyIn(id: string, amount: number) {
+    setSelectedGames(prev => {
+      const next = new Map(prev)
+      next.set(id, amount)
+      return next
+    })
+  }
+
   const courseName = selectedCourse
     ? selectedCourse.course_name || selectedCourse.club_name
     : useManual
@@ -141,6 +175,10 @@ export default function QuickRoundClient({ userName }: { userName: string }) {
             name: p.name.trim(),
             handicap: p.handicap ? parseFloat(p.handicap) : null,
           })),
+          games: Array.from(selectedGames.entries()).map(([id, buyIn]) => ({
+            formatId: id,
+            buyIn,
+          })),
         }),
       })
 
@@ -153,6 +191,7 @@ export default function QuickRoundClient({ userName }: { userName: string }) {
       posthog.capture('quick_round_started', {
         course_name: courseName.trim(),
         player_count: players.length,
+        game_count: selectedGames.size,
         used_api_course: !!selectedCourse,
       })
       router.push(`/trip/${tripId}/live/${courseId}`)
@@ -362,6 +401,56 @@ export default function QuickRoundClient({ userName }: { userName: string }) {
             </p>
           )}
         </div>
+
+        {/* Game Selection */}
+        {availableGames.length > 0 && (
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 className="mb-1 text-lg font-bold text-gray-900">Games</h2>
+            <p className="mb-3 text-xs text-gray-400">
+              Optional — pick any games for {players.length} player{players.length !== 1 ? 's' : ''}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {availableGames.map(game => {
+                const selected = selectedGames.has(game.id)
+                return (
+                  <div key={game.id} className="flex flex-col">
+                    <button
+                      onClick={() => toggleGame(game.id)}
+                      className={`rounded-lg border px-3 py-3 text-left transition ${
+                        selected
+                          ? 'border-golf-500 bg-golf-50 ring-1 ring-golf-500'
+                          : 'border-gray-200 hover:border-golf-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{game.icon}</span>
+                        <span className={`text-sm font-medium ${selected ? 'text-golf-800' : 'text-gray-900'}`}>
+                          {game.name}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500 line-clamp-2">{game.description}</p>
+                    </button>
+                    {selected && (
+                      <div className="mt-1 flex items-center gap-1 px-1">
+                        <span className="text-xs text-gray-500">$</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={selectedGames.get(game.id) || ''}
+                          onChange={e => setGameBuyIn(game.id, parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          className="w-16 rounded border border-gray-200 px-2 py-1 text-xs text-gray-700 outline-none focus:border-golf-500"
+                        />
+                        <span className="text-xs text-gray-400">buy-in</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Tee Off Button */}
         <button

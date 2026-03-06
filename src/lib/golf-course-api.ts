@@ -55,7 +55,7 @@ async function searchCoursesRaw(query: string, apiKey: string): Promise<GolfCour
   }
 }
 
-function buildSearchVariations(query: string): string[] {
+export function buildSearchVariations(query: string): string[] {
   const variations: string[] = [query]
   const lower = query.toLowerCase()
 
