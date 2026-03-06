@@ -97,6 +97,12 @@ export async function GET(
     .order('created_at', { ascending: false })
     .limit(30)
 
+  // Fetch round stats for this course
+  const { data: roundStats } = await supabase
+    .from('round_stats')
+    .select('*')
+    .eq('course_id', courseId)
+
   // Find current user's trip_player_id
   const currentTripPlayer = (tripPlayers || []).find(tp => {
     const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
@@ -126,6 +132,7 @@ export async function GET(
     activityFeed: activityFeed || [],
     currentTripPlayerId: currentTripPlayer?.id || null,
     playerTees: playerTees || [],
+    roundStats: roundStats || [],
     isQuickRound: trip?.is_quick_round || false,
   })
 }

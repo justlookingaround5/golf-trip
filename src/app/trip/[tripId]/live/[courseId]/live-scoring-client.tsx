@@ -8,6 +8,7 @@ import type { ActivityFeedItem, RoundScore, SideBet, SideBetHit } from '@/lib/ty
 import type { HoleMapData } from '@/components/HoleDiagram'
 import HoleView from './components/HoleView'
 import LiveDashboard from './components/LiveDashboard'
+import StatsCard from './components/StatsCard'
 import ScoreIndicator from '@/components/ScoreIndicator'
 import posthog from 'posthog-js'
 
@@ -83,6 +84,7 @@ interface ApiResponse {
   activityFeed: ActivityFeedItem[]
   currentTripPlayerId: string | null
   playerTees: PlayerTeeData[]
+  roundStats: Record<string, unknown>[]
   isQuickRound: boolean
 }
 
@@ -863,6 +865,14 @@ export default function LiveScoringClient({
             <p className="text-lg font-bold text-golf-800">All holes scored!</p>
             <p className="mt-1 text-sm text-golf-600">Tap any hole to edit scores.</p>
           </div>
+        )}
+
+        {/* Stats Card */}
+        {statsEnabled && (
+          <StatsCard
+            stats={((data.roundStats || []).find((s: Record<string, unknown>) => s.trip_player_id === currentTripPlayerId) as any) || null}
+            playerName={ownPlayerName.split(' ')[0]}
+          />
         )}
 
         {/* Live Dashboard */}
