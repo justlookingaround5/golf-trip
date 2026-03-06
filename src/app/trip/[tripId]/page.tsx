@@ -3,9 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Trip, Course, Score, Match, PlayerCourseHandicap, TripPlayer } from '@/lib/types'
 import { calculateTeamStandings } from '@/lib/leaderboard'
-import TripLandingClient from './trip-landing-client'
-import PlanningSection from './planning-section'
-import RoundGamePills from '@/components/RoundGamePills'
+import TripTabs from './trip-tabs'
 
 export default async function TripPublicPage({
   params,
@@ -116,7 +114,7 @@ export default async function TripPublicPage({
     .select('*')
     .in('course_id', (courses ?? []).map((c) => c.id))
 
-  // Fetch games per round (enriched with format details + players)
+  // Fetch games per round
   const courseIds = (courses ?? []).map((c) => c.id)
   const { data: roundGames } = courseIds.length > 0
     ? await supabase
@@ -187,7 +185,7 @@ export default async function TripPublicPage({
   ).length
   const totalMatches = (matches ?? []).length
 
-  // Fetch trip players with profiles for "Who's Going" section
+  // Fetch trip players with profiles for roster
   const { data: tripPlayers } = await supabase
     .from('trip_players')
     .select('id, player:players(id, name, handicap_index, user_id)')
@@ -246,19 +244,37 @@ export default async function TripPublicPage({
     isAdmin = membership?.role === 'owner' || membership?.role === 'admin'
   }
 
-  // Compute countdown
+  // Compute countdown & detect today's course
+  const today = new Date().toISOString().split('T')[0]
+  const todaysCourse = (courses as Course[] ?? []).find(c => c.round_date === today) ?? null
+
   const firstRoundDate = (courses as Course[] ?? [])
     .filter(c => c.round_date)
     .sort((a, b) => (a.round_date! > b.round_date! ? 1 : -1))[0]?.round_date
-
-  const today = new Date().toISOString().split('T')[0]
-  const todaysCourse = (courses as Course[] ?? []).find(c => c.round_date === today)
 
   let daysUntilTrip: number | null = null
   if (firstRoundDate && firstRoundDate > today) {
     const diff = new Date(firstRoundDate).getTime() - new Date(today).getTime()
     daysUntilTrip = Math.ceil(diff / (1000 * 60 * 60 * 24))
   }
+
+  // Auto-detect default tab
+  const tripStatus = (trip as Trip).status
+  let defaultTab: 'plan' | 'play' | 'review' = 'review'
+  if (tripStatus === 'setup') {
+    defaultTab = 'plan'
+  } else if (todaysCourse) {
+    defaultTab = 'play'
+  }
+
+  // Serialize courses for tabs (strip holes, not needed in tabs)
+  const coursesForTabs = (courses as Course[] ?? []).map(c => ({
+    id: c.id,
+    name: c.name,
+    par: c.par,
+    round_number: c.round_number,
+    round_date: c.round_date,
+  }))
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -275,7 +291,6 @@ export default async function TripPublicPage({
           <p className="mt-1 text-golf-200">
             {(trip as Trip).location ?? 'Location TBD'} &middot; {(trip as Trip).year}
           </p>
-          {/* Countdown */}
           {daysUntilTrip !== null && daysUntilTrip > 0 && (
             <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-golf-700/60 px-4 py-1.5 text-sm font-medium">
               <span className="text-2xl font-bold text-white">{daysUntilTrip}</span>
@@ -285,196 +300,36 @@ export default async function TripPublicPage({
         </div>
       </header>
 
-      <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
-        {/* Who's Going */}
-        {roster.length > 0 && (
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
-              The Crew ({roster.length})
-            </h3>
-            <div className="flex flex-wrap gap-3">
-              {roster.map((player) => (
-                <div key={player.id} className="flex items-center gap-2 rounded-full bg-gray-50 dark:bg-gray-700 px-3 py-1.5">
-                  {player.avatar_url ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={player.avatar_url} alt="" className="h-6 w-6 rounded-full" />
-                  ) : (
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-golf-100 text-xs font-bold text-golf-800">
-                      {player.name[0]?.toUpperCase()}
-                    </div>
-                  )}
-                  <div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{player.name}</span>
-                    {player.handicap_index != null && (
-                      <span className="ml-1 text-xs text-gray-500">({player.handicap_index})</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {(trip as Trip).join_code && (
-              <div className="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3">
-                <span className="text-xs text-gray-500">Join code:</span>
-                <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-sm font-bold tracking-widest text-gray-900">
-                  {(trip as Trip).join_code}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Navigation Links */}
-        <div className="grid grid-cols-2 gap-3">
-          <NavLink href={`/trip/${tripId}/leaderboard`} label="Leaderboard" />
-          <NavLink href={`/trip/${tripId}/matches`} label="Matches" />
-          <NavLink href={`/trip/${tripId}/stats`} label="Stats & Awards" />
-          <NavLink href={`/trip/${tripId}/settlement`} label="The Bank" />
-          <NavLink href={`/trip/${tripId}/competition`} label="Ryder Cup" />
-          <NavLink href={`/trip/${tripId}/dashboard`} label="Dashboard" />
-          <NavLink href={`/trip/${tripId}/head-to-head`} label="Head-to-Head" />
-          <NavLink href={`/trip/${tripId}/games`} label="Games" />
-          <NavLink href={`/trip/${tripId}/chat`} label="Trash Talk" />
-        </div>
-
-        {/* Team Standings */}
-        <TripLandingClient
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        <TripTabs
           tripId={tripId}
-          initialTeamStandings={teamStandings}
+          defaultTab={defaultTab}
+          roster={roster}
+          joinCode={(trip as Trip).join_code ?? null}
+          courses={coursesForTabs}
+          gamesByCourse={gamesByCourse}
+          isAdmin={isAdmin}
+          todaysCourse={todaysCourse ? {
+            id: todaysCourse.id,
+            name: todaysCourse.name,
+            par: todaysCourse.par,
+            round_number: todaysCourse.round_number,
+            round_date: todaysCourse.round_date,
+          } : null}
+          teamStandings={teamStandings}
+          activeMatches={activeMatches}
+          totalMatches={totalMatches}
+          completedMatches={completedMatches}
+          activityFeed={(activityFeed || []).map(item => ({
+            id: item.id,
+            event_type: item.event_type,
+            title: item.title,
+            detail: item.detail,
+            icon: item.icon,
+            created_at: item.created_at,
+          }))}
         />
-
-        {/* Go Live Scoring */}
-        {todaysCourse ? (
-          <Link
-            href={`/trip/${tripId}/live/${todaysCourse.id}`}
-            className="flex items-center justify-center gap-2 rounded-xl bg-green-600 py-4 text-lg font-bold text-white shadow-lg active:bg-green-700"
-          >
-            Live Scoring — {todaysCourse.name}
-          </Link>
-        ) : (
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-md">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                <span className="text-xl">&#9971;</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900">Live Scoring</h3>
-                <p className="text-sm text-gray-500">
-                  Available when a round is scheduled for today.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Match Summary */}
-        {totalMatches > 0 && (
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
-              Matches
-            </h3>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-yellow-600">{activeMatches}</p>
-                <p className="text-xs text-gray-500">In Progress</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-green-700">{completedMatches}</p>
-                <p className="text-xs text-gray-500">Completed</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-700">{totalMatches}</p>
-                <p className="text-xs text-gray-500">Total</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Activity Feed */}
-        {(activityFeed || []).length > 0 && (
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
-              Recent Activity
-            </h3>
-            <div className="space-y-3">
-              {(activityFeed || []).map((item) => (
-                <div key={item.id} className="flex items-start gap-3">
-                  <span className="mt-0.5 text-lg">{item.icon || '...'}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.title}</p>
-                    {item.detail && (
-                      <p className="text-xs text-gray-500 truncate">{item.detail}</p>
-                    )}
-                  </div>
-                  <span className="shrink-0 text-xs text-gray-400">
-                    {formatRelativeTime(item.created_at)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Collaborative Planning (admin only) */}
-        {(trip as Trip).status === 'setup' && isAdmin && (
-          <PlanningSection tripId={tripId} />
-        )}
-
-        {/* Rounds */}
-        {(courses ?? []).length > 0 && (
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
-              Rounds
-            </h3>
-            <div className="space-y-2">
-              {(courses as Course[]).map((course) => {
-                const games = gamesByCourse[course.id] || []
-                return (
-                  <div
-                    key={course.id}
-                    className="rounded-lg bg-gray-50 px-4 py-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{course.name}</p>
-                        <p className="text-xs text-gray-500">
-                          Round {course.round_number}
-                          {course.round_date && ` - ${course.round_date}`}
-                        </p>
-                      </div>
-                      <p className="text-sm text-gray-500">Par {course.par}</p>
-                    </div>
-                    {games.length > 0 && (
-                      <RoundGamePills games={games} />
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
-}
-
-function NavLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 text-sm font-semibold text-golf-700 dark:text-golf-400 shadow-sm transition hover:bg-golf-50 dark:hover:bg-golf-900/30"
-    >
-      {label}
-    </Link>
-  )
-}
-
-function formatRelativeTime(dateStr: string): string {
-  const now = Date.now()
-  const then = new Date(dateStr).getTime()
-  const diff = Math.floor((now - then) / 1000)
-
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
-  return `${Math.floor(diff / 86400)}d`
 }
