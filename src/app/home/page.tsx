@@ -11,32 +11,20 @@ type TripWithRole = {
   group_id: string | null
 }
 
-type GroupWithRole = {
-  id: string
-  name: string
-  description: string | null
-  role: string
-}
-
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch groups the user belongs to
+  // Fetch groups (just for isNewUser check)
   const { data: groupMemberships } = await supabase
     .from('group_members')
-    .select('role, group:groups(id, name, description)')
+    .select('group_id')
     .eq('user_id', user!.id)
+    .limit(1)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const groups: GroupWithRole[] = (groupMemberships || [])
-    .filter((m: any) => m.group != null)
-    .map((m: any) => {
-      const group = Array.isArray(m.group) ? m.group[0] : m.group
-      return { ...group, role: m.role }
-    })
+  const hasGroups = (groupMemberships || []).length > 0
 
-  // Fetch trips the user is a member of
+  // Fetch trips
   const { data: memberships } = await supabase
     .from('trip_members')
     .select('role, trip:trips(id, name, location, year, status, group_id)')
@@ -51,45 +39,6 @@ export default async function HomePage() {
       return { ...trip, role: m.role }
     })
     .filter((t: TripWithRole) => t.id != null)
-
-  // Fetch group members for each group
-  const groupIds = groups.map(g => g.id)
-  const groupMembersMap: Record<string, { user_id: string; role: string; display_name: string | null }[]> = {}
-
-  if (groupIds.length > 0) {
-    const { data: allGroupMembers } = await supabase
-      .from('group_members')
-      .select('group_id, user_id, role')
-      .in('group_id', groupIds)
-
-    const memberUserIds = [...new Set((allGroupMembers || []).map(m => m.user_id))]
-    const { data: profiles } = memberUserIds.length > 0
-      ? await supabase
-        .from('player_profiles')
-        .select('user_id, display_name')
-        .in('user_id', memberUserIds)
-      : { data: [] }
-
-    const profileMap = new Map((profiles || []).map(p => [p.user_id, p.display_name]))
-
-    for (const member of allGroupMembers || []) {
-      if (!groupMembersMap[member.group_id]) {
-        groupMembersMap[member.group_id] = []
-      }
-      groupMembersMap[member.group_id].push({
-        user_id: member.user_id,
-        role: member.role,
-        display_name: profileMap.get(member.user_id) || null,
-      })
-    }
-  }
-
-  // Get player profile
-  const { data: playerProfile } = await supabase
-    .from('player_profiles')
-    .select('id, display_name')
-    .eq('user_id', user!.id)
-    .single()
 
   // Pending invites
   const userEmail = user!.email
@@ -109,7 +58,7 @@ export default async function HomePage() {
     }))
   }
 
-  // Find trip_player IDs for this user
+  // Find trip_player IDs
   const { data: players } = await supabase
     .from('players')
     .select('id')
@@ -126,7 +75,7 @@ export default async function HomePage() {
     tripPlayerIds = (tripPlayers || []).map(tp => tp.id)
   }
 
-  // Outstanding balances
+  // Balances
   let balances: { player_name: string; amount: number }[] = []
   if (playerIds.length > 0) {
     const { data: walletsA } = await supabase
@@ -156,16 +105,10 @@ export default async function HomePage() {
     }
 
     for (const w of walletsA || []) {
-      balances.push({
-        player_name: playerNameMap.get(w.player_b_id) || 'Unknown',
-        amount: w.balance,
-      })
+      balances.push({ player_name: playerNameMap.get(w.player_b_id) || 'Unknown', amount: w.balance })
     }
     for (const w of walletsB || []) {
-      balances.push({
-        player_name: playerNameMap.get(w.player_a_id) || 'Unknown',
-        amount: -w.balance,
-      })
+      balances.push({ player_name: playerNameMap.get(w.player_a_id) || 'Unknown', amount: -w.balance })
     }
   }
 
@@ -222,38 +165,11 @@ export default async function HomePage() {
     }
   }
 
-  // Recent activity
-  let recentActivity: {
-    id: string
-    money: number
-    points: number
-    game_name: string | null
-    computed_at: string
-  }[] = []
-
-  if (tripPlayerIds.length > 0) {
-    const { data: recent } = await supabase
-      .from('game_results')
-      .select('id, money, points, computed_at, round_game:round_games(game_format:game_formats(name))')
-      .in('trip_player_id', tripPlayerIds)
-      .order('computed_at', { ascending: false })
-      .limit(10)
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recentActivity = (recent || []).map((r: any) => ({
-      id: r.id,
-      money: r.money,
-      points: r.points,
-      game_name: r.round_game?.game_format?.name || null,
-      computed_at: r.computed_at,
-    }))
-  }
-
-  // Detect default tab
+  // Auto-detect default tab
   const today = new Date().toISOString().split('T')[0]
   const hasRoundToday = upcomingRounds.some(r => r.round_date === today)
   const hasSetupTrips = trips.some(t => t.status === 'setup')
-  const isNewUser = trips.length === 0 && groups.length === 0 && pendingInvites.length === 0
+  const isNewUser = trips.length === 0 && !hasGroups && pendingInvites.length === 0
 
   let defaultTab: 'plan' | 'play' | 'review' = 'plan'
   if (hasRoundToday) {
@@ -265,11 +181,7 @@ export default async function HomePage() {
   return (
     <HomeClient
       defaultTab={defaultTab}
-      displayName={playerProfile?.display_name || 'Golfer'}
-      groups={groups}
       trips={trips}
-      groupMembersMap={groupMembersMap}
-      userId={user!.id}
       pendingInvites={pendingInvites}
       isNewUser={isNewUser}
       upcomingRounds={upcomingRounds}
@@ -279,7 +191,6 @@ export default async function HomePage() {
       bestGross={bestGross}
       tripsCount={trips.length}
       balances={balances}
-      recentActivity={recentActivity}
     />
   )
 }

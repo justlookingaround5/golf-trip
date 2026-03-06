@@ -1,15 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import SignOutButton from '@/app/admin/(protected)/sign-out-button'
 
 function ForeLiveLogo() {
   return (
     <svg
-      width="28"
-      height="28"
+      width="24"
+      height="24"
       viewBox="0 0 28 28"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -30,32 +28,28 @@ export default function Navbar({
   profile: { display_name: string | null; avatar_url: string | null }
   activeRound?: { tripId: string; courseId: string; courseName: string } | null
 }) {
-  const [menuOpen, setMenuOpen] = useState(false)
-
   return (
-    <nav className="bg-golf-800 text-white shadow-md">
-      <div className="flex items-center justify-between px-4 py-2.5">
-        {/* Left: Logo + brand */}
-        <Link href="/home" className="flex items-center gap-2 hover:opacity-90">
+    <nav className="bg-golf-800 text-white">
+      <div className="flex items-center justify-between px-4 py-1.5">
+        <Link href="/home" className="flex items-center gap-1.5 hover:opacity-90">
           <ForeLiveLogo />
-          <span className="text-lg font-bold tracking-tight text-gold">
+          <span className="text-base font-bold tracking-tight text-gold">
             ForeLive
           </span>
         </Link>
 
-        {/* Right: Live Play + Profile + sign out */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2">
           {activeRound && (
             <Link
               href={`/trip/${activeRound.tripId}/live/${activeRound.courseId}`}
-              className="rounded-md bg-green-600 px-2.5 py-1 text-sm font-bold text-white hover:bg-green-700"
+              className="rounded-md bg-green-600 px-2 py-1 text-xs font-bold text-white hover:bg-green-700"
             >
-              Live Play
+              Live
             </Link>
           )}
           <Link
             href="/admin/profile"
-            className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-golf-700"
+            className="flex items-center rounded-full hover:opacity-80"
           >
             {profile.avatar_url ? (
               <Image
@@ -70,47 +64,9 @@ export default function Navbar({
                 {(profile.display_name || '?')[0].toUpperCase()}
               </div>
             )}
-            <span className="hidden text-sm font-medium sm:inline">
-              {profile.display_name}
-            </span>
           </Link>
-          <div className="hidden sm:block">
-            <SignOutButton />
-          </div>
-          {/* Mobile menu */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="rounded-md p-1.5 hover:bg-golf-700 sm:hidden"
-            aria-label="Menu"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              {menuOpen ? (
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              ) : (
-                <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-              )}
-            </svg>
-          </button>
         </div>
       </div>
-
-      {/* Mobile dropdown */}
-      {menuOpen && (
-        <div className="border-t border-golf-700 px-4 pb-3 pt-2 sm:hidden">
-          {activeRound && (
-            <Link
-              href={`/trip/${activeRound.tripId}/live/${activeRound.courseId}`}
-              onClick={() => setMenuOpen(false)}
-              className="block rounded-md bg-green-600 px-3 py-2 text-sm font-bold text-white hover:bg-green-700"
-            >
-              Live Play — {activeRound.courseName}
-            </Link>
-          )}
-          <div className="mt-2 border-t border-golf-700 pt-2">
-            <SignOutButton />
-          </div>
-        </div>
-      )}
     </nav>
   )
 }
