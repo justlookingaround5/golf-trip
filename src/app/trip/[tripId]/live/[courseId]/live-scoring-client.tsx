@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getStrokesPerHole } from '@/lib/handicap'
 import type { ActivityFeedItem, RoundScore, SideBet, SideBetHit } from '@/lib/types'
@@ -109,6 +110,58 @@ export default function LiveScoringClient({
   const [holeStats, setHoleStats] = useState<Record<string, { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }>>({})
   const [saving, setSaving] = useState(false)
   const [holeMaps, setHoleMaps] = useState<Record<number, HoleMapData>>({})
+
+  // Round management state
+  const router = useRouter()
+  const [showRoundMenu, setShowRoundMenu] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<'end' | 'delete' | null>(null)
+  const [roundActionLoading, setRoundActionLoading] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowRoundMenu(false)
+      }
+    }
+    if (showRoundMenu) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showRoundMenu])
+
+  async function handleEndRound() {
+    setRoundActionLoading(true)
+    try {
+      const res = await fetch(`/api/rounds/${courseId}`, { method: 'POST' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || 'Failed to end round')
+      }
+      posthog.capture('round_ended', { course_name: courseName })
+      router.push('/home')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to end round')
+      setRoundActionLoading(false)
+      setConfirmAction(null)
+    }
+  }
+
+  async function handleDeleteRound() {
+    setRoundActionLoading(true)
+    try {
+      const res = await fetch(`/api/rounds/${courseId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || 'Failed to delete round')
+      }
+      posthog.capture('round_deleted', { course_name: courseName })
+      router.push('/home')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete round')
+      setRoundActionLoading(false)
+      setConfirmAction(null)
+    }
+  }
 
   // Load data
   const loadData = useCallback(async () => {
@@ -560,6 +613,42 @@ export default function LiveScoringClient({
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Confirmation dialog */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900">
+              {confirmAction === 'end' ? 'End Round Early?' : 'Delete Round?'}
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              {confirmAction === 'end'
+                ? 'This will finalize the round with whatever scores have been entered. You can still view the scorecard afterward.'
+                : 'This will permanently delete the round and all scores. This cannot be undone.'}
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => setConfirmAction(null)}
+                disabled={roundActionLoading}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAction === 'end' ? handleEndRound : handleDeleteRound}
+                disabled={roundActionLoading}
+                className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50 ${
+                  confirmAction === 'delete'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-golf-700 hover:bg-golf-800'
+                }`}
+              >
+                {roundActionLoading ? 'Working...' : confirmAction === 'end' ? 'End Round' : 'Delete Round'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-20 bg-golf-800 px-4 py-3 text-white shadow-md">
         <div className="mx-auto max-w-lg flex items-center justify-between">
@@ -569,22 +658,53 @@ export default function LiveScoringClient({
               Live Scoring &middot; Par {data.course.par}
             </p>
           </div>
-          {!data.isQuickRound && (
-            <a
-              href={`/trip/${tripId}`}
-              className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
-            >
-              Trip
-            </a>
-          )}
-          {data.isQuickRound && (
-            <a
-              href="/home"
-              className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
-            >
-              Home
-            </a>
-          )}
+          <div className="flex items-center gap-2">
+            {!data.isQuickRound && (
+              <a
+                href={`/trip/${tripId}`}
+                className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
+              >
+                Trip
+              </a>
+            )}
+            {data.isQuickRound && (
+              <a
+                href="/home"
+                className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
+              >
+                Home
+              </a>
+            )}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowRoundMenu(!showRoundMenu)}
+                className="rounded-md p-1.5 text-golf-200 hover:bg-golf-700"
+                aria-label="Round options"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <circle cx="10" cy="4" r="1.5" />
+                  <circle cx="10" cy="10" r="1.5" />
+                  <circle cx="10" cy="16" r="1.5" />
+                </svg>
+              </button>
+              {showRoundMenu && (
+                <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                  <button
+                    onClick={() => { setShowRoundMenu(false); setConfirmAction('end') }}
+                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    End Round Early
+                  </button>
+                  <button
+                    onClick={() => { setShowRoundMenu(false); setConfirmAction('delete') }}
+                    className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Delete Round
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
