@@ -104,6 +104,7 @@ export default function LiveScoringClient({
 
   const [activeHole, setActiveHole] = useState<number | null>(null)
   const [holeScores, setHoleScores] = useState<Record<string, number>>({})
+  const [touchedPlayers, setTouchedPlayers] = useState<Set<string>>(new Set())
   const [holeStats, setHoleStats] = useState<Record<string, { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }>>({})
   const [saving, setSaving] = useState(false)
 
@@ -246,13 +247,23 @@ export default function LiveScoringClient({
     if (!hole) return
 
     const initial: Record<string, number> = {}
+    const initialTouched = new Set<string>()
 
     // All trip players
     for (const tp of data.tripPlayers) {
       const existing = data.roundScores.find(
         s => s.hole_id === hole.id && s.trip_player_id === tp.id
       )
-      initial[tp.id] = existing?.gross_score ?? hole.par
+      if (existing) {
+        initial[tp.id] = existing.gross_score
+        initialTouched.add(tp.id)
+      } else if (tp.id === currentTripPlayerId) {
+        initial[tp.id] = hole.par
+        initialTouched.add(tp.id)
+      } else {
+        // Partners default to par but are NOT marked as touched
+        initial[tp.id] = hole.par
+      }
     }
 
     // Load existing stats for current player
@@ -268,11 +279,13 @@ export default function LiveScoringClient({
     })
 
     setHoleScores(initial)
+    setTouchedPlayers(initialTouched)
     setActiveHole(holeNumber)
   }
 
   function adjustScore(tripPlayerId: string, delta: number) {
     if (navigator.vibrate) navigator.vibrate(10)
+    setTouchedPlayers(prev => new Set(prev).add(tripPlayerId))
     setHoleScores(prev => {
       const current = prev[tripPlayerId] ?? 4
       const next = Math.max(1, Math.min(20, current + delta))
@@ -282,6 +295,7 @@ export default function LiveScoringClient({
 
   function setScore(tripPlayerId: string, value: number) {
     if (navigator.vibrate) navigator.vibrate(10)
+    setTouchedPlayers(prev => new Set(prev).add(tripPlayerId))
     setHoleScores(prev => ({ ...prev, [tripPlayerId]: value }))
   }
 
@@ -299,15 +313,9 @@ export default function LiveScoringClient({
     const hole = holes.find(h => h.hole_number === activeHole)
     if (!hole) return
 
-    // Build scores array — only include players that have non-default scores or own player
+    // Build scores array — only include own score and partners whose scores were explicitly touched
     const scoresToSubmit = Object.entries(holeScores)
-      .filter(([tpId, score]) => {
-        // Always include own score
-        if (tpId === currentTripPlayerId) return true
-        // Include partner scores only if they were explicitly set (not default par)
-        const existing = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
-        return existing || score !== hole.par
-      })
+      .filter(([tpId]) => touchedPlayers.has(tpId))
       .map(([trip_player_id, gross_score]) => {
         const entry: Record<string, unknown> = { trip_player_id, gross_score }
         // Attach stats for own player
@@ -521,6 +529,7 @@ export default function LiveScoringClient({
       name: getPlayerName(tp),
       strokes: playerStrokesMap.get(tp.id)?.get(activeHoleData?.hole_number ?? 0) ?? 0,
       score: holeScores[tp.id] ?? (activeHoleData?.par ?? 4),
+      touched: touchedPlayers.has(tp.id),
     }))
 
   return (

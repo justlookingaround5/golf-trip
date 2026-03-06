@@ -26,6 +26,7 @@ interface HoleViewProps {
     name: string
     strokes: number
     score: number
+    touched: boolean
   }[]
   playerTee?: string
   saving: boolean

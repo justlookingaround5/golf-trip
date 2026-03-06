@@ -9,6 +9,7 @@ interface PartnerData {
   strokes: number
   score: number
   par: number
+  touched: boolean
 }
 
 interface PlayingPartnerExpanderProps {
@@ -48,9 +49,9 @@ export default function PlayingPartnerExpander({
           >
             <span className="text-sm font-medium text-gray-700">{p.name}</span>
             <div className="flex items-center gap-2">
-              {p.score > 0 && (
-                <span className="text-sm font-bold text-gray-900">{p.score}</span>
-              )}
+              <span className={`text-sm font-bold ${p.touched ? 'text-gray-900' : 'text-gray-400'}`}>
+                {p.touched ? p.score : '—'}
+              </span>
               <span className="text-gray-400 text-xs">
                 {expanded.has(p.tripPlayerId) ? '▲' : '▼'}
               </span>
