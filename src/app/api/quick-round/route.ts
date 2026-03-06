@@ -138,11 +138,10 @@ export async function POST(request: NextRequest) {
     .eq('user_id', user.id)
     .single()
 
-  for (const playerInput of players) {
-    // Check if this is the logged-in user (match by name against profile)
-    const isCurrentUser =
-      userProfile?.display_name &&
-      playerInput.name.toLowerCase() === userProfile.display_name.toLowerCase()
+  for (let i = 0; i < players.length; i++) {
+    const playerInput = players[i]
+    // First player is always the logged-in user
+    const isCurrentUser = i === 0
 
     let playerId: string | null = null
 
@@ -159,8 +158,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!playerId) {
-      // Try to find by exact name match (case-insensitive)
+    if (!playerId && !isCurrentUser) {
+      // Try to find by exact name match (case-insensitive) for non-owner players
       const { data: existingByName } = await supabase
         .from('players')
         .select('id')
@@ -174,7 +173,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!playerId) {
-      // Create a new guest player
+      // Create a new player
       const insertData: Record<string, unknown> = {
         name: playerInput.name,
         handicap_index: playerInput.handicap ?? null,
