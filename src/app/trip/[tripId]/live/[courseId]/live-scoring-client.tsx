@@ -106,10 +106,20 @@ export default function LiveScoringClient({
 
   const [activeHole, setActiveHole] = useState<number | null>(null)
   const [holeScores, setHoleScores] = useState<Record<string, number>>({})
+  const [statsEnabled, setStatsEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(`stats-enabled-${courseId}`) === 'true'
+    }
+    return false
+  })
   const [touchedPlayers, setTouchedPlayers] = useState<Set<string>>(new Set())
   const [holeStats, setHoleStats] = useState<Record<string, { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }>>({})
   const [saving, setSaving] = useState(false)
   const [holeMaps, setHoleMaps] = useState<Record<number, HoleMapData>>({})
+
+  useEffect(() => {
+    localStorage.setItem(`stats-enabled-${courseId}`, String(statsEnabled))
+  }, [statsEnabled, courseId])
 
   // Round management state
   const router = useRouter()
@@ -659,6 +669,16 @@ export default function LiveScoringClient({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setStatsEnabled(!statsEnabled)}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
+                statsEnabled
+                  ? 'bg-golf-500 text-white'
+                  : 'border border-golf-600 text-golf-300 hover:bg-golf-700'
+              }`}
+            >
+              {statsEnabled ? 'Stats ON' : 'Stats'}
+            </button>
             {!data.isQuickRound && (
               <a
                 href={`/trip/${tripId}`}
@@ -730,6 +750,7 @@ export default function LiveScoringClient({
           girHit={holeStats[currentTripPlayerId]?.gir}
           puttsCount={holeStats[currentTripPlayerId]?.putts}
           onStatsChange={updateStats}
+          statsEnabled={statsEnabled}
           holeMapData={holeMaps[activeHole] ?? null}
         />
       )}

@@ -1,7 +1,5 @@
 'use client'
 
-import { useState } from 'react'
-
 interface PlayerScoreInputProps {
   name: string
   strokes: number
@@ -14,6 +12,7 @@ interface PlayerScoreInputProps {
   girHit?: boolean | null
   puttsCount?: number | null
   onStatsChange?: (stats: { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }) => void
+  statsEnabled?: boolean
 }
 
 export default function PlayerScoreInput({
@@ -28,8 +27,8 @@ export default function PlayerScoreInput({
   girHit,
   puttsCount,
   onStatsChange,
+  statsEnabled,
 }: PlayerScoreInputProps) {
-  const [showStats, setShowStats] = useState(false)
 
   // Wider range: par-2 to par+4
   const presets: number[] = []
@@ -97,15 +96,8 @@ export default function PlayerScoreInput({
       </div>
 
       {/* Optional hole stats toggles */}
-      {isOwn && onStatsChange && (
+      {isOwn && statsEnabled && onStatsChange && (
         <div className="mt-2">
-          <button
-            onClick={() => setShowStats(!showStats)}
-            className="text-[10px] text-gray-400 hover:text-gray-600"
-          >
-            {showStats ? 'Hide stats' : '+ Stats'}
-          </button>
-          {showStats && (
             <div className="flex items-center gap-3 mt-1.5">
               {/* Fairway */}
               {par > 3 && (
@@ -171,7 +163,6 @@ export default function PlayerScoreInput({
                 ))}
               </div>
             </div>
-          )}
         </div>
       )}
     </div>

@@ -42,6 +42,7 @@ interface HoleViewProps {
   girHit?: boolean | null
   puttsCount?: number | null
   onStatsChange?: (stats: { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }) => void
+  statsEnabled?: boolean
   holeMapData?: HoleMapData | null
 }
 
@@ -65,6 +66,7 @@ export default function HoleView({
   girHit,
   puttsCount,
   onStatsChange,
+  statsEnabled,
   holeMapData,
 }: HoleViewProps) {
   const swipeHandlers = useSwipe({
@@ -155,6 +157,7 @@ export default function HoleView({
             girHit={girHit}
             puttsCount={puttsCount}
             onStatsChange={onStatsChange}
+            statsEnabled={statsEnabled}
           />
 
           {/* Partners - expandable */}
