@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getStrokesPerHole } from '@/lib/handicap'
 import type { ActivityFeedItem, RoundScore, SideBet, SideBetHit } from '@/lib/types'
+import type { HoleMapData } from '@/components/HoleDiagram'
 import HoleView from './components/HoleView'
 import LiveDashboard from './components/LiveDashboard'
 import ScoreIndicator from '@/components/ScoreIndicator'
@@ -107,6 +108,7 @@ export default function LiveScoringClient({
   const [touchedPlayers, setTouchedPlayers] = useState<Set<string>>(new Set())
   const [holeStats, setHoleStats] = useState<Record<string, { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }>>({})
   const [saving, setSaving] = useState(false)
+  const [holeMaps, setHoleMaps] = useState<Record<number, HoleMapData>>({})
 
   // Load data
   const loadData = useCallback(async () => {
@@ -127,6 +129,30 @@ export default function LiveScoringClient({
   }, [courseId])
 
   useEffect(() => { loadData() }, [loadData])
+
+  // Load hole map data
+  useEffect(() => {
+    fetch(`/api/courses/${courseId}/hole-maps`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.holes) {
+          const map: Record<number, HoleMapData> = {}
+          for (const h of data.holes) {
+            map[h.holeNumber] = {
+              source: h.source || 'osm',
+              holePath: h.holePath || [],
+              tees: h.tees || [],
+              fairways: h.fairways || [],
+              greens: h.greens || [],
+              bunkers: h.bunkers || [],
+              water: h.water || [],
+            }
+          }
+          setHoleMaps(map)
+        }
+      })
+      .catch(() => {})
+  }, [courseId])
 
   // Realtime subscriptions
   useEffect(() => {
@@ -584,6 +610,7 @@ export default function LiveScoringClient({
           girHit={holeStats[currentTripPlayerId]?.gir}
           puttsCount={holeStats[currentTripPlayerId]?.putts}
           onStatsChange={updateStats}
+          holeMapData={holeMaps[activeHole] ?? null}
         />
       )}
 

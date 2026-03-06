@@ -19,9 +19,11 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { courseName, courseApiId, players } = body as {
+  const { courseName, courseApiId, latitude, longitude, players } = body as {
     courseName: string
     courseApiId?: number | null
+    latitude?: number | null
+    longitude?: number | null
     players: PlayerInput[]
   }
 
@@ -108,6 +110,8 @@ export async function POST(request: NextRequest) {
       round_number: 1,
       round_date: new Date().toISOString().split('T')[0],
       golf_course_api_id: apiId,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
     })
     .select()
     .single()

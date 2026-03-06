@@ -12,6 +12,8 @@ interface CourseResult {
   location: {
     city: string
     state: string
+    latitude?: number
+    longitude?: number
   }
 }
 
@@ -133,6 +135,8 @@ export default function QuickRoundClient({ userName }: { userName: string }) {
         body: JSON.stringify({
           courseName: courseName.trim(),
           courseApiId: selectedCourse?.id || null,
+          latitude: selectedCourse?.location?.latitude || null,
+          longitude: selectedCourse?.location?.longitude || null,
           players: players.map(p => ({
             name: p.name.trim(),
             handicap: p.handicap ? parseFloat(p.handicap) : null,

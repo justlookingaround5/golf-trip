@@ -9,6 +9,8 @@ export interface GolfCourseSearchResult {
     city: string
     state: string
     country: string
+    latitude: number
+    longitude: number
   }
 }
 
@@ -31,6 +33,8 @@ export interface GolfCourseDetail {
     city: string
     state: string
     country: string
+    latitude: number
+    longitude: number
   }
   tees: {
     male: GolfCourseTeeBox[]

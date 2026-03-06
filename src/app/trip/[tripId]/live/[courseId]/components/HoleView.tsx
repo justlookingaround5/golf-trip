@@ -4,6 +4,8 @@ import { useSwipe } from '@/hooks/useSwipe'
 import CourseInfoBar from './CourseInfoBar'
 import PlayerScoreInput from './PlayerScoreInput'
 import PlayingPartnerExpander from './PlayingPartnerExpander'
+import HoleDiagram from '@/components/HoleDiagram'
+import type { HoleMapData } from '@/components/HoleDiagram'
 
 interface HoleData {
   id: string
@@ -40,6 +42,7 @@ interface HoleViewProps {
   girHit?: boolean | null
   puttsCount?: number | null
   onStatsChange?: (stats: { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }) => void
+  holeMapData?: HoleMapData | null
 }
 
 export default function HoleView({
@@ -62,6 +65,7 @@ export default function HoleView({
   girHit,
   puttsCount,
   onStatsChange,
+  holeMapData,
 }: HoleViewProps) {
   const swipeHandlers = useSwipe({
     onSwipeLeft: () => {
@@ -122,6 +126,16 @@ export default function HoleView({
           handicapIndex={hole.handicap_index}
           yardage={hole.yardage}
           playerTee={playerTee}
+        />
+      </div>
+
+      {/* Hole diagram */}
+      <div className="py-2 flex justify-center">
+        <HoleDiagram
+          par={hole.par}
+          yardage={hole.yardage ? Object.values(hole.yardage)[0] : undefined}
+          holeNumber={hole.hole_number}
+          mapData={holeMapData}
         />
       </div>
 
