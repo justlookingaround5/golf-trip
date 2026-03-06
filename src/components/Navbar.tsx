@@ -1,6 +1,5 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -24,11 +23,6 @@ function ForeLiveLogo() {
   )
 }
 
-const NAV_LINKS = [
-  { href: '/home', label: 'Home' },
-  { href: '/admin', label: 'Manage Trips' },
-]
-
 export default function Navbar({
   profile,
   activeRound,
@@ -36,51 +30,29 @@ export default function Navbar({
   profile: { display_name: string | null; avatar_url: string | null }
   activeRound?: { tripId: string; courseId: string; courseName: string } | null
 }) {
-  const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
-
-  function isActive(href: string) {
-    if (href === '/home') return pathname === '/home'
-    return pathname.startsWith(href)
-  }
 
   return (
     <nav className="bg-golf-800 text-white shadow-md">
       <div className="flex items-center justify-between px-4 py-2.5">
-        {/* Left: Logo + brand + nav links (desktop) */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          <Link href="/home" className="flex items-center gap-2 hover:opacity-90">
-            <ForeLiveLogo />
-            <span className="text-lg font-bold tracking-tight text-gold">
-              ForeLive
-            </span>
-          </Link>
-          <span className="mx-1 hidden text-golf-500 sm:inline sm:mx-2">|</span>
-          {NAV_LINKS.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`hidden rounded-md px-2.5 py-1 text-sm font-medium sm:inline-block ${
-                isActive(link.href)
-                  ? 'bg-golf-700 text-gold'
-                  : 'hover:bg-golf-700'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+        {/* Left: Logo + brand */}
+        <Link href="/home" className="flex items-center gap-2 hover:opacity-90">
+          <ForeLiveLogo />
+          <span className="text-lg font-bold tracking-tight text-gold">
+            ForeLive
+          </span>
+        </Link>
+
+        {/* Right: Live Play + Profile + sign out */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {activeRound && (
             <Link
               href={`/trip/${activeRound.tripId}/live/${activeRound.courseId}`}
-              className="hidden rounded-md bg-green-600 px-2.5 py-1 text-sm font-bold text-white hover:bg-green-700 sm:inline-block"
+              className="rounded-md bg-green-600 px-2.5 py-1 text-sm font-bold text-white hover:bg-green-700"
             >
               Live Play
             </Link>
           )}
-        </div>
-
-        {/* Right: Profile + sign out (desktop) + hamburger (mobile) */}
-        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/admin/profile"
             className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-golf-700"
@@ -105,7 +77,7 @@ export default function Navbar({
           <div className="hidden sm:block">
             <SignOutButton />
           </div>
-          {/* Mobile hamburger */}
+          {/* Mobile menu */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="rounded-md p-1.5 hover:bg-golf-700 sm:hidden"
@@ -122,23 +94,9 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* Mobile dropdown menu */}
+      {/* Mobile dropdown */}
       {menuOpen && (
         <div className="border-t border-golf-700 px-4 pb-3 pt-2 sm:hidden">
-          {NAV_LINKS.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMenuOpen(false)}
-              className={`block rounded-md px-3 py-2 text-sm font-medium ${
-                isActive(link.href)
-                  ? 'bg-golf-700 text-gold'
-                  : 'hover:bg-golf-700'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
           {activeRound && (
             <Link
               href={`/trip/${activeRound.tripId}/live/${activeRound.courseId}`}

@@ -1,11 +1,5 @@
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import GroupsSection from './components/GroupsSection'
-import PersonalStats from './components/PersonalStats'
-import RecentActivity from './components/RecentActivity'
-import PendingInvites from './components/PendingInvites'
-import OutstandingBalances from './components/OutstandingBalances'
-import UpcomingRounds from './components/UpcomingRounds'
+import HomeClient from './home-client'
 
 type TripWithRole = {
   id: string
@@ -58,7 +52,7 @@ export default async function HomePage() {
     })
     .filter((t: TripWithRole) => t.id != null)
 
-  // Fetch group members for each group (for display)
+  // Fetch group members for each group
   const groupIds = groups.map(g => g.id)
   const groupMembersMap: Record<string, { user_id: string; role: string; display_name: string | null }[]> = {}
 
@@ -115,7 +109,7 @@ export default async function HomePage() {
     }))
   }
 
-  // Find trip_player IDs for this user (needed for stats + balances)
+  // Find trip_player IDs for this user
   const { data: players } = await supabase
     .from('players')
     .select('id')
@@ -132,17 +126,15 @@ export default async function HomePage() {
     tripPlayerIds = (tripPlayers || []).map(tp => tp.id)
   }
 
-  // Outstanding balances from player_wallets
+  // Outstanding balances
   let balances: { player_name: string; amount: number }[] = []
   if (playerIds.length > 0) {
-    // Wallets where user is player_a (positive balance = they owe us)
     const { data: walletsA } = await supabase
       .from('player_wallets')
       .select('player_b_id, balance')
       .in('player_a_id', playerIds)
       .neq('balance', 0)
 
-    // Wallets where user is player_b (negative balance = we owe them)
     const { data: walletsB } = await supabase
       .from('player_wallets')
       .select('player_a_id, balance')
@@ -166,18 +158,18 @@ export default async function HomePage() {
     for (const w of walletsA || []) {
       balances.push({
         player_name: playerNameMap.get(w.player_b_id) || 'Unknown',
-        amount: w.balance, // positive = they owe us
+        amount: w.balance,
       })
     }
     for (const w of walletsB || []) {
       balances.push({
         player_name: playerNameMap.get(w.player_a_id) || 'Unknown',
-        amount: -w.balance, // flip: if balance positive, we owe them
+        amount: -w.balance,
       })
     }
   }
 
-  // Upcoming rounds from active trips
+  // Upcoming rounds
   const activeTripIds = trips.filter(t => t.status === 'active').map(t => t.id)
   let upcomingRounds: { trip_id: string; trip_name: string; course_name: string; course_id: string; round_date: string }[] = []
 
@@ -257,120 +249,37 @@ export default async function HomePage() {
     }))
   }
 
-  // Check if this is a brand new user with nothing
+  // Detect default tab
+  const today = new Date().toISOString().split('T')[0]
+  const hasRoundToday = upcomingRounds.some(r => r.round_date === today)
+  const hasSetupTrips = trips.some(t => t.status === 'setup')
   const isNewUser = trips.length === 0 && groups.length === 0 && pendingInvites.length === 0
 
+  let defaultTab: 'plan' | 'play' | 'review' = 'plan'
+  if (hasRoundToday) {
+    defaultTab = 'play'
+  } else if (!hasSetupTrips && (totalRounds > 0 || balances.length > 0)) {
+    defaultTab = 'review'
+  }
+
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {playerProfile?.display_name || 'Golfer'}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Your groups, trips, and stats at a glance.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/quick-round"
-            className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-          >
-            Quick Round
-          </Link>
-          <Link
-            href="/admin/trips/new"
-            className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
-          >
-            New Trip
-          </Link>
-        </div>
-      </div>
-
-      {/* Pending invites banner */}
-      <PendingInvites invites={pendingInvites} />
-      {pendingInvites.length > 0 && <div className="mb-6" />}
-
-      {/* New user onboarding */}
-      {isNewUser ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-10 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-golf-100">
-            <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
-              <circle cx="14" cy="14" r="13" stroke="#1a3260" strokeWidth="2" fill="none" />
-              <line x1="10" y1="6" x2="10" y2="22" stroke="#1a3260" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M10 6 L20 10 L10 14 Z" fill="#1a3260" />
-              <circle cx="10" cy="22" r="1.5" fill="#1a3260" />
-            </svg>
-          </div>
-          <h2 className="mb-2 text-xl font-bold text-gray-900">Welcome to ForeLive!</h2>
-          <p className="mb-6 text-gray-500">Get started by creating your first golf trip or joining one with a code.</p>
-          <div className="flex justify-center gap-3">
-            <Link
-              href="/quick-round"
-              className="rounded-md bg-green-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-700"
-            >
-              Quick Round
-            </Link>
-            <Link
-              href="/admin/trips/new"
-              className="rounded-md bg-golf-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-golf-800"
-            >
-              Create a Trip
-            </Link>
-            <Link
-              href="/join/code"
-              className="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Join with Code
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-10">
-          {/* Upcoming rounds */}
-          <UpcomingRounds rounds={upcomingRounds} />
-
-          {/* Live Scoring promo — always visible */}
-          {upcomingRounds.every(r => r.round_date !== new Date().toISOString().split('T')[0]) && (
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                  <span className="text-xl">🏌️</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Live Scoring</h3>
-                  <p className="text-sm text-gray-500">
-                    Score your round in real time on game day. A &ldquo;Live Scoring&rdquo; button will appear here when a round is scheduled for today.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Groups + trips */}
-          <GroupsSection
-            groups={groups}
-            trips={trips}
-            groupMembersMap={groupMembersMap}
-            userId={user!.id}
-          />
-
-          {/* Stats row */}
-          <div className="grid gap-8 lg:grid-cols-2">
-            <PersonalStats
-              totalRounds={totalRounds}
-              totalWinnings={totalWinnings}
-              bestGross={bestGross}
-              tripsCount={trips.length}
-            />
-            <RecentActivity activity={recentActivity} />
-          </div>
-
-          {/* Balances */}
-          <OutstandingBalances balances={balances} />
-        </div>
-      )}
-    </div>
+    <HomeClient
+      defaultTab={defaultTab}
+      displayName={playerProfile?.display_name || 'Golfer'}
+      groups={groups}
+      trips={trips}
+      groupMembersMap={groupMembersMap}
+      userId={user!.id}
+      pendingInvites={pendingInvites}
+      isNewUser={isNewUser}
+      upcomingRounds={upcomingRounds}
+      hasRoundToday={hasRoundToday}
+      totalRounds={totalRounds}
+      totalWinnings={totalWinnings}
+      bestGross={bestGross}
+      tripsCount={trips.length}
+      balances={balances}
+      recentActivity={recentActivity}
+    />
   )
 }

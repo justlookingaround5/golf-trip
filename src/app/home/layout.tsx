@@ -58,7 +58,7 @@ export default async function HomeLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar profile={profile} activeRound={activeRound} />
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-2xl px-4 py-6">
         {children}
       </main>
       {chatTripId && <ChatAssistant tripId={chatTripId} />}
