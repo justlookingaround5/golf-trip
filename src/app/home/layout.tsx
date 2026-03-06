@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
+import ChatAssistant from '@/components/ChatAssistant'
 import { getActiveRound } from '@/lib/active-round'
 
 export default async function HomeLayout({
@@ -43,12 +44,24 @@ export default async function HomeLayout({
   // Find today's active round for the Live Scoring nav link
   const activeRound = await getActiveRound(supabase, user.id)
 
+  // Find user's most recent trip for the chat assistant
+  const { data: recentMembership } = await supabase
+    .from('trip_members')
+    .select('trip_id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  const chatTripId = activeRound?.tripId ?? recentMembership?.trip_id ?? null
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar profile={profile} activeRound={activeRound} />
       <main className="mx-auto max-w-6xl px-4 py-8">
         {children}
       </main>
+      {chatTripId && <ChatAssistant tripId={chatTripId} />}
     </div>
   )
 }
