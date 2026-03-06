@@ -369,6 +369,10 @@ export interface RoundStats {
   greens_in_regulation: number
   bounce_backs: number
   scoring_average: number | null
+  fairways_hit: number
+  fairways_total: number
+  total_putts: number
+  putts_per_hole: number | null
   computed_at: string
 }
 

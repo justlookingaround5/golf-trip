@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { processScoreEvents } from '@/lib/score-processing'
+import { computeRoundStats } from '@/lib/compute-round-stats'
 
 function getServiceClient() {
   return createClient(
@@ -159,7 +160,103 @@ export async function POST(
     (err) => console.error('Live score event processing error:', err)
   )
 
+  // 5. Fire-and-forget: recompute round stats
+  recomputeRoundStats(db, courseId).catch(
+    (err) => console.error('Round stats recompute error:', err)
+  )
+
   return NextResponse.json({
     roundScores: updatedScores || [],
   })
+}
+
+// ---------------------------------------------------------------------------
+// Recompute round stats for all players on a course
+// ---------------------------------------------------------------------------
+
+async function recomputeRoundStats(db: SupabaseClient, courseId: string) {
+  // 1. Fetch all round_scores for this course
+  const { data: allScores, error: scoresErr } = await db
+    .from('round_scores')
+    .select('trip_player_id, hole_id, gross_score, fairway_hit, gir, putts')
+    .eq('course_id', courseId)
+
+  if (scoresErr || !allScores) {
+    console.error('recomputeRoundStats: failed to fetch scores', scoresErr?.message)
+    return
+  }
+
+  // 2. Fetch all holes for this course
+  const { data: holes, error: holesErr } = await db
+    .from('holes')
+    .select('id, hole_number, par, handicap_index')
+    .eq('course_id', courseId)
+
+  if (holesErr || !holes || holes.length === 0) {
+    console.error('recomputeRoundStats: failed to fetch holes', holesErr?.message)
+    return
+  }
+
+  // 3. Fetch course to get trip_id
+  const { data: course } = await db
+    .from('courses')
+    .select('trip_id')
+    .eq('id', courseId)
+    .single()
+
+  if (!course) return
+
+  // 4. Fetch player_course_handicaps for this course
+  const { data: handicaps } = await db
+    .from('player_course_handicaps')
+    .select('trip_player_id, handicap_strokes')
+    .eq('course_id', courseId)
+
+  // Also check player_round_tees for per-round tee-based handicaps
+  const { data: roundTees } = await db
+    .from('player_round_tees')
+    .select('trip_player_id, course_handicap')
+    .eq('course_id', courseId)
+
+  // 5. Group scores by trip_player_id
+  const scoresByPlayer = new Map<string, typeof allScores>()
+  for (const score of allScores) {
+    const existing = scoresByPlayer.get(score.trip_player_id) || []
+    existing.push(score)
+    scoresByPlayer.set(score.trip_player_id, existing)
+  }
+
+  // 6. For each player, compute and upsert round stats
+  const now = new Date().toISOString()
+
+  for (const [tripPlayerId, playerScores] of scoresByPlayer) {
+    // Prefer player_round_tees, fallback to player_course_handicaps
+    const roundTee = (roundTees || []).find(rt => rt.trip_player_id === tripPlayerId)
+    const courseHcp = (handicaps || []).find(h => h.trip_player_id === tripPlayerId)
+    const handicapStrokes = roundTee?.course_handicap ?? courseHcp?.handicap_strokes ?? 0
+
+    const stats = computeRoundStats(
+      playerScores.map(s => ({
+        hole_id: s.hole_id,
+        gross_score: s.gross_score,
+        fairway_hit: s.fairway_hit,
+        gir: s.gir,
+        putts: s.putts,
+      })),
+      holes,
+      handicapStrokes,
+    )
+
+    await db
+      .from('round_stats')
+      .upsert(
+        {
+          course_id: courseId,
+          trip_player_id: tripPlayerId,
+          ...stats,
+          computed_at: now,
+        },
+        { onConflict: 'course_id,trip_player_id' },
+      )
+  }
 }

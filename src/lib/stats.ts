@@ -171,6 +171,10 @@ export function computeRoundStats(
     scoring_average: holeData.length > 0
       ? Math.round((grossTotal / holeData.length) * 100) / 100
       : null,
+    fairways_hit: 0,
+    fairways_total: 0,
+    total_putts: 0,
+    putts_per_hole: null,
   }
 }
 
@@ -189,6 +193,7 @@ function emptyRoundStats(courseId: string, tripPlayerId: string): Omit<RoundStat
     front_nine_gross: null, front_nine_net: null,
     back_nine_gross: null, back_nine_net: null,
     greens_in_regulation: 0, bounce_backs: 0, scoring_average: null,
+    fairways_hit: 0, fairways_total: 0, total_putts: 0, putts_per_hole: null,
   }
 }
 
