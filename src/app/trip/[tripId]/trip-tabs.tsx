@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import TeamStandings from '@/components/TeamStandings'
@@ -78,37 +78,46 @@ const INTERNAL_TABS: { key: InternalTab; label: string; emoji: string }[] = [
 ]
 
 export default function TripTabs(props: TripTabsProps) {
+  return (
+    <Suspense fallback={<TripTabsInner {...props} initialTab="points" />}>
+      <TripTabsWithSearchParams {...props} />
+    </Suspense>
+  )
+}
+
+function TripTabsWithSearchParams(props: TripTabsProps) {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab') as InternalTab | null
+  const initialTab = tabParam && INTERNAL_TABS.find((t) => t.key === tabParam) ? tabParam : 'points'
+  return <TripTabsInner {...props} initialTab={initialTab} />
+}
 
-  const [internalTab, setInternalTab] = useState<InternalTab>(
-    tabParam && INTERNAL_TABS.find((t) => t.key === tabParam) ? tabParam : 'points'
-  )
+function TripTabsInner(props: TripTabsProps & { initialTab: InternalTab }) {
+  const { initialTab, ...rest } = props
+  const [internalTab, setInternalTab] = useState<InternalTab>(initialTab)
 
-  // Sync to URL param when it changes (e.g. from home screen quick links)
+  // Sync if initialTab changes (e.g. Suspense resolves with a URL param)
   useEffect(() => {
-    if (tabParam && INTERNAL_TABS.find((t) => t.key === tabParam)) {
-      setInternalTab(tabParam)
-    }
-  }, [tabParam])
+    setInternalTab(initialTab)
+  }, [initialTab])
 
   // Upcoming/setup trips show a different view
-  if (props.tripStatus === 'setup') {
-    return <UpcomingView {...props} />
+  if (rest.tripStatus === 'setup') {
+    return <UpcomingView {...rest} />
   }
 
   return (
     <div>
       {/* Live scoring banner — show when there's a round today */}
-      {props.todaysCourse && (
+      {rest.todaysCourse && (
         <Link
-          href={`/trip/${props.tripId}/live/${props.todaysCourse.id}`}
+          href={`/trip/${rest.tripId}/live/${rest.todaysCourse.id}`}
           className="mb-4 flex items-center gap-3 rounded-xl bg-green-600 px-5 py-4 text-white shadow-md active:bg-green-700 transition"
         >
           <span className="text-2xl">⛳</span>
           <div>
             <p className="font-bold">Live Scoring Active</p>
-            <p className="text-sm text-green-100">{props.todaysCourse.name}</p>
+            <p className="text-sm text-green-100">{rest.todaysCourse.name}</p>
           </div>
           <svg className="ml-auto shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <polyline points="9 18 15 12 9 6" />
@@ -135,12 +144,12 @@ export default function TripTabs(props: TripTabsProps) {
       </div>
 
       {/* Tab content */}
-      {internalTab === 'points' && <PointsTab {...props} />}
-      {internalTab === 'matches' && <MatchesTab {...props} />}
-      {internalTab === 'leaderboard' && <LeaderboardTab {...props} />}
-      {internalTab === 'stats' && <StatsTab {...props} />}
-      {internalTab === 'skins' && <SkinsTab {...props} />}
-      {internalTab === 'money' && <MoneyTab {...props} />}
+      {internalTab === 'points' && <PointsTab {...rest} />}
+      {internalTab === 'matches' && <MatchesTab {...rest} />}
+      {internalTab === 'leaderboard' && <LeaderboardTab {...rest} />}
+      {internalTab === 'stats' && <StatsTab {...rest} />}
+      {internalTab === 'skins' && <SkinsTab {...rest} />}
+      {internalTab === 'money' && <MoneyTab {...rest} />}
     </div>
   )
 }
