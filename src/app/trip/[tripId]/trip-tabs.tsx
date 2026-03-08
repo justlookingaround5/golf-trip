@@ -51,7 +51,6 @@ interface TripTabsProps {
   defaultTab: Tab
   // Plan
   roster: RosterPlayer[]
-  joinCode: string | null
   courses: CourseInfo[]
   gamesByCourse: Record<string, EnrichedGame[]>
   isAdmin: boolean
@@ -101,7 +100,7 @@ export default function TripTabs(props: TripTabsProps) {
   )
 }
 
-function PlanTab({ tripId, roster, joinCode, courses, gamesByCourse, isAdmin }: TripTabsProps) {
+function PlanTab({ tripId, roster, courses, gamesByCourse, isAdmin }: TripTabsProps) {
   return (
     <div className="space-y-5">
       {/* The Crew */}
@@ -127,14 +126,6 @@ function PlanTab({ tripId, roster, joinCode, courses, gamesByCourse, isAdmin }: 
               </div>
             ))}
           </div>
-          {joinCode && (
-            <div className="mt-3 flex items-center gap-2 border-t border-gray-100 dark:border-gray-700 pt-3">
-              <span className="text-xs text-gray-500">Join code:</span>
-              <span className="rounded bg-gray-100 dark:bg-gray-700 px-2 py-0.5 font-mono text-sm font-bold tracking-widest text-gray-900 dark:text-gray-100">
-                {joinCode}
-              </span>
-            </div>
-          )}
         </Card>
       )}
 

@@ -2,16 +2,12 @@
 
 import { useState } from 'react'
 
-export default function ShareTrip({ tripId, joinCode }: { tripId: string; joinCode: string | null }) {
+export default function ShareTrip({ tripId }: { tripId: string }) {
   const [copied, setCopied] = useState<string | null>(null)
 
   const tripUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/trip/${tripId}`
     : `/trip/${tripId}`
-
-  const joinUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/join/code`
-    : '/join/code'
 
   async function copyToClipboard(text: string, label: string) {
     try {
@@ -32,9 +28,7 @@ export default function ShareTrip({ tripId, joinCode }: { tripId: string; joinCo
   }
 
   async function handleShare() {
-    const shareText = joinCode
-      ? `Join our golf trip! Use code ${joinCode} at ${joinUrl} or open ${tripUrl}`
-      : `Check out our golf trip: ${tripUrl}`
+    const shareText = `Check out our golf trip: ${tripUrl}`
 
     if (navigator.share) {
       try {
@@ -53,23 +47,6 @@ export default function ShareTrip({ tripId, joinCode }: { tripId: string; joinCo
       <p className="mb-4 text-sm text-gray-600">Invite friends to view or join your trip.</p>
 
       <div className="space-y-3">
-        {/* Join Code - Big and prominent */}
-        {joinCode && (
-          <div className="flex items-center justify-between rounded-lg bg-white p-4 border border-gray-200">
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Join Code</p>
-              <p className="mt-1 font-mono text-3xl font-bold tracking-[0.3em] text-golf-800">{joinCode}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => copyToClipboard(joinCode, 'code')}
-              className="rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
-            >
-              {copied === 'code' ? 'Copied!' : 'Copy Code'}
-            </button>
-          </div>
-        )}
-
         {/* Trip Link */}
         <div className="flex items-center gap-2 rounded-lg bg-white p-3 border border-gray-200">
           <input

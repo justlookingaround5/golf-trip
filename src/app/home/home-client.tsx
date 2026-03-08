@@ -97,12 +97,6 @@ function PlanSection({ trips }: HomeClientProps) {
             >
               New Trip
             </Link>
-            <Link
-              href="/join/code"
-              className="rounded-full bg-white px-4 py-2 text-sm font-medium text-golf-700 shadow-lg border border-gray-200 hover:bg-gray-50"
-            >
-              Join with Code
-            </Link>
           </div>
         )}
         <button
@@ -305,12 +299,6 @@ function NewUserOnboarding() {
           className="rounded-lg bg-golf-700 py-3 text-center text-sm font-semibold text-white hover:bg-golf-800"
         >
           Create a Trip
-        </Link>
-        <Link
-          href="/join/code"
-          className="rounded-lg border border-gray-300 py-3 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50"
-        >
-          Join with Code
         </Link>
       </div>
     </div>

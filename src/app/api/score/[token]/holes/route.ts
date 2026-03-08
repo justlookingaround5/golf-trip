@@ -13,6 +13,9 @@ function getServiceClient() {
 interface ScoreEntry {
   trip_player_id: string
   gross_score: number
+  fairway_hit?: boolean | null
+  gir?: boolean | null
+  putts?: number | null
 }
 
 export async function POST(
@@ -78,6 +81,9 @@ export async function POST(
     trip_player_id: entry.trip_player_id,
     hole_id,
     gross_score: entry.gross_score,
+    fairway_hit: entry.fairway_hit ?? null,
+    gir: entry.gir ?? null,
+    putts: entry.putts ?? null,
     updated_at: new Date().toISOString(),
   }))
 

@@ -20,7 +20,7 @@ export default async function RoundRecapPage({
 
   const { data: trip } = await supabase
     .from('trips')
-    .select('name, join_code')
+    .select('name')
     .eq('id', tripId)
     .single()
 
@@ -213,17 +213,7 @@ export default async function RoundRecapPage({
         {/* Share / Join CTA */}
         <div className="rounded-xl bg-golf-50 border border-golf-200 p-5 text-center">
           <p className="text-sm text-golf-800 font-medium">Want in on the next trip?</p>
-          {trip?.join_code && (
-            <p className="text-2xl font-mono font-bold text-golf-900 mt-2 tracking-widest">
-              {trip.join_code}
-            </p>
-          )}
-          <Link
-            href="/join/code"
-            className="mt-3 inline-block rounded-md bg-golf-700 px-6 py-2 text-sm font-medium text-white hover:bg-golf-600"
-          >
-            Join Trip
-          </Link>
+          <p className="text-sm text-golf-700 mt-1">Ask your trip organizer to send you an invite.</p>
         </div>
 
       </div>

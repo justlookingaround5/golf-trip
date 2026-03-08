@@ -12,22 +12,6 @@ export default function JoinPage() {
           <p className="text-gray-500">Join a trip or start your own</p>
         </div>
 
-        {/* Join with code */}
-        <Link
-          href="/join/code"
-          className="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-golf-600 transition-all"
-        >
-          <div className="flex items-start gap-4">
-            <span className="text-3xl">🔑</span>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">I have a join code</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Enter the 4-character code from your trip organizer
-              </p>
-            </div>
-          </div>
-        </Link>
-
         {/* Create a trip */}
         <Link
           href="/admin/login"
@@ -43,6 +27,10 @@ export default function JoinPage() {
             </div>
           </div>
         </Link>
+
+        <p className="text-center text-sm text-gray-500">
+          To join a trip, ask your trip organizer to send you an email invite.
+        </p>
 
         {/* Back to home */}
         <p className="text-center text-sm text-gray-400">

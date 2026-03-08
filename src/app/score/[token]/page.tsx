@@ -8,6 +8,7 @@ import { calculateMatchPlay } from '@/lib/match-play'
 import { getStrokesPerHole } from '@/lib/handicap'
 import { useSwipe } from '@/hooks/useSwipe'
 import DotsTracker from '@/components/DotsTracker'
+import ScoreIndicator from '@/components/ScoreIndicator'
 
 // ---------------------------------------------------------------------------
 // Types matching API response
@@ -67,6 +68,15 @@ interface ScoreData {
   trip_player_id: string
   hole_id: string
   gross_score: number
+  fairway_hit?: boolean | null
+  gir?: boolean | null
+  putts?: number | null
+}
+
+interface HoleStatEntry {
+  fairway_hit: boolean | null
+  gir: boolean | null
+  putts: number | null
 }
 
 interface CourseHandicapData {
@@ -113,6 +123,7 @@ export default function ScorerPage() {
   // UI state
   const [activeHole, setActiveHole] = useState<number | null>(null)
   const [holeScores, setHoleScores] = useState<Record<string, number>>({})
+  const [holeStats, setHoleStats] = useState<Record<string, HoleStatEntry>>({})
   const [saving, setSaving] = useState(false)
   const [matchStatus, setMatchStatus] = useState<string>('pending')
   const [dotsHits, setDotsHits] = useState<Record<string, Record<number, string[]>>>({})
@@ -226,13 +237,20 @@ export default function ScorerPage() {
 
     // Initialize scores — use existing scores or default to par
     const initial: Record<string, number> = {}
+    const initialStats: Record<string, HoleStatEntry> = {}
     for (const mp of allMatchPlayers) {
       const existing = data.scores.find(
         (s) => s.hole_id === hole.id && s.trip_player_id === mp.trip_player_id
       )
       initial[mp.trip_player_id] = existing?.gross_score ?? hole.par
+      initialStats[mp.trip_player_id] = {
+        fairway_hit: existing?.fairway_hit ?? null,
+        gir: existing?.gir ?? null,
+        putts: existing?.putts ?? null,
+      }
     }
     setHoleScores(initial)
+    setHoleStats(initialStats)
     setActiveHole(holeNumber)
   }
 
@@ -250,6 +268,13 @@ export default function ScorerPage() {
     setHoleScores((prev) => ({ ...prev, [tripPlayerId]: value }))
   }
 
+  function setHoleStat(tripPlayerId: string, key: keyof HoleStatEntry, value: boolean | number | null) {
+    setHoleStats((prev) => ({
+      ...prev,
+      [tripPlayerId]: { ...prev[tripPlayerId], [key]: value },
+    }))
+  }
+
   async function submitHoleScores() {
     if (navigator.vibrate) navigator.vibrate([20, 50, 20])
     if (!data || activeHole === null) return
@@ -263,6 +288,9 @@ export default function ScorerPage() {
       trip_player_id: mp.trip_player_id,
       hole_id: hole.id,
       gross_score: holeScores[mp.trip_player_id] ?? hole.par,
+      fairway_hit: holeStats[mp.trip_player_id]?.fairway_hit ?? null,
+      gir: holeStats[mp.trip_player_id]?.gir ?? null,
+      putts: holeStats[mp.trip_player_id]?.putts ?? null,
     }))
 
     setData((prev) => {
@@ -291,6 +319,9 @@ export default function ScorerPage() {
       const scores = allMatchPlayers.map((mp) => ({
         trip_player_id: mp.trip_player_id,
         gross_score: holeScores[mp.trip_player_id] ?? hole.par,
+        fairway_hit: holeStats[mp.trip_player_id]?.fairway_hit ?? null,
+        gir: holeStats[mp.trip_player_id]?.gir ?? null,
+        putts: holeStats[mp.trip_player_id]?.putts ?? null,
       }))
 
       const res = await fetch(`/api/score/${token}/holes`, {
@@ -447,11 +478,13 @@ export default function ScorerPage() {
           allMatchPlayers={allMatchPlayers}
           playerStrokesMap={playerStrokesMap}
           holeScores={holeScores}
+          holeStats={holeStats}
           saving={saving}
           error={error}
           openHole={openHole}
           adjustScore={adjustScore}
           setScore={setScore}
+          setHoleStat={setHoleStat}
           submitHoleScores={submitHoleScores}
           onClose={() => setActiveHole(null)}
           dotsHits={dotsHits}
@@ -537,13 +570,6 @@ export default function ScorerPage() {
                             const firstName =
                               mp?.trip_player?.player?.name?.split(' ')[0] ??
                               '?'
-                            const diff = s.gross_score - hole.par
-                            const diffText =
-                              diff === 0
-                                ? 'E'
-                                : diff > 0
-                                  ? `+${diff}`
-                                  : `${diff}`
                             return (
                               <div
                                 key={s.id}
@@ -552,17 +578,7 @@ export default function ScorerPage() {
                                 <span className="truncate text-gray-600">
                                   {firstName}
                                 </span>
-                                <span
-                                  className={`font-semibold ${
-                                    diff < 0
-                                      ? 'text-red-600'
-                                      : diff > 0
-                                        ? 'text-blue-600'
-                                        : 'text-gray-700'
-                                  }`}
-                                >
-                                  {s.gross_score} ({diffText})
-                                </span>
+                                <ScoreIndicator score={s.gross_score} par={hole.par} size="xs" />
                               </div>
                             )
                           })}
@@ -623,11 +639,13 @@ function HoleEntryView({
   allMatchPlayers,
   playerStrokesMap,
   holeScores,
+  holeStats,
   saving,
   error,
   openHole,
   adjustScore,
   setScore,
+  setHoleStat,
   submitHoleScores,
   onClose,
   dotsHits,
@@ -642,11 +660,13 @@ function HoleEntryView({
   allMatchPlayers: MatchPlayerData[]
   playerStrokesMap: Map<string, Map<number, number>>
   holeScores: Record<string, number>
+  holeStats: Record<string, HoleStatEntry>
   saving: boolean
   error: string | null
   openHole: (n: number) => void
   adjustScore: (id: string, d: number) => void
   setScore: (id: string, v: number) => void
+  setHoleStat: (id: string, key: keyof HoleStatEntry, value: boolean | number | null) => void
   submitHoleScores: () => void
   onClose: () => void
   dotsHits: Record<string, Record<number, string[]>>
@@ -666,6 +686,15 @@ function HoleEntryView({
   })
 
   if (activeHole === null || !activeHoleData) return null
+
+  const statsComplete = allMatchPlayers.every((mp) => {
+    const stats = holeStats[mp.trip_player_id]
+    if (!stats) return false
+    if (activeHoleData.par !== 3 && stats.fairway_hit === null) return false
+    if (stats.gir === null) return false
+    if (stats.putts === null) return false
+    return true
+  })
 
   return (
     <div
@@ -712,9 +741,9 @@ function HoleEntryView({
         ))}
       </div>
 
-      {/* Score entry area — vertically centered */}
-      <div className="flex-1 flex flex-col justify-center px-4 overflow-y-auto">
-        <div className="space-y-3 max-w-lg mx-auto w-full">
+      {/* Score entry area */}
+      <div className="flex-1 px-4 overflow-y-auto">
+        <div className="space-y-3 max-w-lg mx-auto w-full py-3">
           {/* Team A */}
           {teamAPlayers.length > 0 && (
             <div>
@@ -730,8 +759,10 @@ function HoleEntryView({
                   }
                   score={holeScores[mp.trip_player_id] ?? activeHoleData.par}
                   par={activeHoleData.par}
+                  stats={holeStats[mp.trip_player_id] ?? { fairway_hit: null, gir: null, putts: null }}
                   onAdjust={(d) => adjustScore(mp.trip_player_id, d)}
                   onSet={(v) => setScore(mp.trip_player_id, v)}
+                  onSetStat={(key, value) => setHoleStat(mp.trip_player_id, key, value)}
                 />
               ))}
             </div>
@@ -752,8 +783,10 @@ function HoleEntryView({
                   }
                   score={holeScores[mp.trip_player_id] ?? activeHoleData.par}
                   par={activeHoleData.par}
+                  stats={holeStats[mp.trip_player_id] ?? { fairway_hit: null, gir: null, putts: null }}
                   onAdjust={(d) => adjustScore(mp.trip_player_id, d)}
                   onSet={(v) => setScore(mp.trip_player_id, v)}
+                  onSetStat={(key, value) => setHoleStat(mp.trip_player_id, key, value)}
                 />
               ))}
             </div>
@@ -782,11 +815,16 @@ function HoleEntryView({
       <div className="px-4 pb-6 pt-2 max-w-lg mx-auto w-full">
         <button
           onClick={submitHoleScores}
-          disabled={saving}
+          disabled={saving || !statsComplete}
           className="w-full rounded-xl bg-golf-700 py-4 text-lg font-bold text-white shadow-lg active:bg-golf-800 disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save & Next'}
         </button>
+        {!statsComplete && !saving && (
+          <p className="mt-1.5 text-center text-xs text-amber-600">
+            Enter stats for all players above to save
+          </p>
+        )}
         <button
           onClick={onClose}
           className="w-full mt-2 py-2 text-sm text-gray-500"
@@ -810,15 +848,19 @@ function PlayerScoreRow({
   strokes,
   score,
   par,
+  stats,
   onAdjust,
   onSet,
+  onSetStat,
 }: {
   name: string
   strokes: number
   score: number
   par: number
+  stats: HoleStatEntry
   onAdjust: (delta: number) => void
   onSet: (value: number) => void
+  onSetStat: (key: keyof HoleStatEntry, value: boolean | number | null) => void
 }) {
   // Common scores: par-1 through par+3
   const presets: number[] = []
@@ -827,7 +869,7 @@ function PlayerScoreRow({
   }
 
   return (
-    <div className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-3">
+    <div className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-3 mb-2">
       <div className="flex items-center justify-between mb-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{name}</p>
@@ -861,8 +903,9 @@ function PlayerScoreRow({
           </button>
         </div>
       </div>
+
       {/* Quick presets */}
-      <div className="flex justify-center gap-1.5">
+      <div className="flex justify-center gap-1.5 mb-3">
         {presets.map(v => (
           <button
             key={v}
@@ -876,6 +919,85 @@ function PlayerScoreRow({
             {v}
           </button>
         ))}
+      </div>
+
+      {/* Per-hole stats */}
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-2.5 space-y-2">
+        {/* Fairway — skip for par 3 */}
+        {par !== 3 && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-gray-500 w-14">Fairway</span>
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => onSetStat('fairway_hit', stats.fairway_hit === true ? null : true)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95 ${
+                  stats.fairway_hit === true
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                Hit
+              </button>
+              <button
+                onClick={() => onSetStat('fairway_hit', stats.fairway_hit === false ? null : false)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95 ${
+                  stats.fairway_hit === false
+                    ? 'bg-red-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                Miss
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* GIR */}
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-gray-500 w-14">GIR</span>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => onSetStat('gir', stats.gir === true ? null : true)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95 ${
+                stats.gir === true
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              }`}
+            >
+              Hit
+            </button>
+            <button
+              onClick={() => onSetStat('gir', stats.gir === false ? null : false)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95 ${
+                stats.gir === false
+                  ? 'bg-red-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              }`}
+            >
+              Miss
+            </button>
+          </div>
+        </div>
+
+        {/* Putts */}
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-gray-500 w-14">Putts</span>
+          <div className="flex gap-1">
+            {[0, 1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                onClick={() => onSetStat('putts', stats.putts === n ? null : n)}
+                className={`w-9 h-8 rounded-lg text-xs font-semibold transition active:scale-95 ${
+                  stats.putts === n
+                    ? 'bg-golf-700 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

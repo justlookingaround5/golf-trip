@@ -150,23 +150,53 @@ export default function MatchScorecard({
   const backNine = sortedHoles.filter((h) => h.hole_number > 9)
   const allPlayers = [...teamAPlayers, ...teamBPlayers]
 
-  // Running match status per hole
+  // Running match status per hole — clinch-aware, standard labels
   const runningStatus = useMemo(() => {
-    const map = new Map<number, { leader: string; margin: number }>()
-    let aWins = 0
-    let bWins = 0
-    for (const hole of sortedHoles) {
+    const map = new Map<number, {
+      leader: 'team_a' | 'team_b' | 'tie'
+      margin: number
+      clinched: boolean
+      label: string
+    }>()
+    const totalHoles = sortedHoles.length || 18
+    let aUp = 0
+    let bUp = 0
+    for (let i = 0; i < sortedHoles.length; i++) {
+      const hole = sortedHoles[i]
       const hr = holeResultByNumber.get(hole.hole_number)
-      if (hr) {
-        if (hr.winner === 'team_a') aWins++
-        else if (hr.winner === 'team_b') bWins++
+      if (!hr) continue
+      if (hr.winner === 'team_a') aUp++
+      else if (hr.winner === 'team_b') bUp++
+      const holesLeft = totalHoles - (i + 1)
+      const diff = aUp - bUp
+      const absLead = Math.abs(diff)
+      if (absLead > holesLeft) {
+        const label = holesLeft === 0 ? `${absLead}UP` : `${absLead}&${holesLeft}`
+        map.set(hole.hole_number, {
+          leader: diff > 0 ? 'team_a' : 'team_b',
+          margin: absLead,
+          clinched: true,
+          label,
+        })
+        break
       }
-      const margin = Math.abs(aWins - bWins)
-      const leader = aWins > bWins ? 'team_a' : bWins > aWins ? 'team_b' : 'tie'
-      map.set(hole.hole_number, { leader, margin })
+      const label = diff === 0 ? 'AS' : diff > 0 ? `${absLead} UP` : `${absLead} DN`
+      map.set(hole.hole_number, {
+        leader: diff > 0 ? 'team_a' : diff < 0 ? 'team_b' : 'tie',
+        margin: absLead,
+        clinched: false,
+        label,
+      })
     }
     return map
   }, [sortedHoles, holeResultByNumber])
+
+  const clinchHoleNumber = useMemo(() => {
+    for (const [holeNum, s] of runningStatus) {
+      if (s.clinched) return holeNum
+    }
+    return null
+  }, [runningStatus])
 
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
@@ -219,6 +249,8 @@ export default function MatchScorecard({
           scoresByHoleAndPlayer={scoresByHoleAndPlayer}
           holeResultByNumber={holeResultByNumber}
           runningStatus={runningStatus}
+          playerStrokesMap={playerStrokesMap}
+          clinchHoleNumber={clinchHoleNumber}
         />
       )}
 
@@ -292,11 +324,17 @@ export default function MatchScorecard({
                               hasScores = true
                             }
 
+                            const receivesStroke = (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0) > 0
+                            const afterClinch = clinchHoleNumber !== null && h.hole_number > clinchHoleNumber
+
                             return (
                               <td
                                 key={h.id}
-                                className="px-1 py-2 text-center"
+                                className={`relative px-1 py-2 text-center ${afterClinch ? 'opacity-30' : receivesStroke ? 'bg-golf-50 dark:bg-golf-900/20' : ''}`}
                               >
+                                {receivesStroke && !afterClinch && (
+                                  <span className="absolute right-0.5 top-0.5 text-[8px] leading-none text-golf-600 dark:text-golf-400">●</span>
+                                )}
                                 {gross !== undefined ? (
                                   <ScoreIndicator score={gross} par={h.par} size="xs" />
                                 ) : (
@@ -312,41 +350,64 @@ export default function MatchScorecard({
                       )
                     })}
 
-                    {/* Match result row */}
-                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-golf-50 dark:bg-golf-900/30">
+                    {/* Hole result row */}
+                    <tr className="border-b border-gray-100 bg-golf-50 dark:bg-golf-900/30">
                       <td className="px-2 py-1 text-xs font-medium text-golf-700">
                         Result
                       </td>
                       {nine.holes.map((h) => {
                         const hr = holeResultByNumber.get(h.hole_number)
+                        const afterClinch = clinchHoleNumber !== null && h.hole_number > clinchHoleNumber
+                        if (afterClinch) {
+                          return <td key={h.id} className="px-1 py-1 text-center text-gray-200 dark:text-gray-700">—</td>
+                        }
                         if (!hr) {
-                          return (
-                            <td
-                              key={h.id}
-                              className="px-1 py-1 text-center text-gray-300"
-                            >
-                              -
-                            </td>
-                          )
+                          return <td key={h.id} className="px-1 py-1 text-center text-gray-300">·</td>
                         }
                         return (
-                          <td
-                            key={h.id}
-                            className="px-1 py-1 text-center"
-                          >
+                          <td key={h.id} className="px-1 py-1 text-center">
                             {hr.winner === 'team_a' ? (
                               <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" />
                             ) : hr.winner === 'team_b' ? (
-                              <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
+                              <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-400" />
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="inline-block h-2.5 w-2.5 rounded-full bg-gray-300" />
                             )}
                           </td>
                         )
                       })}
-                      <td className="px-2 py-1 text-center text-xs text-gray-400">
-                        -
+                      <td className="px-2 py-1 text-center text-xs text-gray-400">—</td>
+                    </tr>
+
+                    {/* Running standing row */}
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-golf-50 dark:bg-golf-900/30">
+                      <td className="px-2 py-1 text-xs font-medium text-golf-700">
+                        Standing
                       </td>
+                      {nine.holes.map((h) => {
+                        const s = runningStatus.get(h.hole_number)
+                        const afterClinch = clinchHoleNumber !== null && h.hole_number > clinchHoleNumber
+                        if (afterClinch) {
+                          return <td key={h.id} className="px-1 py-1 text-center text-gray-200 dark:text-gray-700">—</td>
+                        }
+                        if (!s) {
+                          return <td key={h.id} className="px-1 py-1 text-center text-gray-300">·</td>
+                        }
+                        return (
+                          <td key={h.id} className="px-1 py-1 text-center">
+                            <span className={`text-[9px] font-bold leading-none ${
+                              s.clinched
+                                ? s.leader === 'team_a' ? 'text-green-700' : 'text-red-600'
+                                : s.leader === 'team_a' ? 'text-green-700'
+                                : s.leader === 'team_b' ? 'text-red-600'
+                                : 'text-gray-500'
+                            }`}>
+                              {s.label}
+                            </span>
+                          </td>
+                        )
+                      })}
+                      <td className="px-2 py-1 text-center text-xs text-gray-400">—</td>
                     </tr>
                   </tbody>
                 </table>
@@ -375,12 +436,21 @@ function VerticalScorecard({
   scoresByHoleAndPlayer,
   holeResultByNumber,
   runningStatus,
+  playerStrokesMap,
+  clinchHoleNumber,
 }: {
   holes: Hole[]
   allPlayers: MatchPlayer[]
   scoresByHoleAndPlayer: Map<string, Map<string, number>>
   holeResultByNumber: Map<number, HoleResult>
-  runningStatus: Map<number, { leader: string; margin: number }>
+  runningStatus: Map<number, {
+    leader: 'team_a' | 'team_b' | 'tie'
+    margin: number
+    clinched: boolean
+    label: string
+  }>
+  playerStrokesMap: Map<string, Map<number, number>>
+  clinchHoleNumber: number | null
 }) {
   return (
     <div className="divide-y divide-gray-100">
@@ -389,9 +459,10 @@ function VerticalScorecard({
         const status = runningStatus.get(hole.hole_number)
         const holeScores = scoresByHoleAndPlayer.get(hole.id)
         const hasAnyScore = holeScores && holeScores.size > 0
+        const afterClinch = clinchHoleNumber !== null && hole.hole_number > clinchHoleNumber
 
         return (
-          <div key={hole.id} className="px-4 py-2">
+          <div key={hole.id} className={`px-4 py-2 ${afterClinch ? 'opacity-40' : ''}`}>
             <div className="flex items-center gap-3">
               {/* Hole number + par */}
               <div className="w-12 shrink-0 text-center">
@@ -404,10 +475,14 @@ function VerticalScorecard({
                 {allPlayers.map((mp) => {
                   const gross = holeScores?.get(mp.trip_player_id)
                   const firstName = (playerName(mp).split(' ')[0] ?? '').slice(0, 6)
+                  const receivesStroke = (playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0) > 0
 
                   return (
-                    <div key={mp.trip_player_id} className="text-center min-w-[40px]">
+                    <div key={mp.trip_player_id} className={`relative text-center min-w-[40px] rounded px-1 ${receivesStroke ? 'bg-golf-50 dark:bg-golf-900/20' : ''}`}>
                       <div className="text-[10px] text-gray-500 truncate">{firstName}</div>
+                      {receivesStroke && (
+                        <span className="absolute right-0.5 top-0.5 text-[8px] leading-none text-golf-600 dark:text-golf-400">●</span>
+                      )}
                       {gross !== undefined ? (
                         <ScoreIndicator score={gross} par={hole.par} size="xs" />
                       ) : (
@@ -420,34 +495,32 @@ function VerticalScorecard({
 
               {/* Hole result */}
               <div className="w-8 shrink-0 text-center">
-                {hr ? (
+                {hr && hole.hole_number <= (clinchHoleNumber ?? Infinity) ? (
                   hr.winner === 'team_a' ? (
-                    <span className="inline-block h-3 w-3 rounded-full bg-green-500" />
+                    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-green-100 text-[9px] font-bold text-green-700">W</span>
                   ) : hr.winner === 'team_b' ? (
-                    <span className="inline-block h-3 w-3 rounded-full bg-red-500" />
+                    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-[9px] font-bold text-red-600">L</span>
                   ) : (
-                    <span className="inline-block h-3 w-3 rounded-full bg-gray-300" />
+                    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-100 text-[9px] font-bold text-gray-500">H</span>
                   )
-                ) : hasAnyScore ? (
-                  <span className="text-[10px] text-gray-300">-</span>
+                ) : hasAnyScore && clinchHoleNumber === null ? (
+                  <span className="text-[10px] text-gray-300">·</span>
                 ) : null}
               </div>
 
-              {/* Running status */}
-              <div className="w-16 shrink-0 text-right">
-                {status && hasAnyScore && (
-                  <span className={`text-[10px] font-semibold ${
-                    status.leader === 'team_a'
-                      ? 'text-green-700'
-                      : status.leader === 'team_b'
-                        ? 'text-red-600'
-                        : 'text-gray-500'
+              {/* Running standing */}
+              <div className="w-14 shrink-0 text-right">
+                {status && hole.hole_number <= (clinchHoleNumber ?? Infinity) ? (
+                  <span className={`text-[10px] font-bold ${
+                    status.clinched
+                      ? status.leader === 'team_a' ? 'text-green-700' : 'text-red-600'
+                      : status.leader === 'team_a' ? 'text-green-700'
+                      : status.leader === 'team_b' ? 'text-red-600'
+                      : 'text-gray-500'
                   }`}>
-                    {status.leader === 'tie'
-                      ? 'AS'
-                      : `${status.leader === 'team_a' ? 'A' : 'B'} ${status.margin}UP`}
+                    {status.label}
                   </span>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

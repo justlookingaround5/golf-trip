@@ -305,7 +305,6 @@ export default async function TripPublicPage({
           tripId={tripId}
           defaultTab={defaultTab}
           roster={roster}
-          joinCode={(trip as Trip).join_code ?? null}
           courses={coursesForTabs}
           gamesByCourse={gamesByCourse}
           isAdmin={isAdmin}

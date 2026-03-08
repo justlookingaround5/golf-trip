@@ -47,10 +47,6 @@ export default function DashboardClient({
   initialCommentCounts = {},
 }: DashboardClientProps) {
   const [feed, setFeed] = useState<ActivityFeedItem[]>(initialFeed)
-  const [weather, setWeather] = useState<{
-    current: { temp: number; wind_mph: number; condition: string; icon: string }
-    today: { high: number; low: number; rain_pct: number }
-  } | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const touchStartY = useRef(0)
 
@@ -85,14 +81,6 @@ export default function DashboardClient({
     return () => { supabase.removeChannel(channel) }
   }, [trip.id])
 
-  // Weather fetch
-  useEffect(() => {
-    fetch('/api/weather?lat=33.0&lon=-117.0')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setWeather(data) })
-      .catch(() => {})
-  }, [])
-
   const today = new Date().toISOString().split('T')[0]
 
   return (
@@ -118,11 +106,6 @@ export default function DashboardClient({
           <h1 className="text-2xl font-bold">{trip.name}</h1>
           <p className="text-golf-200 text-sm mt-1">
             {trip.location} &middot; {trip.year}
-            {trip.join_code && (
-              <span className="ml-3 rounded bg-golf-800 px-2 py-0.5 font-mono text-xs">
-                Code: {trip.join_code}
-              </span>
-            )}
           </p>
         </div>
       </header>
@@ -145,21 +128,6 @@ export default function DashboardClient({
               Par {todaysRound.par}
               {todaysRound.round_date && ` · ${new Date(todaysRound.round_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}
             </p>
-
-            {/* Weather */}
-            {weather && (
-              <div className="mt-3 flex items-center gap-4 rounded-lg bg-gray-50 px-3 py-2 text-sm">
-                <span className="text-2xl">{weather.current.icon}</span>
-                <div>
-                  <span className="font-bold text-gray-900">{weather.current.temp}&deg;F</span>
-                  <span className="ml-2 text-gray-500">{weather.current.condition}</span>
-                </div>
-                <div className="ml-auto text-right text-xs text-gray-500">
-                  <div>Wind: {weather.current.wind_mph} mph</div>
-                  <div>Rain: {weather.today.rain_pct}%</div>
-                </div>
-              </div>
-            )}
 
             {/* Active games */}
             {todaysGames.length > 0 && (

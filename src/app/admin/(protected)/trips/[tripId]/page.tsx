@@ -36,7 +36,7 @@ export default async function TripDetailPage({
       <TripActions trip={typedTrip} />
 
       {/* Share Trip */}
-      <ShareTrip tripId={typedTrip.id} joinCode={typedTrip.join_code} />
+      <ShareTrip tripId={typedTrip.id} />
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-lg font-semibold text-gray-900">Trip Details</h3>
@@ -73,17 +73,6 @@ export default async function TripDetailPage({
               /trip/{typedTrip.id}
             </dd>
           </div>
-          {typedTrip.join_code && (
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Join Code</dt>
-              <dd className="mt-1 flex items-center gap-2">
-                <span className="inline-block rounded-md bg-gray-100 px-3 py-1 font-mono text-lg font-bold tracking-widest text-gray-900">
-                  {typedTrip.join_code}
-                </span>
-                <span className="text-xs text-gray-500">Share this code so players can join at /join/code</span>
-              </dd>
-            </div>
-          )}
         </dl>
       </div>
 
