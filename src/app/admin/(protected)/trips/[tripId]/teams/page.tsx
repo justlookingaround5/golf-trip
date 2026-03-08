@@ -214,6 +214,23 @@ export default function TeamsPage() {
     )
   }
 
+  if (tripPlayers.length === 0) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 shadow-sm">
+        <h3 className="mb-2 font-semibold text-amber-900">Players Required</h3>
+        <p className="mb-4 text-sm text-amber-800">
+          Add players to the trip before creating teams.
+        </p>
+        <a
+          href={`/admin/trips/${tripId}/players`}
+          className="inline-flex items-center rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
+        >
+          Go to Players &rarr;
+        </a>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {error && (

@@ -76,7 +76,7 @@ function compute(input: GameEngineInput): GameEngineResult {
     }
 
     // Find lowest score
-    const useNet = mode === 'net' || mode === 'both'
+    const useNet = mode === 'net'
     const sorted = [...holeScores].sort((a, b) =>
       useNet ? a.net - b.net : a.gross - b.gross
     )
@@ -156,8 +156,8 @@ function compute(input: GameEngineInput): GameEngineResult {
 
 function validateConfig(config: Record<string, unknown>) {
   const errors: string[] = []
-  if (config.mode && !['gross', 'net', 'both'].includes(config.mode as string)) {
-    errors.push('mode must be "gross", "net", or "both"')
+  if (config.mode && !['gross', 'net'].includes(config.mode as string)) {
+    errors.push('mode must be "gross" or "net"')
   }
   return { valid: errors.length === 0, errors }
 }

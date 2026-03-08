@@ -146,7 +146,11 @@ export async function POST(
   }
 
   // 8b. Write settlement_ledger entries (idempotent — delete + re-insert)
-  const formatName = roundGame.game_format?.name || engineKey
+  const baseFormatName = roundGame.game_format?.name || engineKey
+  // For skins, include the scoring mode so the payout breakdown is descriptive
+  const formatName = engineKey === 'skins'
+    ? `${baseFormatName} (${mergedConfig.mode === 'gross' ? 'Gross' : 'Net'})`
+    : baseFormatName
   const tripId = roundGame.trip_id
 
   // Delete previous entries for this game

@@ -108,7 +108,11 @@ function PlanTab({ tripId, roster, courses, gamesByCourse, isAdmin }: TripTabsPr
         <Card title={`The Crew (${roster.length})`}>
           <div className="flex flex-wrap gap-3">
             {roster.map((player) => (
-              <div key={player.id} className="flex items-center gap-2 rounded-full bg-gray-50 dark:bg-gray-700 px-3 py-1.5">
+              <Link
+                key={player.id}
+                href={`/trip/${tripId}/players/${player.id}`}
+                className="flex items-center gap-2 rounded-full bg-gray-50 dark:bg-gray-700 px-3 py-1.5 transition hover:bg-golf-50 dark:hover:bg-golf-900/30"
+              >
                 {player.avatar_url ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={player.avatar_url} alt="" className="h-6 w-6 rounded-full" />
@@ -123,7 +127,7 @@ function PlanTab({ tripId, roster, courses, gamesByCourse, isAdmin }: TripTabsPr
                     <span className="ml-1 text-xs text-gray-500">({player.handicap_index})</span>
                   )}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </Card>

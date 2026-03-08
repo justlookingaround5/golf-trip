@@ -25,7 +25,7 @@ export default async function ChatPage({
   // Fetch initial 50 messages (newest first, then reverse in client)
   const { data: messages } = await supabase
     .from('trip_messages')
-    .select('id, user_id, content, created_at')
+    .select('id, user_id, content, created_at, is_system, system_type')
     .eq('trip_id', tripId)
     .order('created_at', { ascending: false })
     .limit(50)
@@ -63,8 +63,14 @@ export default async function ChatPage({
 
   const initialMessages = (messages || []).reverse().map(m => ({
     ...m,
-    display_name: profileMap[m.user_id]?.display_name || 'Unknown',
-    avatar_url: profileMap[m.user_id]?.avatar_url || null,
+    is_system: m.is_system ?? false,
+    system_type: m.system_type ?? null,
+    display_name: m.is_system || !m.user_id
+      ? 'ForeLive'
+      : profileMap[m.user_id]?.display_name || 'Unknown',
+    avatar_url: m.is_system || !m.user_id
+      ? null
+      : profileMap[m.user_id]?.avatar_url || null,
   }))
 
   return (

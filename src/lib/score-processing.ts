@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { detectScoringEvents } from '@/lib/activity'
 import { getEngine } from '@/lib/games'
 import { getStrokesPerHole } from '@/lib/handicap'
+import { calculateMatchPlay } from '@/lib/match-play'
 import { postSystemMessage } from '@/lib/notifications'
 import type { GameEngineInput } from '@/lib/types'
 
@@ -12,14 +13,16 @@ interface ScoreEntry {
 
 /**
  * Non-blocking post-score processing:
- * 1. Detect birdie/eagle events for the activity feed
- * 2. Recompute any active round games for this course
+ * 1. Detect birdie/eagle/bad-score events for the activity feed + chat
+ * 2. Recompute any active round games for this course (with skins alerts)
+ * 3. Auto-complete the match if match-play result is decided
  */
 export async function processScoreEvents(
   db: SupabaseClient,
   courseId: string,
   holeId: string,
-  scoreEntries: ScoreEntry[]
+  scoreEntries: ScoreEntry[],
+  matchId?: string
 ) {
   // Get hole info (par, number) and course's trip_id
   const [holeRes, courseRes] = await Promise.all([
@@ -65,17 +68,18 @@ export async function processScoreEvents(
     .eq('course_id', courseId)
     .order('hole_number')
 
-  // Detect birdie/eagle for each score entry
+  // Detect scoring events for each score entry
   for (const entry of scoreEntries) {
     const hcStrokes = handicapStrokes.get(entry.trip_player_id) ?? 0
     const strokesMap = getStrokesPerHole(hcStrokes, allHoles || [])
     const strokesOnHole = strokesMap.get(hole.hole_number) ?? 0
     const netScore = entry.gross_score - strokesOnHole
+    const pName = playerNames.get(entry.trip_player_id) || 'Someone'
 
     await detectScoringEvents({
       trip_id: tripId,
       trip_player_id: entry.trip_player_id,
-      player_name: playerNames.get(entry.trip_player_id) || 'Unknown',
+      player_name: pName,
       course_id: courseId,
       hole_number: hole.hole_number,
       hole_id: holeId,
@@ -85,33 +89,54 @@ export async function processScoreEvents(
       client: db,
     })
 
-    // Post system chat messages for notable events
-    const diff = netScore - hole.par
-    const pName = playerNames.get(entry.trip_player_id) || 'Someone'
-    if (diff <= -2) {
-      postSystemMessage(db, tripId, `🦅 ${pName} made EAGLE on Hole ${hole.hole_number}! (${entry.gross_score} on par ${hole.par})`).catch(() => {})
-    } else if (diff === -1) {
-      postSystemMessage(db, tripId, `🐦 ${pName} birdied Hole ${hole.hole_number} (${entry.gross_score} on par ${hole.par})`).catch(() => {})
+    // System chat messages for notable scoring events
+    const netDiff = netScore - hole.par
+    const grossDiff = entry.gross_score - hole.par
+
+    if (netDiff <= -2) {
+      postSystemMessage(db, tripId, `🦅 ${pName} made EAGLE on Hole ${hole.hole_number}! (${entry.gross_score} on par ${hole.par})`, 'eagle').catch(() => {})
+    } else if (netDiff === -1) {
+      postSystemMessage(db, tripId, `🐦 ${pName} birdied Hole ${hole.hole_number} (${entry.gross_score} on par ${hole.par})`, 'birdie').catch(() => {})
+    } else if (grossDiff > 2) {
+      // Worse than double bogey (gross score only — triple bogey or worse)
+      const label = grossDiff === 3 ? 'triple bogey' : grossDiff === 4 ? 'quadruple bogey' : `+${grossDiff}`
+      postSystemMessage(db, tripId, `😬 ${pName} made a ${label} on Hole ${hole.hole_number} (${entry.gross_score} on par ${hole.par})`, 'bad_score').catch(() => {})
     }
   }
 
-  // Recompute active round games for this course
-  await recomputeRoundGames(db, courseId)
+  // Recompute active round games (detects new skins won on this hole)
+  await recomputeRoundGames(db, courseId, tripId, hole.hole_number)
+
+  // Auto-complete match play if all holes are done and result is decided
+  if (matchId) {
+    await checkAndCompleteMatch(db, matchId, tripId).catch(
+      (err) => console.error('Match completion check failed:', err)
+    )
+  }
 }
 
 /**
  * Find all non-cancelled round games for a course and recompute via engine.
+ * Posts a system chat message when a new skin is won on the submitted hole.
  */
 export async function recomputeRoundGames(
   db: SupabaseClient,
-  courseId: string
+  courseId: string,
+  tripId?: string,
+  submittedHoleNumber?: number
 ) {
   const { data: roundGames } = await db
     .from('round_games')
     .select(`
       *,
       game_format:game_formats(*),
-      round_game_players(*, trip_player:trip_players(*))
+      round_game_players(
+        *,
+        trip_player:trip_players(
+          *,
+          player:players(name)
+        )
+      )
     `)
     .eq('course_id', courseId)
     .neq('status', 'cancelled')
@@ -139,6 +164,20 @@ export async function recomputeRoundGames(
       (rgp: { trip_player_id: string }) => rgp.trip_player_id
     )
     if (playerIds.length === 0) continue
+
+    const isSkins = engineKey === 'skins'
+
+    // For skins: fetch old results before computing so we can detect new wins
+    const oldSkinsMap = new Map<string, number>() // trip_player_id → skins_won
+    if (isSkins && tripId && submittedHoleNumber !== undefined) {
+      const { data: oldResults } = await db
+        .from('game_results')
+        .select('trip_player_id, points')
+        .eq('round_game_id', rg.id)
+      for (const r of oldResults || []) {
+        oldSkinsMap.set(r.trip_player_id, r.points)
+      }
+    }
 
     // Fetch scores and handicaps for this game's players
     const [scoresRes, handicapsRes] = await Promise.all([
@@ -203,5 +242,132 @@ export async function recomputeRoundGames(
     if (rg.status === 'setup') {
       await db.from('round_games').update({ status: 'active' }).eq('id', rg.id)
     }
+
+    // --- Skins: detect newly-won skin on the submitted hole ---
+    if (isSkins && tripId && submittedHoleNumber !== undefined) {
+      const holeResult = (result.holes as unknown as Array<{
+        hole_number: number
+        winner_id: string | null
+        carried: boolean
+        skin_value: number
+      }>).find(h => h.hole_number === submittedHoleNumber)
+
+      if (holeResult?.winner_id && !holeResult.carried) {
+        const winnerId = holeResult.winner_id
+        const oldSkins = oldSkinsMap.get(winnerId) ?? 0
+        const newSkins = result.players.find(p => p.trip_player_id === winnerId)?.points ?? 0
+
+        if (newSkins > oldSkins) {
+          // Find winner's name from round_game_players
+          const rgp = rg.round_game_players.find(
+            (p: { trip_player_id: string }) => p.trip_player_id === winnerId
+          )
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const playerData = rgp?.trip_player?.player as any
+          const winnerName = Array.isArray(playerData)
+            ? playerData[0]?.name
+            : playerData?.name || 'Someone'
+
+          const skinCount = holeResult.skin_value
+          const mode = (mergedConfig.mode === 'gross' ? 'gross' : 'net') as string
+          const skinWord = skinCount === 1 ? 'skin' : 'skins'
+          postSystemMessage(
+            db,
+            tripId,
+            `💰 ${winnerName} won ${skinCount} ${skinWord} on Hole ${submittedHoleNumber} (${mode})!`,
+            'skin_won'
+          ).catch(() => {})
+        }
+      }
+    }
   }
+}
+
+/**
+ * Check if a match-play match is clinched and auto-complete it.
+ * Posts a system chat message if the match just finished.
+ */
+export async function checkAndCompleteMatch(
+  db: SupabaseClient,
+  matchId: string,
+  tripId: string
+) {
+  // Fetch match status and format
+  const { data: match } = await db
+    .from('matches')
+    .select('id, status, format, course_id')
+    .eq('id', matchId)
+    .single()
+
+  if (!match || match.status === 'completed') return
+
+  // Only process match-play formats
+  const matchPlayFormats = ['1v1_match', '2v2_best_ball', '2v2_alternate_shot']
+  if (!matchPlayFormats.includes(match.format)) return
+
+  // Fetch all required data in parallel
+  const [playersRes, scoresRes, holesRes, handicapsRes] = await Promise.all([
+    db.from('match_players').select('id, trip_player_id, side, trip_player:trip_players(player:players(name))').eq('match_id', matchId),
+    db.from('scores').select('*').eq('match_id', matchId),
+    db.from('holes').select('*').eq('course_id', match.course_id).order('hole_number'),
+    db.from('player_course_handicaps').select('*').eq('course_id', match.course_id),
+  ])
+
+  const matchPlayers = playersRes.data || []
+  const scores = scoresRes.data || []
+  const holes = holesRes.data || []
+
+  if (scores.length === 0 || holes.length === 0) return
+
+  // Build strokes map for match play calculator
+  const playerStrokesMap = new Map<string, Map<number, number>>()
+  for (const mp of matchPlayers) {
+    const ch = (handicapsRes.data || []).find(
+      (c: { trip_player_id: string }) => c.trip_player_id === mp.trip_player_id
+    )
+    playerStrokesMap.set(mp.trip_player_id, getStrokesPerHole(ch?.handicap_strokes ?? 0, holes))
+  }
+
+  // Run match-play calculation
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const matchResult = calculateMatchPlay(scores as any, matchPlayers as any, holes, playerStrokesMap, match.format)
+
+  if (!matchResult.isComplete) return
+
+  // Determine winner side and result string
+  const winnerSide = matchResult.leader === 'tie' ? 'tie'
+    : matchResult.leader === 'team_a' ? 'team_a'
+    : 'team_b'
+
+  // Update match to completed
+  await db.from('matches').update({
+    status: 'completed',
+    result: matchResult.status,
+    winner_side: winnerSide,
+  }).eq('id', matchId)
+
+  // Build a descriptive message
+  const teamA = matchPlayers.filter(mp => mp.side === 'team_a')
+  const teamB = matchPlayers.filter(mp => mp.side === 'team_b')
+
+  function playerLabel(mp: { trip_player?: unknown }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p = mp.trip_player as any
+    const player = Array.isArray(p?.player) ? p.player[0] : p?.player
+    return player?.name || 'Unknown'
+  }
+
+  const teamANames = teamA.map(playerLabel).join(' & ')
+  const teamBNames = teamB.map(playerLabel).join(' & ')
+
+  let message: string
+  if (winnerSide === 'tie') {
+    message = `🤝 Match finished tied — ${teamANames} vs ${teamBNames} (${matchResult.status})`
+  } else {
+    const winnerNames = winnerSide === 'team_a' ? teamANames : teamBNames
+    const loserNames = winnerSide === 'team_a' ? teamBNames : teamANames
+    message = `🏆 ${winnerNames} defeats ${loserNames} ${matchResult.status}!`
+  }
+
+  postSystemMessage(db, tripId, message, 'match_complete').catch(() => {})
 }

@@ -15,12 +15,11 @@ export default async function RoundGamesPage({
 
   const supabase = await createClient()
 
-  // Fetch course info
-  const { data: course } = await supabase
-    .from('courses')
-    .select('*')
-    .eq('id', courseId)
-    .single()
+  // Fetch course info and trip skins defaults in parallel
+  const [{ data: course }, { data: trip }] = await Promise.all([
+    supabase.from('courses').select('*').eq('id', courseId).single(),
+    supabase.from('trips').select('skins_mode, skins_buy_in').eq('id', tripId).single(),
+  ])
 
   if (!course) notFound()
 
@@ -67,6 +66,8 @@ export default async function RoundGamesPage({
         formats={formats || []}
         tripPlayers={tripPlayers || []}
         existingGames={existingGames || []}
+        defaultSkinsMode={(trip?.skins_mode === 'gross' ? 'gross' : 'net')}
+        defaultSkinsBuyIn={trip?.skins_buy_in ?? 0}
       />
     </div>
   )

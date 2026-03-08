@@ -11,6 +11,7 @@ interface Message {
   display_name: string
   avatar_url: string | null
   is_system?: boolean
+  system_type?: string | null
 }
 
 interface ChatClientProps {
@@ -64,7 +65,7 @@ export default function ChatClient({
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${tripId}` },
         async (payload) => {
-          const msg = payload.new as { id: string; user_id: string | null; content: string; created_at: string; is_system?: boolean }
+          const msg = payload.new as { id: string; user_id: string | null; content: string; created_at: string; is_system?: boolean; system_type?: string | null }
 
           // System messages
           if (msg.is_system || !msg.user_id) {
@@ -72,6 +73,7 @@ export default function ChatClient({
               ...msg,
               user_id: null,
               is_system: true,
+              system_type: msg.system_type ?? null,
               display_name: 'ForeLive',
               avatar_url: null,
             }])
@@ -144,7 +146,7 @@ export default function ChatClient({
 
     const { data } = await supabase
       .from('trip_messages')
-      .select('id, user_id, content, created_at, is_system')
+      .select('id, user_id, content, created_at, is_system, system_type')
       .eq('trip_id', tripId)
       .lt('created_at', oldest.created_at)
       .order('created_at', { ascending: false })
@@ -171,6 +173,7 @@ export default function ChatClient({
       const enriched = data.reverse().map(m => ({
         ...m,
         is_system: m.is_system ?? false,
+        system_type: m.system_type ?? null,
         display_name: m.is_system || !m.user_id
           ? 'ForeLive'
           : profileCacheRef.current.get(m.user_id!)?.display_name || 'Unknown',
@@ -209,12 +212,20 @@ export default function ChatClient({
           )}
 
           {messages.map(msg => {
-            // System messages — centered, different style
+            // System messages — centered pill with event-specific styling
             if (msg.is_system || !msg.user_id) {
+              const systemStyles: Record<string, { bubble: string; text: string }> = {
+                eagle:          { bubble: 'bg-golf-100 border border-golf-300',    text: 'text-golf-900' },
+                birdie:         { bubble: 'bg-golf-50 border border-golf-200',     text: 'text-golf-800' },
+                bad_score:      { bubble: 'bg-orange-50 border border-orange-200', text: 'text-orange-800' },
+                skin_won:       { bubble: 'bg-yellow-50 border border-yellow-300', text: 'text-yellow-900' },
+                match_complete: { bubble: 'bg-blue-50 border border-blue-200',     text: 'text-blue-900' },
+              }
+              const style = (msg.system_type && systemStyles[msg.system_type]) || { bubble: 'bg-gray-100', text: 'text-gray-600' }
               return (
                 <div key={msg.id} className="flex justify-center">
-                  <div className="max-w-[85%] rounded-lg bg-gray-100 px-3 py-1.5 text-center">
-                    <p className="text-xs text-gray-600">{msg.content}</p>
+                  <div className={`max-w-[85%] rounded-lg px-3 py-1.5 text-center ${style.bubble}`}>
+                    <p className={`text-xs font-medium ${style.text}`}>{msg.content}</p>
                     <p className="text-[9px] text-gray-400 mt-0.5">{formatTime(msg.created_at)}</p>
                   </div>
                 </div>

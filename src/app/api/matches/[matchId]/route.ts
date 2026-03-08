@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireTripRole } from '@/lib/auth'
+import { postSystemMessage } from '@/lib/notifications'
 
 export async function GET(
   _request: NextRequest,
@@ -131,6 +132,32 @@ export async function PUT(
       'id, match_id, trip_player_id, side, trip_player:trip_players(id, player:players(id, name, handicap_index))'
     )
     .eq('match_id', matchId)
+
+  // Post system chat message when match is manually marked complete
+  if (body.status === 'completed') {
+    const tripId = courseData.trip_id as string
+    const allPlayers = matchPlayers || []
+    function getName(mp: { trip_player?: unknown }): string {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tp = mp.trip_player as any
+      const player = Array.isArray(tp?.player) ? tp.player[0] : tp?.player
+      return player?.name || 'Unknown'
+    }
+    const teamANames = allPlayers.filter(mp => mp.side === 'team_a').map(getName).join(' & ')
+    const teamBNames = allPlayers.filter(mp => mp.side === 'team_b').map(getName).join(' & ')
+    const result = body.result || match?.result || ''
+    const winnerSide = body.winner_side || match?.winner_side
+
+    let message: string
+    if (winnerSide === 'tie' || !winnerSide) {
+      message = `🤝 Match finished — ${teamANames} vs ${teamBNames}${result ? ` (${result})` : ''}`
+    } else {
+      const winnerNames = winnerSide === 'team_a' ? teamANames : teamBNames
+      const loserNames = winnerSide === 'team_a' ? teamBNames : teamANames
+      message = `🏆 ${winnerNames} defeats ${loserNames}${result ? ` ${result}` : ''}!`
+    }
+    postSystemMessage(supabase, tripId, message, 'match_complete').catch(() => {})
+  }
 
   return NextResponse.json({ ...match, match_players: matchPlayers || [] })
 }

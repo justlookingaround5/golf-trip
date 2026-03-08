@@ -1,14 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-
-const tabs = [
-  { label: 'Overview', href: '' },
-  { label: 'Courses', href: '/courses' },
-  { label: 'Players', href: '/players' },
-  { label: 'Teams', href: '/teams' },
-  { label: 'Matches', href: '/matches' },
-]
+import TripSetupNav from './trip-setup-nav'
 
 export default async function TripDetailLayout({
   children,
@@ -30,6 +23,19 @@ export default async function TripDetailLayout({
     notFound()
   }
 
+  const [{ count: courseCount }, { count: playerCount }, { count: teamCount }] =
+    await Promise.all([
+      supabase.from('courses').select('id', { count: 'exact', head: true }).eq('trip_id', tripId),
+      supabase.from('trip_players').select('id', { count: 'exact', head: true }).eq('trip_id', tripId),
+      supabase.from('teams').select('id', { count: 'exact', head: true }).eq('trip_id', tripId),
+    ])
+
+  const setupState = {
+    hasCourses: (courseCount ?? 0) > 0,
+    hasPlayers: (playerCount ?? 0) > 0,
+    hasTeams: (teamCount ?? 0) > 0,
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -45,22 +51,7 @@ export default async function TripDetailLayout({
         </h2>
       </div>
 
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-6">
-          {tabs.map((tab) => {
-            const href = `/admin/trips/${tripId}${tab.href}`
-            return (
-              <Link
-                key={tab.label}
-                href={href}
-                className="whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-sm font-medium text-gray-500 hover:border-golf-500 hover:text-golf-700"
-              >
-                {tab.label}
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
+      <TripSetupNav tripId={tripId} setupState={setupState} />
 
       {children}
     </div>

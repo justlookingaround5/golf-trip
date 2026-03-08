@@ -47,7 +47,7 @@ export default function NewTripPage() {
   // Step 3: Settings
   const [matchBuyIn, setMatchBuyIn] = useState(100)
   const [skinsBuyIn, setSkinsBuyIn] = useState(10)
-  const [skinsMode, setSkinsMode] = useState<'gross' | 'net' | 'both'>('net')
+  const [skinsMode, setSkinsMode] = useState<'gross' | 'net'>('net')
 
   async function loadGroupMembers() {
     if (!groupId || groupLoaded) return
@@ -509,12 +509,11 @@ export default function NewTripPage() {
             <select
               id="skinsMode"
               value={skinsMode}
-              onChange={(e) => setSkinsMode(e.target.value as 'gross' | 'net' | 'both')}
+              onChange={(e) => setSkinsMode(e.target.value as 'gross' | 'net')}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
             >
               <option value="gross">Gross</option>
               <option value="net">Net</option>
-              <option value="both">Both</option>
             </select>
           </div>
 

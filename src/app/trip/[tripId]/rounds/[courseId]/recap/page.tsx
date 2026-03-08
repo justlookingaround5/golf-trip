@@ -36,7 +36,7 @@ export default async function RoundRecapPage({
     .from('round_games')
     .select(`
       *,
-      game_format:game_formats(name, icon),
+      game_format:game_formats(name, icon, engine_key),
       game_results(*, trip_player:trip_players(*, player:players(name)))
     `)
     .eq('course_id', courseId)
@@ -149,7 +149,8 @@ export default async function RoundRecapPage({
               {roundGames.map((game: {
                 id: string
                 buy_in: number
-                game_format?: { name: string; icon: string }
+                config?: Record<string, unknown>
+                game_format?: { name: string; icon: string; engine_key?: string }
                 game_results?: {
                   id: string
                   position: number
@@ -159,11 +160,18 @@ export default async function RoundRecapPage({
                 }[]
               }) => {
                 const results = (game.game_results || []).sort((a, b) => a.position - b.position)
+                const isSkins = game.game_format?.engine_key === 'skins'
+                const skinsMode = isSkins ? (game.config?.mode === 'gross' ? 'Gross' : 'Net') : null
                 return (
                   <div key={game.id} className="rounded-lg bg-gray-50 p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-lg">{game.game_format?.icon}</span>
                       <span className="font-semibold text-gray-900">{game.game_format?.name}</span>
+                      {skinsMode && (
+                        <span className="rounded-full bg-golf-100 px-2 py-0.5 text-xs font-medium text-golf-800">
+                          {skinsMode}
+                        </span>
+                      )}
                       {game.buy_in > 0 && (
                         <span className="text-xs text-gray-500">${game.buy_in} buy-in</span>
                       )}

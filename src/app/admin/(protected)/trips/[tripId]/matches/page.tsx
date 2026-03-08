@@ -343,20 +343,51 @@ export default function MatchesPage() {
 
   if (courses.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-gray-500">
-          No courses added yet. Add courses first before configuring matches.
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 shadow-sm">
+        <h3 className="mb-2 font-semibold text-amber-900">Courses Required</h3>
+        <p className="mb-4 text-sm text-amber-800">
+          Add courses before configuring matches.
         </p>
+        <a
+          href={`/admin/trips/${tripId}/courses`}
+          className="inline-flex items-center rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
+        >
+          Go to Courses &rarr;
+        </a>
       </div>
     )
   }
 
   if (tripPlayers.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-gray-500">
-          No players added yet. Add players first before configuring matches.
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 shadow-sm">
+        <h3 className="mb-2 font-semibold text-amber-900">Players Required</h3>
+        <p className="mb-4 text-sm text-amber-800">
+          Add players to the trip before configuring matches.
         </p>
+        <a
+          href={`/admin/trips/${tripId}/players`}
+          className="inline-flex items-center rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
+        >
+          Go to Players &rarr;
+        </a>
+      </div>
+    )
+  }
+
+  if (teams.length === 0) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 shadow-sm">
+        <h3 className="mb-2 font-semibold text-amber-900">Teams Required</h3>
+        <p className="mb-4 text-sm text-amber-800">
+          Create teams before setting up matches.
+        </p>
+        <a
+          href={`/admin/trips/${tripId}/teams`}
+          className="inline-flex items-center rounded-md bg-golf-700 px-4 py-2 text-sm font-medium text-white hover:bg-golf-800"
+        >
+          Go to Teams &rarr;
+        </a>
       </div>
     )
   }

@@ -297,7 +297,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
-  await params
+  const { tripId } = await params
   const supabase = await createClient()
 
   const body = await request.json()
@@ -309,6 +309,92 @@ export async function PATCH(
     )
   }
 
+  // Handle handicap_index update
+  if (body.handicap_index !== undefined) {
+    const access = await requireTripRole(tripId, ['owner', 'admin'])
+    if (!access) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const handicapIndex = body.handicap_index === null ? null : Number(body.handicap_index)
+
+    if (handicapIndex !== null && (isNaN(handicapIndex) || handicapIndex < 0 || handicapIndex > 54)) {
+      return NextResponse.json({ error: 'Handicap index must be between 0 and 54' }, { status: 400 })
+    }
+
+    // Get trip_player to find player_id
+    const { data: tripPlayer, error: tpError } = await supabase
+      .from('trip_players')
+      .select('id, player_id')
+      .eq('id', body.trip_player_id)
+      .single()
+
+    if (tpError || !tripPlayer) {
+      return NextResponse.json({ error: 'Trip player not found' }, { status: 404 })
+    }
+
+    // Update players.handicap_index
+    const { error: playerError } = await supabase
+      .from('players')
+      .update({ handicap_index: handicapIndex })
+      .eq('id', tripPlayer.player_id)
+
+    if (playerError) {
+      return NextResponse.json({ error: playerError.message }, { status: 500 })
+    }
+
+    // Recalculate course handicaps for this trip
+    if (handicapIndex !== null) {
+      const { data: courses } = await supabase
+        .from('courses')
+        .select('id, slope, rating, par')
+        .eq('trip_id', tripId)
+
+      if (courses && courses.length > 0) {
+        const validCourses = courses.filter(
+          (c: { slope: number | null; rating: number | null }) => c.slope != null && c.rating != null
+        )
+
+        if (validCourses.length > 0) {
+          const records = validCourses.map((c: { id: string; slope: number; rating: number; par: number }) => ({
+            trip_player_id: body.trip_player_id,
+            course_id: c.id,
+            handicap_strokes: calculateCourseHandicap(handicapIndex, c.slope, c.rating, c.par),
+          }))
+
+          await supabase
+            .from('player_course_handicaps')
+            .upsert(records, { onConflict: 'trip_player_id,course_id' })
+        }
+      }
+    } else {
+      // Cleared handicap — remove course handicap records
+      await supabase
+        .from('player_course_handicaps')
+        .delete()
+        .eq('trip_player_id', body.trip_player_id)
+    }
+
+    // Return updated trip player
+    const { data: updated, error: fetchError } = await supabase
+      .from('trip_players')
+      .select('*, player:players(*)')
+      .eq('id', body.trip_player_id)
+      .single()
+
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 500 })
+    }
+
+    const { data: courseHandicaps } = await supabase
+      .from('player_course_handicaps')
+      .select('trip_player_id, course_id, handicap_strokes')
+      .eq('trip_player_id', body.trip_player_id)
+
+    return NextResponse.json({ ...updated, course_handicaps: courseHandicaps || [] })
+  }
+
+  // Handle other field updates (e.g. paid)
   const updates: Record<string, unknown> = {}
   if (body.paid !== undefined) updates.paid = body.paid
 

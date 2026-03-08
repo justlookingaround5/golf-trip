@@ -27,7 +27,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
   const [location, setLocation] = useState(trip.location || '')
   const [matchBuyIn, setMatchBuyIn] = useState(trip.match_buy_in)
   const [skinsBuyIn, setSkinsBuyIn] = useState(trip.skins_buy_in)
-  const [skinsMode, setSkinsMode] = useState(trip.skins_mode)
+  const [skinsMode, setSkinsMode] = useState<'gross' | 'net'>(trip.skins_mode === 'gross' ? 'gross' : 'net')
   const [handicapMode, setHandicapMode] = useState(trip.handicap_mode || 'static')
 
   async function handleStatusChange() {
@@ -204,12 +204,11 @@ export default function TripActions({ trip }: { trip: Trip }) {
               <select
                 id="edit-skinsMode"
                 value={skinsMode}
-                onChange={(e) => setSkinsMode(e.target.value as 'gross' | 'net' | 'both')}
+                onChange={(e) => setSkinsMode(e.target.value as 'gross' | 'net')}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
               >
                 <option value="gross">Gross</option>
                 <option value="net">Net</option>
-                <option value="both">Both</option>
               </select>
             </div>
           </div>
@@ -230,7 +229,7 @@ export default function TripActions({ trip }: { trip: Trip }) {
                 setLocation(trip.location || '')
                 setMatchBuyIn(trip.match_buy_in)
                 setSkinsBuyIn(trip.skins_buy_in)
-                setSkinsMode(trip.skins_mode)
+                setSkinsMode(trip.skins_mode === 'gross' ? 'gross' : 'net')
                 setHandicapMode(trip.handicap_mode || 'static')
               }}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"

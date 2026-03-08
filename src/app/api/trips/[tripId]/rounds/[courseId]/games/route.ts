@@ -106,3 +106,39 @@ export async function POST(
 
   return NextResponse.json(roundGame, { status: 201 })
 }
+
+/**
+ * DELETE /api/trips/[tripId]/rounds/[courseId]/games?round_game_id=[id]
+ *
+ * Remove a game from a round. Cleans up players, results, and ledger entries.
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ tripId: string; courseId: string }> }
+) {
+  const { tripId } = await params
+
+  const auth = await requireTripRole(tripId, ['owner', 'admin'])
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  }
+
+  const roundGameId = new URL(request.url).searchParams.get('round_game_id')
+  if (!roundGameId) {
+    return NextResponse.json({ error: 'round_game_id is required' }, { status: 400 })
+  }
+
+  const supabase = await createClient()
+
+  // Clean up in order (FK constraints)
+  await supabase.from('settlement_ledger').delete().eq('source_id', roundGameId).eq('source_type', 'game_result')
+  await supabase.from('game_results').delete().eq('round_game_id', roundGameId)
+  await supabase.from('round_game_players').delete().eq('round_game_id', roundGameId)
+
+  const { error } = await supabase.from('round_games').delete().eq('id', roundGameId)
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
+}

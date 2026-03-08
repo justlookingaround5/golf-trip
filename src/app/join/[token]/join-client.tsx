@@ -17,10 +17,18 @@ interface JoinClientProps {
   isLoggedIn: boolean
 }
 
+type Step = 'invite' | 'handicap'
+
 export default function JoinClient({ token, invite, trip, isLoggedIn }: JoinClientProps) {
   const router = useRouter()
+  const [step, setStep] = useState<Step>('invite')
   const [joining, setJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Handicap step state
+  const [handicapMethod, setHandicapMethod] = useState<'ghin' | 'manual'>('manual')
+  const [ghinNumber, setGhinNumber] = useState('')
+  const [handicapIndex, setHandicapIndex] = useState('')
 
   // Already accepted
   if (invite.status === 'accepted') {
@@ -69,12 +77,27 @@ export default function JoinClient({ token, invite, trip, isLoggedIn }: JoinClie
     }
   }
 
-  async function handleJoin() {
+  async function handleHandicapSubmit(e: React.FormEvent) {
+    e.preventDefault()
+
+    const parsedHandicap = parseFloat(handicapIndex)
+    if (isNaN(parsedHandicap) || parsedHandicap < 0 || parsedHandicap > 54) {
+      setError('Please enter a valid handicap index between 0 and 54.')
+      return
+    }
+
     setJoining(true)
     setError(null)
 
     try {
-      const res = await fetch(`/api/invite/${token}`, { method: 'POST' })
+      const res = await fetch(`/api/invite/${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          handicap_index: parsedHandicap,
+          ghin_number: ghinNumber.trim() || null,
+        }),
+      })
       const data = await res.json()
 
       if (!res.ok) {
@@ -88,24 +111,141 @@ export default function JoinClient({ token, invite, trip, isLoggedIn }: JoinClie
     }
   }
 
+  const tripHeader = (
+    <div className="mb-6 text-center">
+      <div className="mb-4 text-4xl">&#9971;</div>
+      <h1 className="mb-1 text-2xl font-bold text-gray-900">
+        You&apos;re Invited!
+      </h1>
+      {trip && (
+        <div className="mt-3 space-y-1">
+          <p className="text-lg font-semibold text-golf-700">{trip.name}</p>
+          {trip.location && (
+            <p className="text-sm text-gray-600">{trip.location}</p>
+          )}
+          <p className="text-sm text-gray-500">{trip.year}</p>
+        </div>
+      )}
+    </div>
+  )
+
+  // Step 2: Handicap setup
+  if (step === 'handicap') {
+    const ghinLookupUrl = ghinNumber.trim()
+      ? `https://www.ghin.com/golfer-search?ghinNumber=${encodeURIComponent(ghinNumber.trim())}`
+      : 'https://www.ghin.com'
+
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
+          {tripHeader}
+
+          <div className="mb-5">
+            <h2 className="text-lg font-semibold text-gray-900">Set Your Handicap</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Your handicap index is used to calculate net scores, stroke indicators, and
+              leaderboard standings.
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {/* Method toggle */}
+          <div className="mb-5 flex rounded-md border border-gray-200 overflow-hidden text-sm font-medium">
+            <button
+              type="button"
+              onClick={() => setHandicapMethod('manual')}
+              className={`flex-1 py-2 transition-colors ${
+                handicapMethod === 'manual'
+                  ? 'bg-golf-700 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Enter Manually
+            </button>
+            <button
+              type="button"
+              onClick={() => setHandicapMethod('ghin')}
+              className={`flex-1 py-2 transition-colors border-l border-gray-200 ${
+                handicapMethod === 'ghin'
+                  ? 'bg-golf-700 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              Use GHIN
+            </button>
+          </div>
+
+          <form onSubmit={handleHandicapSubmit} className="space-y-4">
+            {handicapMethod === 'ghin' && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  GHIN Number
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={ghinNumber}
+                    onChange={(e) => setGhinNumber(e.target.value)}
+                    placeholder="e.g. 1234567"
+                    className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
+                  />
+                  <a
+                    href={ghinLookupUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center rounded-md border border-golf-300 bg-golf-50 px-3 py-2 text-xs font-medium text-golf-700 hover:bg-golf-100 whitespace-nowrap"
+                  >
+                    Look up ↗
+                  </a>
+                </div>
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Look up your handicap index on GHIN.com, then enter it below.
+                </p>
+              </div>
+            )}
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Handicap Index
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="54"
+                value={handicapIndex}
+                onChange={(e) => setHandicapIndex(e.target.value)}
+                placeholder="e.g. 12.4"
+                required
+                autoFocus={handicapMethod === 'manual'}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
+              />
+              <p className="mt-1 text-xs text-gray-400">Between 0 and 54. Use one decimal place.</p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={joining || !handicapIndex}
+              className="w-full rounded-md bg-golf-700 px-4 py-3 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
+            >
+              {joining ? 'Joining trip...' : 'Confirm & Join Trip'}
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  // Step 1: Sign in / confirm invite
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <div className="mb-6 text-center">
-          <div className="mb-4 text-4xl">&#9971;</div>
-          <h1 className="mb-1 text-2xl font-bold text-gray-900">
-            You&apos;re Invited!
-          </h1>
-          {trip && (
-            <div className="mt-3 space-y-1">
-              <p className="text-lg font-semibold text-golf-700">{trip.name}</p>
-              {trip.location && (
-                <p className="text-sm text-gray-600">{trip.location}</p>
-              )}
-              <p className="text-sm text-gray-500">{trip.year}</p>
-            </div>
-          )}
-        </div>
+        {tripHeader}
 
         {error && (
           <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
@@ -115,11 +255,10 @@ export default function JoinClient({ token, invite, trip, isLoggedIn }: JoinClie
 
         {isLoggedIn ? (
           <button
-            onClick={handleJoin}
-            disabled={joining}
-            className="w-full rounded-md bg-golf-700 px-4 py-3 text-sm font-medium text-white hover:bg-golf-800 disabled:opacity-50"
+            onClick={() => setStep('handicap')}
+            className="w-full rounded-md bg-golf-700 px-4 py-3 text-sm font-medium text-white hover:bg-golf-800"
           >
-            {joining ? 'Joining...' : 'Join This Trip'}
+            Join This Trip
           </button>
         ) : (
           <div className="space-y-3">

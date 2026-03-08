@@ -121,9 +121,9 @@ export async function POST(
     )
   }
 
-  // 6. Fire-and-forget: activity feed events + game engine recomputation
+  // 6. Fire-and-forget: activity feed events + game engine recomputation + match completion
   const db = getServiceClient()
-  processScoreEvents(db, match.course_id, hole_id, scores).catch(
+  processScoreEvents(db, match.course_id, hole_id, scores, match.id).catch(
     (err) => console.error('Score event processing error:', err)
   )
 
