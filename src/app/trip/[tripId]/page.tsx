@@ -282,7 +282,7 @@ export default async function TripPublicPage({
       <header className="bg-golf-800 px-4 py-6 text-white shadow-md">
         <div className="mx-auto max-w-2xl">
           <Link
-            href="/home"
+            href="/"
             className="mb-2 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition-colors"
           >
             &larr; Home
@@ -303,6 +303,7 @@ export default async function TripPublicPage({
       <div className="mx-auto max-w-2xl px-4 py-6">
         <TripTabs
           tripId={tripId}
+          tripStatus={tripStatus}
           defaultTab={defaultTab}
           roster={roster}
           courses={coursesForTabs}
