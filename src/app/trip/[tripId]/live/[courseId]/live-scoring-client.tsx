@@ -826,7 +826,7 @@ export default function LiveScoringClient({
                           <td
                             key={tpId}
                             onClick={() => openCell(hole.hole_number, tpId)}
-                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-golf-100 ${isTeamBest ? 'bg-golf-100' : 'bg-golf-50'}`}
+                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-golf-100 ${isTeamBest ? 'bg-golf-100' : ''}`}
                           >
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-sm leading-none text-gray-500">*</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
@@ -854,7 +854,7 @@ export default function LiveScoringClient({
                           <td
                             key={tpId}
                             onClick={() => openCell(hole.hole_number, tpId)}
-                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-blue-100 ${isTeamBest ? 'bg-blue-100' : 'bg-blue-50'}`}
+                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-blue-100 ${isTeamBest ? 'bg-blue-100' : ''}`}
                           >
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-sm leading-none text-gray-500">*</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
