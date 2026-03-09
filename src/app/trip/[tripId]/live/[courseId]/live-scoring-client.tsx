@@ -511,6 +511,7 @@ export default function LiveScoringClient({
 
     let aWins = 0
     let bWins = 0
+    let firstResultSeen = false
 
     return holes.map(hole => {
       const getTeamBestNet = (teamIds: string[]): number | null => {
@@ -536,11 +537,15 @@ export default function LiveScoringClient({
       }
 
       const lead = aWins - bWins
-      const status = allPlayersScored && aBest !== null && bBest !== null
+      const hasResult = allPlayersScored && aBest !== null && bBest !== null
+      const isFirstResult = hasResult && !firstResultSeen
+      if (hasResult) firstResultSeen = true
+
+      const status = hasResult
         ? (lead === 0 ? 'AS' : `${Math.abs(lead)}UP`)
         : null
 
-      return { hole, aBest, bBest, lead, status }
+      return { hole, aBest, bBest, lead, status, isFirstResult }
     })
   }, [isBestBallMatchPlay, data, holes, teamAssignments, matchStrokesMap])
 
@@ -799,7 +804,7 @@ export default function LiveScoringClient({
                   )
                   if (nineHoles.length === 0) return []
 
-                  const holeRows = nineHoles.map(({ hole, aBest, bBest, lead, status }) => (
+                  const holeRows = nineHoles.map(({ hole, aBest, bBest, lead, status, isFirstResult }) => (
                     <tr key={hole.id} className="border-b border-gray-100">
                       {/* Hole number */}
                       <td
@@ -835,8 +840,8 @@ export default function LiveScoringClient({
                       })}
                       {/* Running match play status */}
                       <td className="w-10 px-1 py-2 text-center font-semibold text-[11px] border-l border-gray-200">
-                        {status && lead !== 0 && (
-                          <span className={`flex items-center justify-center gap-0.5 ${lead > 0 ? 'text-golf-700' : 'text-blue-600'}`}>
+                        {status && (lead !== 0 || isFirstResult) && (
+                          <span className={`flex items-center justify-center gap-0.5 ${lead > 0 ? 'text-golf-700' : lead < 0 ? 'text-blue-600' : 'text-gray-500'}`}>
                             {lead > 0 && <span>◀</span>}
                             <span>{status}</span>
                             {lead < 0 && <span>▶</span>}
