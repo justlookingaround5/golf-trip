@@ -17,9 +17,27 @@ interface CourseResult {
   }
 }
 
+interface TeeBox {
+  tee_name: string
+  course_rating: number
+  slope_rating: number
+  par_total: number
+  total_yards: number
+  holes: { par: number; yardage: number; handicap: number }[]
+}
+
+interface CourseDetail {
+  id: number
+  club_name: string
+  course_name: string
+  location: { city: string; state: string }
+  tees: { male: TeeBox[]; female: TeeBox[] }
+}
+
 interface PlayerSlot {
   name: string
   handicap: string
+  tee: string
 }
 
 interface GameFormat {
@@ -32,7 +50,7 @@ interface GameFormat {
   team_based: boolean
 }
 
-export default function QuickRoundClient({ userName, gameFormats }: { userName: string; gameFormats: GameFormat[] }) {
+export default function QuickRoundClient({ userName, userHandicap, gameFormats }: { userName: string; userHandicap: number | null; gameFormats: GameFormat[] }) {
   const router = useRouter()
 
   // Course search state
@@ -44,9 +62,14 @@ export default function QuickRoundClient({ userName, gameFormats }: { userName: 
   const [useManual, setUseManual] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
+  // Course detail / tee state
+  const [courseDetail, setCourseDetail] = useState<CourseDetail | null>(null)
+  const [teeGender, setTeeGender] = useState<'male' | 'female'>('male')
+  const [loadingDetail, setLoadingDetail] = useState(false)
+
   // Player state
   const [players, setPlayers] = useState<PlayerSlot[]>([
-    { name: userName, handicap: '' },
+    { name: userName, handicap: userHandicap != null ? String(userHandicap) : '', tee: '' },
   ])
 
   // Game selection state: gameId -> buy-in amount
@@ -58,6 +81,8 @@ export default function QuickRoundClient({ userName, gameFormats }: { userName: 
 
   // Debounced search
   const searchTimeoutRef = useState<NodeJS.Timeout | null>(null)
+
+  const availableTees = courseDetail?.tees?.[teeGender] || []
 
   const searchCourses = useCallback(
     async (query: string) => {
@@ -85,6 +110,7 @@ export default function QuickRoundClient({ userName, gameFormats }: { userName: 
   function handleCourseInput(value: string) {
     setCourseQuery(value)
     setSelectedCourse(null)
+    setCourseDetail(null)
     setUseManual(false)
 
     if (searchTimeoutRef[0]) clearTimeout(searchTimeoutRef[0])
@@ -92,12 +118,25 @@ export default function QuickRoundClient({ userName, gameFormats }: { userName: 
     searchTimeoutRef[0] = timeout
   }
 
-  function selectCourse(course: CourseResult) {
+  async function selectCourse(course: CourseResult) {
     setSelectedCourse(course)
     setCourseQuery(course.course_name || course.club_name)
     setCourseResults([])
     setUseManual(false)
+    setCourseDetail(null)
+    setLoadingDetail(true)
     posthog.capture('course_selected', { course_name: course.course_name || course.club_name, source: 'search' })
+    try {
+      const res = await fetch(`/api/courses/lookup?id=${course.id}`)
+      if (res.ok) {
+        const detail: CourseDetail = await res.json()
+        setCourseDetail(detail)
+        const firstTee = detail.tees?.male?.[0]?.tee_name || ''
+        setPlayers(prev => prev.map(p => ({ ...p, tee: firstTee })))
+      }
+    } finally {
+      setLoadingDetail(false)
+    }
   }
 
   function useManualCourse() {
@@ -105,12 +144,13 @@ export default function QuickRoundClient({ userName, gameFormats }: { userName: 
     setManualCourse(courseQuery)
     setCourseResults([])
     setSelectedCourse(null)
+    setCourseDetail(null)
     posthog.capture('course_selected', { course_name: courseQuery, source: 'manual' })
   }
 
   function addPlayer() {
     if (players.length >= 4) return
-    setPlayers([...players, { name: '', handicap: '' }])
+    setPlayers([...players, { name: '', handicap: '', tee: availableTees[0]?.tee_name || '' }])
     posthog.capture('player_added', { player_count: players.length + 1 })
   }
 
@@ -174,6 +214,7 @@ export default function QuickRoundClient({ userName, gameFormats }: { userName: 
           players: players.map(p => ({
             name: p.name.trim(),
             handicap: p.handicap ? parseFloat(p.handicap) : null,
+            teeName: p.tee || null,
           })),
           games: Array.from(selectedGames.entries()).map(([id, buyIn]) => ({
             formatId: id,
@@ -237,24 +278,79 @@ export default function QuickRoundClient({ userName, gameFormats }: { userName: 
           <h2 className="mb-3 text-lg font-bold text-gray-900">Course</h2>
 
           {selectedCourse ? (
-            <div className="flex items-center justify-between rounded-lg border-2 border-golf-500 bg-golf-50 p-3">
-              <div>
-                <p className="font-semibold text-gray-900">
-                  {selectedCourse.course_name || selectedCourse.club_name}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {selectedCourse.location?.city}, {selectedCourse.location?.state}
-                </p>
+            <div>
+              <div className="flex items-center justify-between rounded-lg border-2 border-golf-500 bg-golf-50 p-3">
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {selectedCourse.course_name || selectedCourse.club_name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {selectedCourse.location?.city}, {selectedCourse.location?.state}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedCourse(null)
+                    setCourseDetail(null)
+                    setCourseQuery('')
+                  }}
+                  className="text-sm font-medium text-golf-700 hover:text-golf-900"
+                >
+                  Change
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  setSelectedCourse(null)
-                  setCourseQuery('')
-                }}
-                className="text-sm font-medium text-golf-700 hover:text-golf-900"
-              >
-                Change
-              </button>
+
+              {loadingDetail && (
+                <p className="mt-2 text-xs text-gray-400">Loading tee data...</p>
+              )}
+
+              {courseDetail && (
+                <div className="mt-3 space-y-2">
+                  {/* Gender toggle */}
+                  {(courseDetail.tees?.female?.length ?? 0) > 0 && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setTeeGender('male')}
+                        className={`rounded-md px-3 py-1 text-xs font-medium ${
+                          teeGender === 'male'
+                            ? 'bg-golf-700 text-white'
+                            : 'border border-gray-300 bg-white text-gray-700'
+                        }`}
+                      >
+                        Men&apos;s Tees
+                      </button>
+                      <button
+                        onClick={() => setTeeGender('female')}
+                        className={`rounded-md px-3 py-1 text-xs font-medium ${
+                          teeGender === 'female'
+                            ? 'bg-golf-700 text-white'
+                            : 'border border-gray-300 bg-white text-gray-700'
+                        }`}
+                      >
+                        Women&apos;s Tees
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Tee card grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableTees.map(tee => (
+                      <button
+                        key={tee.tee_name}
+                        onClick={() => setPlayers(prev => prev.map(p => ({ ...p, tee: tee.tee_name })))}
+                        className="rounded-md border border-gray-200 bg-white p-2 text-left text-xs hover:border-golf-300 hover:bg-golf-50 transition"
+                      >
+                        <p className="font-semibold text-gray-900">{tee.tee_name}</p>
+                        <p className="text-gray-600">Slope {tee.slope_rating} · Rating {tee.course_rating}</p>
+                        <p className="text-gray-600">{tee.total_yards?.toLocaleString()} yds · Par {tee.par_total}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Tap a tee to apply to all players. Change individually below.
+                  </p>
+                </div>
+              )}
             </div>
           ) : useManual ? (
             <div className="space-y-2">
@@ -380,6 +476,17 @@ export default function QuickRoundClient({ userName, gameFormats }: { userName: 
                     className="w-16 bg-transparent text-right text-sm text-gray-600 outline-none placeholder-gray-400"
                     step="0.1"
                   />
+                  {availableTees.length > 0 && (
+                    <select
+                      value={player.tee}
+                      onChange={e => updatePlayer(index, 'tee', e.target.value)}
+                      className="w-20 bg-transparent text-xs text-gray-600 outline-none"
+                    >
+                      {availableTees.map(t => (
+                        <option key={t.tee_name} value={t.tee_name}>{t.tee_name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 {players.length > 1 && (
                   <button

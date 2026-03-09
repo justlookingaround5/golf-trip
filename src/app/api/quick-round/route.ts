@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCourseDetail, searchCourses } from '@/lib/golf-course-api'
+import { calculateCourseHandicap } from '@/lib/handicap'
 
 interface PlayerInput {
   name: string
   handicap?: number | null
+  teeName?: string | null
 }
 
 export async function POST(request: NextRequest) {
@@ -41,9 +43,10 @@ export async function POST(request: NextRequest) {
   let slope: number | null = null
   let rating: number | null = null
   let apiId: number | null = courseApiId ?? null
+  let detail: Awaited<ReturnType<typeof getCourseDetail>> = null
 
   if (apiId) {
-    const detail = await getCourseDetail(apiId)
+    detail = await getCourseDetail(apiId)
     if (detail?.tees?.male?.[0]) {
       const tee = detail.tees.male[0]
       coursePar = tee.par_total || 72
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
           par: h.par,
           handicap_index: h.handicap || (i + 1),
           yardage: Object.fromEntries(
-            (detail.tees.male || []).map(t => [t.tee_name, t.holes[i]?.yardage || 0])
+            (detail!.tees.male || []).map(t => [t.tee_name, t.holes[i]?.yardage || 0])
           ),
         }))
       }
@@ -215,14 +218,45 @@ export async function POST(request: NextRequest) {
 
     // Set course handicap if provided
     if (playerInput.handicap != null) {
+      let teeSlope = slope ?? 113
+      let teeRating = rating ?? coursePar
+      let teePar = coursePar
+
+      if (playerInput.teeName && detail) {
+        const allTees = [...(detail.tees?.male || []), ...(detail.tees?.female || [])]
+        const tee = allTees.find(t => t.tee_name === playerInput.teeName)
+        if (tee) {
+          teeSlope = tee.slope_rating
+          teeRating = tee.course_rating
+          teePar = tee.par_total
+        }
+      }
+
+      const courseHandicap = Math.max(0, calculateCourseHandicap(playerInput.handicap, teeSlope, teeRating, teePar))
+
       await supabase.from('player_course_handicaps').upsert(
         {
           trip_player_id: tripPlayer.id,
           course_id: course.id,
-          handicap_strokes: playerInput.handicap,
+          handicap_strokes: courseHandicap,
         },
         { onConflict: 'trip_player_id,course_id' }
       )
+
+      if (playerInput.teeName) {
+        await supabase.from('player_round_tees').upsert(
+          {
+            trip_player_id: tripPlayer.id,
+            course_id: course.id,
+            tee_name: playerInput.teeName,
+            tee_slope: teeSlope,
+            tee_rating: teeRating,
+            tee_par: teePar,
+            handicap_index: playerInput.handicap,
+          },
+          { onConflict: 'trip_player_id,course_id' }
+        )
+      }
     }
   }
 
