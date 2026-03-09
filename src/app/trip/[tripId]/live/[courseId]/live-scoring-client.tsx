@@ -587,6 +587,12 @@ export default function LiveScoringClient({
 
   const ownPlayerName = playerNameMap.get(currentTripPlayerId) || 'You'
 
+  function scoreCellClass(gross: number, par: number): string {
+    if (gross < par) return 'text-red-600 font-semibold'
+    if (gross >= par + 2) return 'bg-yellow-100'
+    return ''
+  }
+
   const partners = data.tripPlayers
     .filter(tp => tp.id !== currentTripPlayerId)
     .map(tp => ({
@@ -747,76 +753,107 @@ export default function LiveScoringClient({
           </div>
         </div>
 
-        {[
-          { label: 'Front 9', start: 1, end: 9 },
-          { label: 'Back 9', start: 10, end: 18 },
-        ].map(nine => {
-          const nineHoles = holes.filter(
-            h => h.hole_number >= nine.start && h.hole_number <= nine.end
-          )
-          if (nineHoles.length === 0) return null
+        {/* Scorecard table */}
+        <div className="-mx-4 overflow-x-auto">
+          <table className="min-w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="sticky left-0 z-10 bg-gray-100 w-9 px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-gray-200">Hole</th>
+                <th className="sticky left-9 z-10 bg-gray-100 w-9 px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">Par</th>
+                {data.tripPlayers.map(tp => (
+                  <th key={tp.id} colSpan={2} className="px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
+                    {getPlayerName(tp).split(' ')[0]}
+                  </th>
+                ))}
+              </tr>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="sticky left-0 z-10 bg-gray-50 w-9" />
+                <th className="sticky left-9 z-10 bg-gray-50 w-9 border-l border-gray-200" />
+                {data.tripPlayers.map(tp => [
+                  <th key={`${tp.id}-g`} className="px-1 py-1 text-center font-medium text-gray-400 border-l border-gray-200">G</th>,
+                  <th key={`${tp.id}-n`} className="px-1 py-1 text-center font-medium text-gray-400">N</th>,
+                ])}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: 'Front', start: 1, end: 9 },
+                { label: 'Back', start: 10, end: 18 },
+              ].flatMap(nine => {
+                const nineHoles = holes.filter(h => h.hole_number >= nine.start && h.hole_number <= nine.end)
+                if (nineHoles.length === 0) return []
 
-          return (
-            <div key={nine.label} className="mb-4">
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
-                {nine.label}
-              </h3>
-              <div className="grid grid-cols-3 gap-2">
-                {nineHoles.map(hole => {
-                  const isComplete = completedHoles.has(hole.hole_number)
-                  const isActive = activeHole === hole.hole_number
+                const holeRows = nineHoles.map(hole => (
+                  <tr
+                    key={hole.id}
+                    onClick={() => openHole(hole.hole_number)}
+                    className="cursor-pointer hover:bg-gray-50 active:bg-gray-100 border-b border-gray-100"
+                  >
+                    <td className="sticky left-0 z-10 bg-white w-9 px-1 py-1.5 text-center font-medium text-gray-700">{hole.hole_number}</td>
+                    <td className="sticky left-9 z-10 bg-white w-9 px-1 py-1.5 text-center text-gray-500 border-l border-gray-200">{hole.par}</td>
+                    {data.tripPlayers.map(tp => {
+                      const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tp.id)
+                      const gross = score?.gross_score
+                      const strokes = playerStrokesMap.get(tp.id)?.get(hole.hole_number) ?? 0
+                      const net = gross !== undefined ? gross - strokes : undefined
+                      return [
+                        <td key={`${tp.id}-g`} className={`px-1 py-1.5 text-center border-l border-gray-200 ${gross !== undefined ? scoreCellClass(gross, hole.par) : ''}`}>{gross ?? ''}</td>,
+                        <td key={`${tp.id}-n`} className={`px-1 py-1.5 text-center ${net !== undefined ? scoreCellClass(net, hole.par) : ''}`}>{net ?? ''}</td>,
+                      ]
+                    })}
+                  </tr>
+                ))
 
-                  // Own score for this hole
-                  const ownScore = data.roundScores.find(
-                    s => s.hole_id === hole.id && s.trip_player_id === currentTripPlayerId
-                  )
+                const parSum = nineHoles.reduce((s, h) => s + h.par, 0)
+                const subtotalRow = (
+                  <tr key={`${nine.label}-sub`} className="border-b-2 border-gray-300 bg-gray-50 font-bold">
+                    <td className="sticky left-0 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-700">{nine.label}</td>
+                    <td className="sticky left-9 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{parSum}</td>
+                    {data.tripPlayers.map(tp => {
+                      let grossSum = 0, netSum = 0, hasScore = false
+                      for (const h of nineHoles) {
+                        const s = data.roundScores.find(sc => sc.hole_id === h.id && sc.trip_player_id === tp.id)
+                        if (s) {
+                          hasScore = true
+                          grossSum += s.gross_score
+                          netSum += s.gross_score - (playerStrokesMap.get(tp.id)?.get(h.hole_number) ?? 0)
+                        }
+                      }
+                      return [
+                        <td key={`${tp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
+                        <td key={`${tp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                      ]
+                    })}
+                  </tr>
+                )
 
-                  // Strokes on this hole for current player
-                  const ownStrokesOnHole = playerStrokesMap.get(currentTripPlayerId)?.get(hole.hole_number) ?? 0
-
-                  return (
-                    <button
-                      key={hole.id}
-                      onClick={() => openHole(hole.hole_number)}
-                      className={`relative rounded-xl border-2 p-3 text-left transition-all active:scale-95 ${
-                        isActive
-                          ? 'border-golf-600 bg-golf-50 shadow-md'
-                          : isComplete
-                            ? 'border-golf-300 bg-golf-50'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}
-                    >
-                      {isComplete && (
-                        <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-golf-600 text-xs text-white">
-                          &#10003;
-                        </span>
-                      )}
-                      <div className="text-lg font-bold text-gray-900">{hole.hole_number}</div>
-                      <div className="text-xs text-gray-500">Par {hole.par}</div>
-                      <div className="text-xs text-gray-400">Hdcp {hole.handicap_index}</div>
-
-                      {/* Stroke dots for current player on this hole */}
-                      {ownStrokesOnHole > 0 && (
-                        <div className="text-green-600 text-xs tracking-tight">
-                          {'•'.repeat(ownStrokesOnHole)}
-                        </div>
-                      )}
-
-                      {ownScore && (
-                        <div className="mt-1 border-t border-golf-200 pt-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-600">{ownPlayerName.split(' ')[0]}</span>
-                            <ScoreIndicator score={ownScore.gross_score} par={hole.par} size="xs" />
-                          </div>
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
+                return [...holeRows, subtotalRow]
+              })}
+              {/* Total row */}
+              {holes.length > 0 && (
+                <tr className="bg-gray-100 font-bold">
+                  <td className="sticky left-0 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-700">Total</td>
+                  <td className="sticky left-9 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{holes.reduce((s, h) => s + h.par, 0)}</td>
+                  {data.tripPlayers.map(tp => {
+                    let grossSum = 0, netSum = 0, hasScore = false
+                    for (const h of holes) {
+                      const s = data.roundScores.find(sc => sc.hole_id === h.id && sc.trip_player_id === tp.id)
+                      if (s) {
+                        hasScore = true
+                        grossSum += s.gross_score
+                        netSum += s.gross_score - (playerStrokesMap.get(tp.id)?.get(h.hole_number) ?? 0)
+                      }
+                    }
+                    return [
+                      <td key={`${tp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
+                      <td key={`${tp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                    ]
+                  })}
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Quick start button */}
         {nextUnscoredHole && activeHole === null && (

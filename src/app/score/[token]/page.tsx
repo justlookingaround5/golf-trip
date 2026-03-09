@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { MATCH_FORMAT_LABELS } from '@/lib/types'
 import type { MatchFormat } from '@/lib/types'
-import { calculateMatchPlay } from '@/lib/match-play'
+import { calculateMatchPlay, getHoleResults } from '@/lib/match-play'
 import { getStrokesPerHole } from '@/lib/handicap'
 import { useSwipe } from '@/hooks/useSwipe'
 import DotsTracker from '@/components/DotsTracker'
@@ -199,6 +199,13 @@ export default function ScorerPage() {
       playerStrokesMap,
       data.match.format
     )
+  }, [data, playerStrokesMap])
+
+  // Hole-by-hole match results indexed by hole number
+  const holeResultsMap = useMemo(() => {
+    if (!data) return new Map<number, { winner: 'team_a' | 'team_b' | 'halved' }>()
+    const results = getHoleResults(data.scores, data.matchPlayers, data.holes, playerStrokesMap, data.match.format)
+    return new Map(results.map(r => [r.holeNumber, r]))
   }, [data, playerStrokesMap])
 
   // Which holes are completed (have scores from all players)?
@@ -426,6 +433,12 @@ export default function ScorerPage() {
     )
   }
 
+  function scoreCellClass(gross: number, par: number): string {
+    if (gross < par) return 'text-red-600 font-semibold'
+    if (gross >= par + 2) return 'bg-yellow-100'
+    return ''
+  }
+
   const statusDisplay = getStatusDisplay()
   const activeHoleData = activeHole
     ? holes.find((h) => h.hole_number === activeHole)
@@ -504,93 +517,171 @@ export default function ScorerPage() {
           </div>
         </div>
 
-        {/* Front 9 / Back 9 */}
-        {[
-          { label: 'Front 9', start: 1, end: 9 },
-          { label: 'Back 9', start: 10, end: 18 },
-        ].map((nine) => {
-          const nineHoles = holes.filter(
-            (h) =>
-              h.hole_number >= nine.start && h.hole_number <= nine.end
-          )
-          if (nineHoles.length === 0) return null
+        {/* Scorecard table */}
+        <div className="-mx-4 overflow-x-auto">
+          <table className="min-w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="sticky left-0 z-10 bg-gray-100 w-9 px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-gray-200">Hole</th>
+                <th className="sticky left-9 z-10 bg-gray-100 w-9 px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">Par</th>
+                {teamAPlayers.map(mp => (
+                  <th key={mp.id} colSpan={2} className="px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
+                    {playerName(mp).split(' ')[0]}
+                  </th>
+                ))}
+                <th className="px-1 py-1.5 text-center font-semibold text-gray-500 border-b border-l border-gray-200">vs</th>
+                {teamBPlayers.map(mp => (
+                  <th key={mp.id} colSpan={2} className="px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
+                    {playerName(mp).split(' ')[0]}
+                  </th>
+                ))}
+              </tr>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="sticky left-0 z-10 bg-gray-50 w-9" />
+                <th className="sticky left-9 z-10 bg-gray-50 w-9 border-l border-gray-200" />
+                {teamAPlayers.map(mp => [
+                  <th key={`${mp.id}-g`} className="px-1 py-1 text-center font-medium text-gray-400 border-l border-gray-200">G</th>,
+                  <th key={`${mp.id}-n`} className="px-1 py-1 text-center font-medium text-gray-400">N</th>,
+                ])}
+                <th className="border-l border-gray-200" />
+                {teamBPlayers.map(mp => [
+                  <th key={`${mp.id}-g`} className="px-1 py-1 text-center font-medium text-gray-400 border-l border-gray-200">G</th>,
+                  <th key={`${mp.id}-n`} className="px-1 py-1 text-center font-medium text-gray-400">N</th>,
+                ])}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: 'Front', start: 1, end: 9 },
+                { label: 'Back', start: 10, end: 18 },
+              ].flatMap(nine => {
+                const nineHoles = holes.filter(h => h.hole_number >= nine.start && h.hole_number <= nine.end)
+                if (nineHoles.length === 0) return []
 
-          return (
-            <div key={nine.label} className="mb-4">
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
-                {nine.label}
-              </h3>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
-                {nineHoles.map((hole) => {
-                  const isComplete = completedHoles.has(hole.hole_number)
-                  const isActive = activeHole === hole.hole_number
-
-                  // Get scores summary for this hole
-                  const holeScoreData = data.scores.filter(
-                    (s) => s.hole_id === hole.id
-                  )
+                const holeRows = nineHoles.map(hole => {
+                  const holeResult = holeResultsMap.get(hole.hole_number)
+                  const vsLabel = holeResult?.winner === 'team_a' ? '+1' : holeResult?.winner === 'team_b' ? '-1' : ''
+                  const vsCls = holeResult?.winner === 'team_a'
+                    ? 'bg-green-100 text-green-800'
+                    : holeResult?.winner === 'team_b'
+                      ? 'bg-red-100 text-red-700'
+                      : ''
 
                   return (
-                    <button
+                    <tr
                       key={hole.id}
                       onClick={() => openHole(hole.hole_number)}
-                      className={`relative rounded-xl border-2 p-3 text-left transition-all active:scale-95 ${
-                        isActive
-                          ? 'border-golf-600 bg-golf-50 shadow-md'
-                          : isComplete
-                            ? 'border-golf-300 bg-golf-50'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}
+                      className="cursor-pointer hover:bg-gray-50 active:bg-gray-100 border-b border-gray-100"
                     >
-                      {/* Completed checkmark */}
-                      {isComplete && (
-                        <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-golf-600 text-xs text-white">
-                          &#10003;
-                        </span>
-                      )}
-
-                      <div className="text-lg font-bold text-gray-900">
-                        {hole.hole_number}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Par {hole.par}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Hdcp {hole.handicap_index}
-                      </div>
-
-                      {/* Show scores if completed */}
-                      {isComplete && holeScoreData.length > 0 && (
-                        <div className="mt-1 border-t border-golf-200 pt-1">
-                          {holeScoreData.map((s) => {
-                            const mp = allMatchPlayers.find(
-                              (m) =>
-                                m.trip_player_id === s.trip_player_id
-                            )
-                            const firstName =
-                              mp?.trip_player?.player?.name?.split(' ')[0] ??
-                              '?'
-                            return (
-                              <div
-                                key={s.id}
-                                className="flex items-center justify-between text-xs"
-                              >
-                                <span className="truncate text-gray-600">
-                                  {firstName}
-                                </span>
-                                <ScoreIndicator score={s.gross_score} par={hole.par} size="xs" />
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </button>
+                      <td className="sticky left-0 z-10 bg-white w-9 px-1 py-1.5 text-center font-medium text-gray-700">{hole.hole_number}</td>
+                      <td className="sticky left-9 z-10 bg-white w-9 px-1 py-1.5 text-center text-gray-500 border-l border-gray-200">{hole.par}</td>
+                      {teamAPlayers.map(mp => {
+                        const score = data.scores.find(s => s.hole_id === hole.id && s.trip_player_id === mp.trip_player_id)
+                        const gross = score?.gross_score
+                        const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
+                        const net = gross !== undefined ? gross - strokes : undefined
+                        return [
+                          <td key={`${mp.id}-g`} className={`px-1 py-1.5 text-center border-l border-gray-200 ${gross !== undefined ? scoreCellClass(gross, hole.par) : ''}`}>{gross ?? ''}</td>,
+                          <td key={`${mp.id}-n`} className={`px-1 py-1.5 text-center ${net !== undefined ? scoreCellClass(net, hole.par) : ''}`}>{net ?? ''}</td>,
+                        ]
+                      })}
+                      <td className={`px-1 py-1.5 text-center font-bold border-l border-gray-200 ${vsCls}`}>{vsLabel}</td>
+                      {teamBPlayers.map(mp => {
+                        const score = data.scores.find(s => s.hole_id === hole.id && s.trip_player_id === mp.trip_player_id)
+                        const gross = score?.gross_score
+                        const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
+                        const net = gross !== undefined ? gross - strokes : undefined
+                        return [
+                          <td key={`${mp.id}-g`} className={`px-1 py-1.5 text-center border-l border-gray-200 ${gross !== undefined ? scoreCellClass(gross, hole.par) : ''}`}>{gross ?? ''}</td>,
+                          <td key={`${mp.id}-n`} className={`px-1 py-1.5 text-center ${net !== undefined ? scoreCellClass(net, hole.par) : ''}`}>{net ?? ''}</td>,
+                        ]
+                      })}
+                    </tr>
                   )
-                })}
-              </div>
-            </div>
-          )
-        })}
+                })
+
+                const parSum = nineHoles.reduce((s, h) => s + h.par, 0)
+                const subtotalRow = (
+                  <tr key={`${nine.label}-sub`} className="border-b-2 border-gray-300 bg-gray-50 font-bold">
+                    <td className="sticky left-0 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-700">{nine.label}</td>
+                    <td className="sticky left-9 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{parSum}</td>
+                    {teamAPlayers.map(mp => {
+                      let grossSum = 0, netSum = 0, hasScore = false
+                      for (const h of nineHoles) {
+                        const s = data.scores.find(sc => sc.hole_id === h.id && sc.trip_player_id === mp.trip_player_id)
+                        if (s) {
+                          hasScore = true
+                          grossSum += s.gross_score
+                          netSum += s.gross_score - (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0)
+                        }
+                      }
+                      return [
+                        <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
+                        <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                      ]
+                    })}
+                    <td className="border-l border-gray-200" />
+                    {teamBPlayers.map(mp => {
+                      let grossSum = 0, netSum = 0, hasScore = false
+                      for (const h of nineHoles) {
+                        const s = data.scores.find(sc => sc.hole_id === h.id && sc.trip_player_id === mp.trip_player_id)
+                        if (s) {
+                          hasScore = true
+                          grossSum += s.gross_score
+                          netSum += s.gross_score - (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0)
+                        }
+                      }
+                      return [
+                        <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
+                        <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                      ]
+                    })}
+                  </tr>
+                )
+
+                return [...holeRows, subtotalRow]
+              })}
+              {/* Total row */}
+              {holes.length > 0 && (
+                <tr className="bg-gray-100 font-bold">
+                  <td className="sticky left-0 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-700">Total</td>
+                  <td className="sticky left-9 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{holes.reduce((s, h) => s + h.par, 0)}</td>
+                  {teamAPlayers.map(mp => {
+                    let grossSum = 0, netSum = 0, hasScore = false
+                    for (const h of holes) {
+                      const s = data.scores.find(sc => sc.hole_id === h.id && sc.trip_player_id === mp.trip_player_id)
+                      if (s) {
+                        hasScore = true
+                        grossSum += s.gross_score
+                        netSum += s.gross_score - (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0)
+                      }
+                    }
+                    return [
+                      <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
+                      <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                    ]
+                  })}
+                  <td className="border-l border-gray-200" />
+                  {teamBPlayers.map(mp => {
+                    let grossSum = 0, netSum = 0, hasScore = false
+                    for (const h of holes) {
+                      const s = data.scores.find(sc => sc.hole_id === h.id && sc.trip_player_id === mp.trip_player_id)
+                      if (s) {
+                        hasScore = true
+                        grossSum += s.gross_score
+                        netSum += s.gross_score - (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0)
+                      }
+                    }
+                    return [
+                      <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
+                      <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                    ]
+                  })}
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Quick start button */}
         {nextUnscoredHole && activeHole === null && (
