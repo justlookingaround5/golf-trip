@@ -493,6 +493,17 @@ export default function LiveScoringClient({
   const matchPlayData = useMemo(() => {
     if (!isBestBallMatchPlay || !data) return null
 
+    // Low-handicap player gets 0 strokes; everyone else earns the difference
+    const allPlayerIds = [...teamAssignments.team_a, ...teamAssignments.team_b]
+    const minStrokes = Math.min(
+      ...allPlayerIds.map(id => data.courseHandicaps.find(c => c.trip_player_id === id)?.handicap_strokes ?? 0)
+    )
+    const matchStrokesMap = new Map<string, Map<number, number>>()
+    for (const id of allPlayerIds) {
+      const raw = data.courseHandicaps.find(c => c.trip_player_id === id)?.handicap_strokes ?? 0
+      matchStrokesMap.set(id, getStrokesPerHole(Math.max(0, raw - minStrokes), data.holes))
+    }
+
     let aWins = 0
     let bWins = 0
 
@@ -501,7 +512,7 @@ export default function LiveScoringClient({
         const nets = teamIds.flatMap(tpId => {
           const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
           if (!score) return []
-          const strokes = playerStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
+          const strokes = matchStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
           return [score.gross_score - strokes]
         })
         return nets.length === 0 ? null : Math.min(...nets)
@@ -522,7 +533,7 @@ export default function LiveScoringClient({
 
       return { hole, aBest, bBest, lead, status }
     })
-  }, [isBestBallMatchPlay, data, holes, teamAssignments, playerStrokesMap])
+  }, [isBestBallMatchPlay, data, holes, teamAssignments])
 
   // Loading
   if (loading) {
