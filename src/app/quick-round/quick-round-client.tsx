@@ -38,6 +38,7 @@ interface PlayerSlot {
   name: string
   handicap: string
   tee: string
+  team: 'team_a' | 'team_b' | ''
 }
 
 interface GameFormat {
@@ -69,7 +70,7 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
 
   // Player state
   const [players, setPlayers] = useState<PlayerSlot[]>([
-    { name: userName, handicap: userHandicap != null ? String(userHandicap) : '', tee: '' },
+    { name: userName, handicap: userHandicap != null ? String(userHandicap) : '', tee: '', team: '' },
   ])
 
   // Game selection state: gameId -> buy-in amount
@@ -150,7 +151,7 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
 
   function addPlayer() {
     if (players.length >= 4) return
-    setPlayers([...players, { name: '', handicap: '', tee: availableTees[0]?.tee_name || '' }])
+    setPlayers([...players, { name: '', handicap: '', tee: availableTees[0]?.tee_name || '', team: '' }])
     posthog.capture('player_added', { player_count: players.length + 1 })
   }
 
@@ -167,6 +168,14 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
 
   const availableGames = gameFormats.filter(
     g => players.length >= g.min_players && players.length <= g.max_players
+  )
+
+  const hasTeamGame = availableGames.some(g => selectedGames.has(g.id) && g.team_based)
+
+  const teamsValid = !hasTeamGame || (
+    players.every(p => p.team === 'team_a' || p.team === 'team_b') &&
+    players.some(p => p.team === 'team_a') &&
+    players.some(p => p.team === 'team_b')
   )
 
   function toggleGame(id: string) {
@@ -195,6 +204,7 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
   const canSubmit =
     courseName.trim().length > 0 &&
     players.every(p => p.name.trim().length > 0) &&
+    teamsValid &&
     !submitting
 
   async function handleSubmit() {
@@ -215,11 +225,12 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
             name: p.name.trim(),
             handicap: p.handicap ? parseFloat(p.handicap) : null,
             teeName: p.tee || null,
+            team: p.team || null,
           })),
-          games: Array.from(selectedGames.entries()).map(([id, buyIn]) => ({
-            formatId: id,
-            buyIn,
-          })),
+          games: Array.from(selectedGames.entries()).map(([id, buyIn]) => {
+            const fmt = gameFormats.find(g => g.id === id)
+            return { formatId: id, buyIn, team_based: fmt?.team_based ?? false }
+          }),
         }),
       })
 
@@ -487,6 +498,18 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
                       ))}
                     </select>
                   )}
+                  {hasTeamGame && (
+                    <div className="flex gap-1 shrink-0">
+                      <button
+                        onClick={() => updatePlayer(index, 'team', player.team === 'team_a' ? '' : 'team_a')}
+                        className={`w-7 h-7 rounded-full text-xs font-bold border transition ${player.team === 'team_a' ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-500 border-gray-300'}`}
+                      >A</button>
+                      <button
+                        onClick={() => updatePlayer(index, 'team', player.team === 'team_b' ? '' : 'team_b')}
+                        className={`w-7 h-7 rounded-full text-xs font-bold border transition ${player.team === 'team_b' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-300'}`}
+                      >B</button>
+                    </div>
+                  )}
                 </div>
                 {players.length > 1 && (
                   <button
@@ -505,6 +528,11 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
           {players.length < 4 && (
             <p className="mt-2 text-xs text-gray-400">
               {4 - players.length} more player{4 - players.length !== 1 ? 's' : ''} can be added
+            </p>
+          )}
+          {hasTeamGame && !teamsValid && (
+            <p className="mt-2 text-xs text-amber-600 font-medium">
+              Assign each player to Team A or Team B before starting.
             </p>
           )}
         </div>

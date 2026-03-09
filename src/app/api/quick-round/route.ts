@@ -7,6 +7,7 @@ interface PlayerInput {
   name: string
   handicap?: number | null
   teeName?: string | null
+  team?: 'team_a' | 'team_b' | null
 }
 
 export async function POST(request: NextRequest) {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     latitude?: number | null
     longitude?: number | null
     players: PlayerInput[]
-    games?: { formatId: string; buyIn: number }[]
+    games?: { formatId: string; buyIn: number; team_based?: boolean }[]
   }
 
   if (!courseName) {
@@ -146,6 +147,8 @@ export async function POST(request: NextRequest) {
     .eq('user_id', user.id)
     .single()
 
+  const tripPlayerIds: string[] = []
+
   for (let i = 0; i < players.length; i++) {
     const playerInput = players[i]
     // First player is always the logged-in user
@@ -216,6 +219,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: tpError.message }, { status: 500 })
     }
 
+    tripPlayerIds.push(tripPlayer.id)
+
     // Set course handicap if provided
     if (playerInput.handicap != null) {
       let teeSlope = slope ?? 113
@@ -260,17 +265,31 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 7. Create selected games with buy-ins
+  // 7. Create selected games with buy-ins and team assignments
   if (games && games.length > 0) {
-    const roundGames = games.map(g => ({
-      trip_id: trip.id,
-      course_id: course.id,
-      game_format_id: g.formatId,
-      buy_in: g.buyIn || 0,
-      status: 'active',
-      created_by: user.id,
-    }))
-    await supabase.from('round_games').insert(roundGames)
+    for (const g of games) {
+      const { data: roundGame } = await supabase
+        .from('round_games')
+        .insert({
+          trip_id: trip.id,
+          course_id: course.id,
+          game_format_id: g.formatId,
+          buy_in: g.buyIn || 0,
+          status: 'active',
+          created_by: user.id,
+        })
+        .select('id')
+        .single()
+
+      if (roundGame && g.team_based) {
+        const rgPlayers = tripPlayerIds.map((tpId, i) => ({
+          round_game_id: roundGame.id,
+          trip_player_id: tpId,
+          side: players[i]?.team || null,
+        }))
+        await supabase.from('round_game_players').insert(rgPlayers)
+      }
+    }
   }
 
   return NextResponse.json({ tripId: trip.id, courseId: course.id }, { status: 201 })
