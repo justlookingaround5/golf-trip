@@ -37,7 +37,9 @@ export default function HomeClient({ trips, activeRound, pendingInvites }: HomeC
     return 'past'
   })
 
-  const activeTrips = trips.filter((t) => t.status === 'active')
+  // Exclude the trip that has a live round today — it's already shown in the active round card
+  const activeRoundTripId = activeRound?.tripId ?? null
+  const activeTrips = trips.filter((t) => t.status === 'active' && t.id !== activeRoundTripId)
   const upcomingTrips = trips.filter((t) => t.status === 'setup')
   const pastTrips = trips.filter((t) => t.status === 'completed')
 
@@ -150,15 +152,19 @@ export default function HomeClient({ trips, activeRound, pendingInvites }: HomeC
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="grid grid-cols-3 gap-2 pt-2">
+        {/* Start a Round — primary action, full width */}
+        {!activeRound && (
           <Link
             href="/quick-round"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-2 py-4 text-center shadow-sm hover:border-golf-400 hover:shadow-md transition active:scale-95"
+            className="flex items-center justify-center gap-3 w-full rounded-xl bg-golf-800 py-4 text-white font-semibold shadow-md hover:bg-golf-700 active:scale-95 transition"
           >
-            <span className="text-2xl">⛳</span>
-            <span className="text-xs font-semibold text-gray-700">Start a Round</span>
+            <span className="text-xl">⛳</span>
+            Start a Round
           </Link>
+        )}
+
+        {/* Trip management */}
+        <div className="grid grid-cols-2 gap-2">
           <Link
             href="/admin/trips/new"
             className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-2 py-4 text-center shadow-sm hover:border-golf-400 hover:shadow-md transition active:scale-95"
