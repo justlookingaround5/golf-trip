@@ -66,16 +66,16 @@ export default function MatchScorecard({
     [matchPlayers]
   )
 
-  // Build player strokes map
+  // Build player strokes map — low handicap player gets 0, others receive the difference
   const playerStrokesMap = useMemo(() => {
+    const rawStrokes = matchPlayers.map((mp) => ({
+      id: mp.trip_player_id,
+      strokes: courseHandicaps.find((c) => c.trip_player_id === mp.trip_player_id)?.handicap_strokes ?? 0,
+    }))
+    const minStrokes = rawStrokes.length > 0 ? Math.min(...rawStrokes.map((p) => p.strokes)) : 0
     const map = new Map<string, Map<number, number>>()
-    for (const mp of matchPlayers) {
-      const ch = courseHandicaps.find(
-        (c) => c.trip_player_id === mp.trip_player_id
-      )
-      const handicapStrokes = ch?.handicap_strokes ?? 0
-      const strokesMap = getStrokesPerHole(handicapStrokes, holes)
-      map.set(mp.trip_player_id, strokesMap)
+    for (const { id, strokes } of rawStrokes) {
+      map.set(id, getStrokesPerHole(Math.max(0, strokes - minStrokes), holes))
     }
     return map
   }, [matchPlayers, courseHandicaps, holes])
