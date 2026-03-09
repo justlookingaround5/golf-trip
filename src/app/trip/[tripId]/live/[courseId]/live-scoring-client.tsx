@@ -294,6 +294,7 @@ export default function LiveScoringClient({
     return map
   }, [data])
 
+
   // Completed holes (where current player has a score)
   const completedHoles = useMemo(() => {
     if (!data || !currentTripPlayerId) return new Set<number>()
@@ -490,19 +491,23 @@ export default function LiveScoringClient({
     teamAssignments.team_a.length > 0 &&
     teamAssignments.team_b.length > 0
 
-  const matchPlayData = useMemo(() => {
-    if (!isBestBallMatchPlay || !data) return null
-
-    // Low-handicap player gets 0 strokes; everyone else earns the difference
+  // Match play adjusted strokes: low player gets 0, others receive the difference
+  const matchStrokesMap = useMemo(() => {
+    if (!isBestBallMatchPlay || !data) return new Map<string, Map<number, number>>()
     const allPlayerIds = [...teamAssignments.team_a, ...teamAssignments.team_b]
     const minStrokes = Math.min(
       ...allPlayerIds.map(id => data.courseHandicaps.find(c => c.trip_player_id === id)?.handicap_strokes ?? 0)
     )
-    const matchStrokesMap = new Map<string, Map<number, number>>()
+    const map = new Map<string, Map<number, number>>()
     for (const id of allPlayerIds) {
       const raw = data.courseHandicaps.find(c => c.trip_player_id === id)?.handicap_strokes ?? 0
-      matchStrokesMap.set(id, getStrokesPerHole(Math.max(0, raw - minStrokes), data.holes))
+      map.set(id, getStrokesPerHole(Math.max(0, raw - minStrokes), data.holes))
     }
+    return map
+  }, [isBestBallMatchPlay, data, teamAssignments])
+
+  const matchPlayData = useMemo(() => {
+    if (!isBestBallMatchPlay || !data) return null
 
     let aWins = 0
     let bWins = 0
@@ -537,7 +542,7 @@ export default function LiveScoringClient({
 
       return { hole, aBest, bBest, lead, status }
     })
-  }, [isBestBallMatchPlay, data, holes, teamAssignments])
+  }, [isBestBallMatchPlay, data, holes, teamAssignments, matchStrokesMap])
 
   // Loading
   if (loading) {
@@ -814,7 +819,7 @@ export default function LiveScoringClient({
                       {teamAssignments.team_a.map(tpId => {
                         const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
                         const gross = score?.gross_score
-                        const strokes = playerStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
+                        const strokes = matchStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
                         const net = gross !== undefined ? gross - strokes : undefined
                         const isTeamBest = net !== undefined && aBest !== null && net === aBest
                         return (
@@ -842,7 +847,7 @@ export default function LiveScoringClient({
                       {teamAssignments.team_b.map(tpId => {
                         const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
                         const gross = score?.gross_score
-                        const strokes = playerStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
+                        const strokes = matchStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
                         const net = gross !== undefined ? gross - strokes : undefined
                         const isTeamBest = net !== undefined && bBest !== null && net === bBest
                         return (
