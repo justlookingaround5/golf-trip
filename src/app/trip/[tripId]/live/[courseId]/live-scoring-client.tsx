@@ -485,7 +485,7 @@ export default function LiveScoringClient({
   const bbTeamNames = useMemo(() => {
     const getName = (tpId: string) => {
       const tp = data?.tripPlayers.find(t => t.id === tpId)
-      return tp ? getPlayerName(tp) : ''
+      return tp ? getPlayerName(tp).split(' ')[0] : ''
     }
     const teamANames = teamAssignments.team_a.map(getName).filter(Boolean)
     const teamBNames = teamAssignments.team_b.map(getName).filter(Boolean)
@@ -749,24 +749,6 @@ export default function LiveScoringClient({
           <div className="-mx-4 overflow-x-auto">
             <table className="min-w-full text-xs border-collapse">
               <thead>
-                {/* Team name headers */}
-                <tr className="bg-gray-100">
-                  <th className="w-8 px-1 py-1.5 border-b border-gray-200" />
-                  <th className="w-7 px-1 py-1.5 border-b border-gray-200" />
-                  <th
-                    colSpan={teamAssignments.team_a.length}
-                    className="px-2 py-1.5 text-center font-bold text-golf-800 border-b border-l border-gray-300"
-                  >
-                    {bbTeamNames.team_a}
-                  </th>
-                  <th className="w-10 px-1 py-1.5 border-b border-gray-200" />
-                  <th
-                    colSpan={teamAssignments.team_b.length}
-                    className="px-2 py-1.5 text-center font-bold text-blue-700 border-b border-l border-gray-300"
-                  >
-                    {bbTeamNames.team_b}
-                  </th>
-                </tr>
                 {/* Player name headers */}
                 <tr className="bg-gray-50">
                   <th className="w-8 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Hole</th>
@@ -1109,9 +1091,9 @@ export default function LiveScoringClient({
                 </div>
               </div>
               {hole.yardage && (() => {
-                const entries = Object.entries(hole.yardage).filter(([tee]) =>
-                  activeTeeNames.size === 0 ? true : activeTeeNames.has(tee)
-                )
+                const entries = Object.entries(hole.yardage)
+                  .filter(([tee]) => activeTeeNames.size === 0 ? true : activeTeeNames.has(tee))
+                  .sort(([, a], [, b]) => b - a)
                 if (entries.length === 0) return null
                 return (
                   <div className="mt-3 rounded-lg bg-gray-50 p-3">
