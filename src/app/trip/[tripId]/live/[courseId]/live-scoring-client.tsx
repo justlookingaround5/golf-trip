@@ -704,15 +704,15 @@ export default function LiveScoringClient({
               <thead>
                 {/* Team name headers */}
                 <tr className="bg-gray-100">
+                  <th className="w-8 px-1 py-1.5 border-b border-gray-200" />
+                  <th className="w-7 px-1 py-1.5 border-b border-gray-200" />
                   <th
                     colSpan={teamAssignments.team_a.length}
-                    className="px-2 py-1.5 text-center font-bold text-golf-800 border-b border-r border-gray-300"
+                    className="px-2 py-1.5 text-center font-bold text-golf-800 border-b border-l border-gray-300"
                   >
                     {bbTeamNames.team_a}
                   </th>
-                  <th className="w-8 px-1 py-1.5 border-b border-gray-200" />
                   <th className="w-10 px-1 py-1.5 border-b border-gray-200" />
-                  <th className="w-8 px-1 py-1.5 border-b border-gray-200" />
                   <th
                     colSpan={teamAssignments.team_b.length}
                     className="px-2 py-1.5 text-center font-bold text-blue-700 border-b border-l border-gray-300"
@@ -722,6 +722,8 @@ export default function LiveScoringClient({
                 </tr>
                 {/* Player name headers */}
                 <tr className="bg-gray-50">
+                  <th className="w-8 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Hole</th>
+                  <th className="w-7 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Par</th>
                   {teamAssignments.team_a.map(tpId => {
                     const tpScores = data.roundScores.filter(s => s.trip_player_id === tpId)
                     const gross = tpScores.reduce((sum, s) => sum + s.gross_score, 0)
@@ -732,15 +734,13 @@ export default function LiveScoringClient({
                     const vsPar = tpScores.length > 0 ? gross - par : null
                     const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                     return (
-                      <th key={tpId} className="px-1 py-1.5 text-center font-semibold text-golf-800 border-b border-r border-gray-200">
+                      <th key={tpId} className="px-1 py-1.5 text-center font-semibold text-golf-800 border-b border-l border-gray-200">
                         {(playerNameMap.get(tpId) || '—').split(' ')[0]}
                         {label && <span className="font-normal text-gray-400">{label}</span>}
                       </th>
                     )
                   })}
-                  <th className="w-8 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Hole</th>
-                  <th className="w-10 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Match</th>
-                  <th className="w-8 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Par</th>
+                  <th className="w-10 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-l border-gray-200">Match</th>
                   {teamAssignments.team_b.map(tpId => {
                     const tpScores = data.roundScores.filter(s => s.trip_player_id === tpId)
                     const gross = tpScores.reduce((sum, s) => sum + s.gross_score, 0)
@@ -771,6 +771,20 @@ export default function LiveScoringClient({
 
                   const holeRows = nineHoles.map(({ hole, aBest, bBest, lead, status }) => (
                     <tr key={hole.id} className="border-b border-gray-100">
+                      {/* Hole number */}
+                      <td
+                        onClick={() => setInfoHole(hole.hole_number)}
+                        className="w-8 px-1 py-2 text-center font-medium text-gray-700 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                      >
+                        {hole.hole_number}
+                      </td>
+                      {/* Par */}
+                      <td
+                        onClick={() => setInfoHole(hole.hole_number)}
+                        className="w-7 px-1 py-2 text-center text-gray-500 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                      >
+                        {hole.par}
+                      </td>
                       {/* Team A player scores */}
                       {teamAssignments.team_a.map(tpId => {
                         const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
@@ -782,22 +796,15 @@ export default function LiveScoringClient({
                           <td
                             key={tpId}
                             onClick={() => openCell(hole.hole_number, tpId)}
-                            className={`relative px-1 py-2 text-center border-r border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100 ${isTeamBest ? 'bg-golf-50' : ''}`}
+                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100 ${isTeamBest ? 'bg-golf-50' : ''}`}
                           >
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-[10px] leading-none text-gray-400">·</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
                           </td>
                         )
                       })}
-                      {/* Hole number */}
-                      <td
-                        onClick={() => setInfoHole(hole.hole_number)}
-                        className="w-8 px-1 py-2 text-center font-medium text-gray-700 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
-                      >
-                        {hole.hole_number}
-                      </td>
                       {/* Running match play status */}
-                      <td className="w-10 px-1 py-2 text-center font-semibold text-[11px]">
+                      <td className="w-10 px-1 py-2 text-center font-semibold text-[11px] border-l border-gray-200">
                         {status && (
                           <span className={
                             lead > 0 ? 'text-golf-700' :
@@ -807,13 +814,6 @@ export default function LiveScoringClient({
                             {status}
                           </span>
                         )}
-                      </td>
-                      {/* Par */}
-                      <td
-                        onClick={() => setInfoHole(hole.hole_number)}
-                        className="w-8 px-1 py-2 text-center text-gray-500 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
-                      >
-                        {hole.par}
                       </td>
                       {/* Team B player scores */}
                       {teamAssignments.team_b.map(tpId => {
@@ -844,6 +844,8 @@ export default function LiveScoringClient({
 
                   const subtotalRow = (
                     <tr key={`${nine.label}-sub`} className="border-b-2 border-gray-300 bg-gray-50 font-bold">
+                      <td className="px-1 py-2 text-center text-gray-600 text-[10px]">{nine.label}</td>
+                      <td className="px-1 py-2 text-center text-gray-600">{parSum}</td>
                       {teamAssignments.team_a.map(tpId => {
                         let grossSum = 0
                         const allScored = nineHoles.every(({ hole }) => {
@@ -852,13 +854,12 @@ export default function LiveScoringClient({
                           return !!s
                         })
                         return (
-                          <td key={tpId} className="px-1 py-2 text-center border-r border-gray-200 text-golf-800">
+                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-golf-800">
                             {allScored ? grossSum : ''}
                           </td>
                         )
                       })}
-                      <td className="px-1 py-2 text-center text-gray-600 text-[10px]">{nine.label}</td>
-                      <td className="px-1 py-2 text-center text-[10px] font-semibold">
+                      <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200">
                         {nineStatus?.status && (
                           <span className={
                             nineStatus.lead > 0 ? 'text-golf-700' :
@@ -869,7 +870,6 @@ export default function LiveScoringClient({
                           </span>
                         )}
                       </td>
-                      <td className="px-1 py-2 text-center text-gray-600">{parSum}</td>
                       {teamAssignments.team_b.map(tpId => {
                         let grossSum = 0
                         const allScored = nineHoles.every(({ hole }) => {
@@ -894,6 +894,8 @@ export default function LiveScoringClient({
                   const finalStatus = [...matchPlayData].reverse().find(d => d.status !== null)
                   return (
                     <tr className="bg-gray-100 font-bold">
+                      <td className="px-1 py-2 text-center text-gray-600 text-[10px]">Total</td>
+                      <td className="px-1 py-2 text-center text-gray-600">{holes.reduce((s, h) => s + h.par, 0)}</td>
                       {teamAssignments.team_a.map(tpId => {
                         let grossSum = 0
                         const allScored = holes.every(h => {
@@ -902,13 +904,12 @@ export default function LiveScoringClient({
                           return !!s
                         })
                         return (
-                          <td key={tpId} className="px-1 py-2 text-center border-r border-gray-200 text-golf-800">
+                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-golf-800">
                             {allScored ? grossSum : ''}
                           </td>
                         )
                       })}
-                      <td className="px-1 py-2 text-center text-gray-600 text-[10px]">Total</td>
-                      <td className="px-1 py-2 text-center text-[10px] font-semibold">
+                      <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200">
                         {finalStatus?.status && (
                           <span className={
                             finalStatus.lead > 0 ? 'text-golf-700' :
@@ -919,7 +920,6 @@ export default function LiveScoringClient({
                           </span>
                         )}
                       </td>
-                      <td className="px-1 py-2 text-center text-gray-600">{holes.reduce((s, h) => s + h.par, 0)}</td>
                       {teamAssignments.team_b.map(tpId => {
                         let grossSum = 0
                         const allScored = holes.every(h => {
