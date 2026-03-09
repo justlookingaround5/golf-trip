@@ -334,11 +334,9 @@ export default function LiveScoringClient({
     if (!hole) return
 
     const entry: Record<string, unknown> = { trip_player_id: editCell.tripPlayerId, gross_score: cellScore }
-    if (editCell.tripPlayerId === currentTripPlayerId) {
-      if (cellStats.fairway_hit !== null) entry.fairway_hit = cellStats.fairway_hit
-      if (cellStats.gir !== null) entry.gir = cellStats.gir
-      if (cellStats.putts !== null) entry.putts = cellStats.putts
-    }
+    if (cellStats.fairway_hit !== null) entry.fairway_hit = cellStats.fairway_hit
+    if (cellStats.gir !== null) entry.gir = cellStats.gir
+    if (cellStats.putts !== null) entry.putts = cellStats.putts
 
     const optimistic: RoundScore = {
       id: `optimistic-${editCell.tripPlayerId}-${hole.id}`,
