@@ -80,31 +80,15 @@ export default function HomeClient({ trips, activeRound, pendingInvites }: HomeC
 
         {/* Active round card */}
         {activeRound && (
-          <div className="rounded-xl overflow-hidden shadow-lg">
-            <Link
-              href={`/trip/${activeRound.tripId}/live/${activeRound.courseId}`}
-              className="flex flex-col items-center gap-2 bg-green-600 py-7 text-white active:bg-green-700 transition"
-            >
-              <span className="text-4xl">&#9971;</span>
-              <span className="text-xl font-bold">Live Scoring</span>
-              <span className="text-sm text-green-100">{activeRound.courseName}</span>
-              <span className="text-xs text-green-200 mt-0.5">{activeRound.tripName}</span>
-            </Link>
-            <div className="grid grid-cols-2 divide-x divide-gray-200 bg-white border-x border-b border-gray-200 rounded-b-xl">
-              <Link
-                href={`/trip/${activeRound.tripId}?tab=points`}
-                className="flex items-center justify-center gap-1.5 py-3 text-sm font-semibold text-golf-700 hover:bg-golf-50 transition"
-              >
-                <span>🏆</span> Points
-              </Link>
-              <Link
-                href={`/trip/${activeRound.tripId}?tab=matches`}
-                className="flex items-center justify-center gap-1.5 py-3 text-sm font-semibold text-golf-700 hover:bg-golf-50 transition"
-              >
-                <span>⚔️</span> Matches
-              </Link>
-            </div>
-          </div>
+          <Link
+            href={`/trip/${activeRound.tripId}/live/${activeRound.courseId}`}
+            className="flex flex-col items-center gap-2 rounded-xl bg-green-600 py-7 text-white shadow-lg active:bg-green-700 transition"
+          >
+            <span className="text-4xl">&#9971;</span>
+            <span className="text-xl font-bold">Live Scoring</span>
+            <span className="text-sm text-green-100">{activeRound.courseName}</span>
+            <span className="text-xs text-green-200 mt-0.5">{activeRound.tripName}</span>
+          </Link>
         )}
 
         {/* My Trips */}
