@@ -518,16 +518,20 @@ export default function LiveScoringClient({
         return nets.length === 0 ? null : Math.min(...nets)
       }
 
+      const allPlayersScored = [...teamAssignments.team_a, ...teamAssignments.team_b].every(
+        tpId => data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
+      )
+
       const aBest = getTeamBestNet(teamAssignments.team_a)
       const bBest = getTeamBestNet(teamAssignments.team_b)
 
-      if (aBest !== null && bBest !== null) {
+      if (allPlayersScored && aBest !== null && bBest !== null) {
         if (aBest < bBest) aWins++
         else if (bBest < aBest) bWins++
       }
 
       const lead = aWins - bWins
-      const status = (aBest !== null && bBest !== null)
+      const status = allPlayersScored && aBest !== null && bBest !== null
         ? (lead === 0 ? 'AS' : `${Math.abs(lead)}UP`)
         : null
 
@@ -819,7 +823,7 @@ export default function LiveScoringClient({
                             onClick={() => openCell(hole.hole_number, tpId)}
                             className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-golf-100 ${isTeamBest ? 'bg-golf-100' : 'bg-golf-50'}`}
                           >
-                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-xs leading-none text-gray-400">·</span>}
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-sm leading-none text-gray-500">*</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
                           </td>
                         )
@@ -847,7 +851,7 @@ export default function LiveScoringClient({
                             onClick={() => openCell(hole.hole_number, tpId)}
                             className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-blue-100 ${isTeamBest ? 'bg-blue-100' : 'bg-blue-50'}`}
                           >
-                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-xs leading-none text-gray-400">·</span>}
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-sm leading-none text-gray-500">*</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
                           </td>
                         )
