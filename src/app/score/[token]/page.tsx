@@ -811,24 +811,32 @@ function HoleEntryView({
       {/* Top bar with hole navigation */}
       <div className="flex items-center justify-between bg-golf-800 px-4 py-2 text-white">
         <button
-          onClick={() => activeHole > 1 && openHole(activeHole - 1)}
-          disabled={activeHole <= 1}
-          className="px-3 py-1 text-sm disabled:opacity-30"
+          onClick={onClose}
+          className="flex items-center gap-1 text-sm text-golf-200 hover:text-white"
         >
-          &larr; Prev
+          &larr; Scorecard
         </button>
         <div className="text-center">
           <span className="text-lg font-bold">Hole {activeHoleData.hole_number}</span>
           <span className="ml-2 text-sm text-golf-200">Par {activeHoleData.par}</span>
           <span className="ml-2 text-xs text-golf-300">Hdcp {activeHoleData.handicap_index}</span>
         </div>
-        <button
-          onClick={() => activeHole < holes.length && openHole(activeHole + 1)}
-          disabled={activeHole >= holes.length}
-          className="px-3 py-1 text-sm disabled:opacity-30"
-        >
-          Next &rarr;
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => activeHole > 1 && openHole(activeHole - 1)}
+            disabled={activeHole <= 1}
+            className="px-2 py-1 text-sm disabled:opacity-30"
+          >
+            &larr;
+          </button>
+          <button
+            onClick={() => activeHole < holes.length && openHole(activeHole + 1)}
+            disabled={activeHole >= holes.length}
+            className="px-2 py-1 text-sm disabled:opacity-30"
+          >
+            &rarr;
+          </button>
+        </div>
       </div>
 
       {/* Hole dots */}
