@@ -538,14 +538,18 @@ export default function LiveScoringClient({
 
       const lead = aWins - bWins
       const hasResult = allPlayersScored && aBest !== null && bBest !== null
+      const holeWasDecided = hasResult && aBest !== bBest
       const isFirstResult = hasResult && !firstResultSeen
       if (hasResult) firstResultSeen = true
+
+      // Show result if: the hole was won/lost, OR it's the first completed hole (shows AS if tied)
+      const showStatus = holeWasDecided || isFirstResult
 
       const status = hasResult
         ? (lead === 0 ? 'AS' : `${Math.abs(lead)}UP`)
         : null
 
-      return { hole, aBest, bBest, lead, status, isFirstResult }
+      return { hole, aBest, bBest, lead, status, showStatus }
     })
   }, [isBestBallMatchPlay, data, holes, teamAssignments, matchStrokesMap])
 
@@ -804,7 +808,7 @@ export default function LiveScoringClient({
                   )
                   if (nineHoles.length === 0) return []
 
-                  const holeRows = nineHoles.map(({ hole, aBest, bBest, lead, status, isFirstResult }) => (
+                  const holeRows = nineHoles.map(({ hole, aBest, bBest, lead, status, showStatus }) => (
                     <tr key={hole.id} className="border-b border-gray-100">
                       {/* Hole number */}
                       <td
@@ -840,7 +844,7 @@ export default function LiveScoringClient({
                       })}
                       {/* Running match play status */}
                       <td className="w-10 px-1 py-2 text-center font-semibold text-[11px] border-l border-gray-200">
-                        {status && (lead !== 0 || isFirstResult) && (
+                        {status && showStatus && (
                           <span className={`flex items-center justify-center gap-0.5 ${lead > 0 ? 'text-golf-700' : lead < 0 ? 'text-blue-600' : 'text-gray-500'}`}>
                             {lead > 0 && <span>◀</span>}
                             <span>{status}</span>
