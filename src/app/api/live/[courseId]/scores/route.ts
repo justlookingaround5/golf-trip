@@ -79,76 +79,74 @@ export async function POST(
     return NextResponse.json({ error: roundScoreError.message }, { status: 500 })
   }
 
-  // 2. Sync to scores table via synthetic round match
-  const syntheticToken = `live_round_${courseId}`
-  let { data: match } = await db
-    .from('matches')
-    .select('id, status')
-    .eq('scorer_token', syntheticToken)
-    .single()
-
-  if (!match) {
-    // Get course info for match creation
-    const { data: course } = await db
-      .from('courses')
-      .select('id, trip_id')
-      .eq('id', courseId)
-      .single()
-
-    if (!course) {
-      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
-    }
-
-    // Create synthetic match
-    const { data: newMatch, error: matchError } = await db
+  // 2. Sync to scores table via synthetic round match (best-effort — errors logged but do not block the response)
+  try {
+    const syntheticToken = `live_round_${courseId}`
+    let { data: match } = await db
       .from('matches')
-      .insert({
-        course_id: courseId,
-        format: '1v1_stroke',
-        point_value: 0,
-        scorer_token: syntheticToken,
-        status: 'in_progress',
-      })
       .select('id, status')
+      .eq('scorer_token', syntheticToken)
       .single()
 
-    if (matchError || !newMatch) {
-      return NextResponse.json({ error: 'Failed to create round match' }, { status: 500 })
+    if (!match) {
+      const { data: course } = await db
+        .from('courses')
+        .select('id, trip_id')
+        .eq('id', courseId)
+        .single()
+
+      if (course) {
+        const { data: newMatch, error: matchError } = await db
+          .from('matches')
+          .insert({
+            course_id: courseId,
+            format: '1v1_stroke',
+            point_value: 0,
+            scorer_token: syntheticToken,
+            status: 'in_progress',
+          })
+          .select('id, status')
+          .single()
+
+        if (!matchError && newMatch) {
+          match = newMatch
+
+          const { data: tripPlayers } = await db
+            .from('trip_players')
+            .select('id')
+            .eq('trip_id', course.trip_id)
+
+          if (tripPlayers && tripPlayers.length > 0) {
+            const matchPlayers = tripPlayers.map((tp, i) => ({
+              match_id: newMatch.id,
+              trip_player_id: tp.id,
+              side: i % 2 === 0 ? 'team_a' : 'team_b',
+            }))
+            await db.from('match_players').insert(matchPlayers)
+          }
+        } else if (matchError) {
+          console.error('Failed to create synthetic match:', matchError.message)
+        }
+      }
     }
-    match = newMatch
 
-    // Add all trip players to match
-    const { data: tripPlayers } = await db
-      .from('trip_players')
-      .select('id')
-      .eq('trip_id', course.trip_id)
-
-    if (tripPlayers && tripPlayers.length > 0) {
-      const matchPlayers = tripPlayers.map((tp, i) => ({
-        match_id: newMatch.id,
-        trip_player_id: tp.id,
-        side: i % 2 === 0 ? 'team_a' : 'team_b',
+    if (match) {
+      const scoreData = scores.map((entry) => ({
+        match_id: match!.id,
+        trip_player_id: entry.trip_player_id,
+        hole_id,
+        gross_score: entry.gross_score,
+        updated_at: new Date().toISOString(),
       }))
-
-      await db.from('match_players').insert(matchPlayers)
+      const { error: scoreError } = await db
+        .from('scores')
+        .upsert(scoreData, { onConflict: 'match_id,trip_player_id,hole_id' })
+      if (scoreError) {
+        console.error('Failed to sync to scores table:', scoreError.message)
+      }
     }
-  }
-
-  // Upsert into scores table
-  const scoreData = scores.map((entry) => ({
-    match_id: match.id,
-    trip_player_id: entry.trip_player_id,
-    hole_id,
-    gross_score: entry.gross_score,
-    updated_at: new Date().toISOString(),
-  }))
-
-  const { error: scoreError } = await db
-    .from('scores')
-    .upsert(scoreData, { onConflict: 'match_id,trip_player_id,hole_id' })
-
-  if (scoreError) {
-    console.error('Failed to sync to scores table:', scoreError.message)
+  } catch (syncErr) {
+    console.error('Score sync error (non-fatal):', syncErr)
   }
 
   // 3. Return updated round_scores
