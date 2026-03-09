@@ -587,11 +587,6 @@ export default function LiveScoringClient({
 
   const ownPlayerName = playerNameMap.get(currentTripPlayerId) || 'You'
 
-  function scoreCellClass(gross: number, par: number): string {
-    if (gross < par) return 'text-red-600 font-semibold'
-    if (gross >= par + 2) return 'bg-yellow-100'
-    return ''
-  }
 
   const partners = data.tripPlayers
     .filter(tp => tp.id !== currentTripPlayerId)
@@ -760,19 +755,21 @@ export default function LiveScoringClient({
               <tr className="bg-gray-100">
                 <th className="sticky left-0 z-10 bg-gray-100 w-9 px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-gray-200">Hole</th>
                 <th className="sticky left-9 z-10 bg-gray-100 w-9 px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">Par</th>
-                {data.tripPlayers.map(tp => (
-                  <th key={tp.id} colSpan={2} className="px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
-                    {getPlayerName(tp).split(' ')[0]}
-                  </th>
-                ))}
-              </tr>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="sticky left-0 z-10 bg-gray-50 w-9" />
-                <th className="sticky left-9 z-10 bg-gray-50 w-9 border-l border-gray-200" />
-                {data.tripPlayers.map(tp => [
-                  <th key={`${tp.id}-g`} className="px-1 py-1 text-center font-medium text-gray-400 border-l border-gray-200">G</th>,
-                  <th key={`${tp.id}-n`} className="px-1 py-1 text-center font-medium text-gray-400">N</th>,
-                ])}
+                {data.tripPlayers.map(tp => {
+                  const tpScores = data.roundScores.filter(s => s.trip_player_id === tp.id)
+                  const grossTotal = tpScores.reduce((sum, s) => sum + s.gross_score, 0)
+                  const parTotal = tpScores.reduce((sum, s) => {
+                    const h = holes.find(hh => hh.id === s.hole_id)
+                    return sum + (h?.par ?? 0)
+                  }, 0)
+                  const vsPar = tpScores.length > 0 ? grossTotal - parTotal : null
+                  const vsParLabel = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
+                  return (
+                    <th key={tp.id} className="px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
+                      {getPlayerName(tp).split(' ')[0]}{vsParLabel && <span className="font-normal text-gray-400">{vsParLabel}</span>}
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody>
@@ -795,11 +792,11 @@ export default function LiveScoringClient({
                       const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tp.id)
                       const gross = score?.gross_score
                       const strokes = playerStrokesMap.get(tp.id)?.get(hole.hole_number) ?? 0
-                      const net = gross !== undefined ? gross - strokes : undefined
-                      return [
-                        <td key={`${tp.id}-g`} className={`px-1 py-1.5 text-center border-l border-gray-200 ${gross !== undefined ? scoreCellClass(gross, hole.par) : ''}`}>{gross ?? ''}</td>,
-                        <td key={`${tp.id}-n`} className={`px-1 py-1.5 text-center ${net !== undefined ? scoreCellClass(net, hole.par) : ''}`}>{net ?? ''}</td>,
-                      ]
+                      const bg = gross !== undefined && gross >= hole.par + 2 ? 'bg-yellow-100' : strokes > 0 ? 'bg-yellow-50' : ''
+                      const text = gross !== undefined && gross < hole.par ? 'text-red-600 font-semibold' : ''
+                      return (
+                        <td key={tp.id} className={`px-1 py-1.5 text-center border-l border-gray-200 ${bg} ${text}`}>{gross ?? ''}</td>
+                      )
                     })}
                   </tr>
                 ))
@@ -810,19 +807,15 @@ export default function LiveScoringClient({
                     <td className="sticky left-0 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-700">{nine.label}</td>
                     <td className="sticky left-9 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{parSum}</td>
                     {data.tripPlayers.map(tp => {
-                      let grossSum = 0, netSum = 0
+                      let grossSum = 0
                       const allScored = nineHoles.every(h => {
                         const s = data.roundScores.find(sc => sc.hole_id === h.id && sc.trip_player_id === tp.id)
-                        if (s) {
-                          grossSum += s.gross_score
-                          netSum += s.gross_score - (playerStrokesMap.get(tp.id)?.get(h.hole_number) ?? 0)
-                        }
+                        if (s) grossSum += s.gross_score
                         return !!s
                       })
-                      return [
-                        <td key={`${tp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>,
-                        <td key={`${tp.id}-n`} className="px-1 py-1.5 text-center">{allScored ? netSum : ''}</td>,
-                      ]
+                      return (
+                        <td key={tp.id} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
+                      )
                     })}
                   </tr>
                 )
@@ -835,19 +828,15 @@ export default function LiveScoringClient({
                   <td className="sticky left-0 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-700">Total</td>
                   <td className="sticky left-9 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{holes.reduce((s, h) => s + h.par, 0)}</td>
                   {data.tripPlayers.map(tp => {
-                    let grossSum = 0, netSum = 0
+                    let grossSum = 0
                     const allScored = holes.every(h => {
                       const s = data.roundScores.find(sc => sc.hole_id === h.id && sc.trip_player_id === tp.id)
-                      if (s) {
-                        grossSum += s.gross_score
-                        netSum += s.gross_score - (playerStrokesMap.get(tp.id)?.get(h.hole_number) ?? 0)
-                      }
+                      if (s) grossSum += s.gross_score
                       return !!s
                     })
-                    return [
-                      <td key={`${tp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>,
-                      <td key={`${tp.id}-n`} className="px-1 py-1.5 text-center">{allScored ? netSum : ''}</td>,
-                    ]
+                    return (
+                      <td key={tp.id} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
+                    )
                   })}
                 </tr>
               )}
@@ -876,25 +865,6 @@ export default function LiveScoringClient({
             <p className="mt-1 text-sm text-golf-600">Tap any hole to edit scores.</p>
           </div>
         )}
-
-        {/* Stats Card */}
-        {statsEnabled && (
-          <StatsCard
-            stats={((data.roundStats || []).find((s: Record<string, unknown>) => s.trip_player_id === currentTripPlayerId) as any) || null}
-            playerName={ownPlayerName.split(' ')[0]}
-          />
-        )}
-
-        {/* Live Dashboard */}
-        <LiveDashboard
-          leaderboard={leaderboard}
-          games={gamesInfo}
-          feed={data.activityFeed}
-          sideBets={data.sideBets}
-          sideBetHits={enrichedHits}
-          coursePar={data.course.par}
-          isQuickRound={data.isQuickRound}
-        />
 
         {/* Spacer for fixed bottom button */}
         {nextUnscoredHole && <div className="h-24" />}
