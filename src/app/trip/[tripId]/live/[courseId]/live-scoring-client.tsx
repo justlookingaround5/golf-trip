@@ -457,6 +457,66 @@ export default function LiveScoringClient({
     }))
   }, [data, playerNameMap, holes])
 
+  // Best Ball match play data
+  const bestBallGame = useMemo(() =>
+    data?.roundGames.find(rg => rg.game_format?.name === 'Best Ball') ?? null,
+    [data])
+
+  const teamAssignments = useMemo(() => {
+    if (!bestBallGame) return { team_a: [] as string[], team_b: [] as string[] }
+    return {
+      team_a: bestBallGame.round_game_players
+        .filter(rgp => rgp.side === 'team_a')
+        .map(rgp => rgp.trip_player_id),
+      team_b: bestBallGame.round_game_players
+        .filter(rgp => rgp.side === 'team_b')
+        .map(rgp => rgp.trip_player_id),
+    }
+  }, [bestBallGame])
+
+  const bbTeamNames = useMemo(() => ({
+    team_a: (bestBallGame?.config?.team_a_name as string) || 'Team A',
+    team_b: (bestBallGame?.config?.team_b_name as string) || 'Team B',
+  }), [bestBallGame])
+
+  const isBestBallMatchPlay = bestBallGame !== null &&
+    teamAssignments.team_a.length > 0 &&
+    teamAssignments.team_b.length > 0
+
+  const matchPlayData = useMemo(() => {
+    if (!isBestBallMatchPlay || !data) return null
+
+    let aWins = 0
+    let bWins = 0
+
+    return holes.map(hole => {
+      const getTeamBestNet = (teamIds: string[]): number | null => {
+        const nets = teamIds.flatMap(tpId => {
+          const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
+          if (!score) return []
+          const strokes = playerStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
+          return [score.gross_score - strokes]
+        })
+        return nets.length === 0 ? null : Math.min(...nets)
+      }
+
+      const aBest = getTeamBestNet(teamAssignments.team_a)
+      const bBest = getTeamBestNet(teamAssignments.team_b)
+
+      if (aBest !== null && bBest !== null) {
+        if (aBest < bBest) aWins++
+        else if (bBest < aBest) bWins++
+      }
+
+      const lead = aWins - bWins
+      const status = (aBest !== null && bBest !== null)
+        ? (lead === 0 ? 'AS' : `${Math.abs(lead)}UP`)
+        : null
+
+      return { hole, aBest, bBest, lead, status }
+    })
+  }, [isBestBallMatchPlay, data, holes, teamAssignments, playerStrokesMap])
+
   // Loading
   if (loading) {
     return (
@@ -605,7 +665,282 @@ export default function LiveScoringClient({
           </div>
         </div>
 
-        {/* Scorecard table */}
+        {/* Best Ball match status banner */}
+        {isBestBallMatchPlay && matchPlayData && (() => {
+          const lastPlayed = [...matchPlayData].reverse().find(d => d.status !== null)
+          if (!lastPlayed) return (
+            <div className="mb-3 rounded-lg bg-gray-100 px-4 py-2.5 text-center text-sm text-gray-500">
+              Match not started
+            </div>
+          )
+          const { lead, status } = lastPlayed
+          const holesPlayed = matchPlayData.filter(d => d.status !== null).length
+          const holesRemaining = holes.length - holesPlayed
+          if (lead === 0) return (
+            <div className="mb-3 rounded-lg bg-gray-100 px-4 py-2.5 text-center">
+              <span className="font-bold text-gray-700">All Square</span>
+              <span className="ml-2 text-xs text-gray-400">thru {holesPlayed}</span>
+            </div>
+          )
+          const leadingTeam = lead > 0 ? bbTeamNames.team_a : bbTeamNames.team_b
+          const isMatchOver = Math.abs(lead) > holesRemaining
+          return (
+            <div className={`mb-3 rounded-lg px-4 py-2.5 text-center ${lead > 0 ? 'bg-golf-50' : 'bg-blue-50'}`}>
+              <span className={`font-bold ${lead > 0 ? 'text-golf-800' : 'text-blue-700'}`}>
+                {leadingTeam} {status}
+              </span>
+              {isMatchOver
+                ? <span className="ml-2 text-xs text-gray-500">Match over</span>
+                : <span className="ml-2 text-xs text-gray-400">thru {holesPlayed}</span>
+              }
+            </div>
+          )
+        })()}
+
+        {/* Scorecard table — Best Ball match play layout */}
+        {isBestBallMatchPlay && matchPlayData ? (
+          <div className="-mx-4 overflow-x-auto">
+            <table className="min-w-full text-xs border-collapse">
+              <thead>
+                {/* Team name headers */}
+                <tr className="bg-gray-100">
+                  <th
+                    colSpan={teamAssignments.team_a.length}
+                    className="px-2 py-1.5 text-center font-bold text-golf-800 border-b border-r border-gray-300"
+                  >
+                    {bbTeamNames.team_a}
+                  </th>
+                  <th className="w-8 px-1 py-1.5 border-b border-gray-200" />
+                  <th className="w-10 px-1 py-1.5 border-b border-gray-200" />
+                  <th className="w-8 px-1 py-1.5 border-b border-gray-200" />
+                  <th
+                    colSpan={teamAssignments.team_b.length}
+                    className="px-2 py-1.5 text-center font-bold text-blue-700 border-b border-l border-gray-300"
+                  >
+                    {bbTeamNames.team_b}
+                  </th>
+                </tr>
+                {/* Player name headers */}
+                <tr className="bg-gray-50">
+                  {teamAssignments.team_a.map(tpId => {
+                    const tpScores = data.roundScores.filter(s => s.trip_player_id === tpId)
+                    const gross = tpScores.reduce((sum, s) => sum + s.gross_score, 0)
+                    const par = tpScores.reduce((sum, s) => {
+                      const h = holes.find(hh => hh.id === s.hole_id)
+                      return sum + (h?.par ?? 0)
+                    }, 0)
+                    const vsPar = tpScores.length > 0 ? gross - par : null
+                    const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
+                    return (
+                      <th key={tpId} className="px-1 py-1.5 text-center font-semibold text-golf-800 border-b border-r border-gray-200">
+                        {(playerNameMap.get(tpId) || '—').split(' ')[0]}
+                        {label && <span className="font-normal text-gray-400">{label}</span>}
+                      </th>
+                    )
+                  })}
+                  <th className="w-8 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Hole</th>
+                  <th className="w-10 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Match</th>
+                  <th className="w-8 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Par</th>
+                  {teamAssignments.team_b.map(tpId => {
+                    const tpScores = data.roundScores.filter(s => s.trip_player_id === tpId)
+                    const gross = tpScores.reduce((sum, s) => sum + s.gross_score, 0)
+                    const par = tpScores.reduce((sum, s) => {
+                      const h = holes.find(hh => hh.id === s.hole_id)
+                      return sum + (h?.par ?? 0)
+                    }, 0)
+                    const vsPar = tpScores.length > 0 ? gross - par : null
+                    const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
+                    return (
+                      <th key={tpId} className="px-1 py-1.5 text-center font-semibold text-blue-700 border-b border-l border-gray-200">
+                        {(playerNameMap.get(tpId) || '—').split(' ')[0]}
+                        {label && <span className="font-normal text-gray-400">{label}</span>}
+                      </th>
+                    )
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: 'Front', start: 1, end: 9 },
+                  { label: 'Back', start: 10, end: 18 },
+                ].flatMap(nine => {
+                  const nineHoles = matchPlayData.filter(
+                    d => d.hole.hole_number >= nine.start && d.hole.hole_number <= nine.end
+                  )
+                  if (nineHoles.length === 0) return []
+
+                  const holeRows = nineHoles.map(({ hole, aBest, bBest, lead, status }) => (
+                    <tr key={hole.id} className="border-b border-gray-100">
+                      {/* Team A player scores */}
+                      {teamAssignments.team_a.map(tpId => {
+                        const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
+                        const gross = score?.gross_score
+                        const strokes = playerStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
+                        const net = gross !== undefined ? gross - strokes : undefined
+                        const isTeamBest = net !== undefined && aBest !== null && net === aBest
+                        return (
+                          <td
+                            key={tpId}
+                            onClick={() => openCell(hole.hole_number, tpId)}
+                            className={`relative px-1 py-2 text-center border-r border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100 ${isTeamBest ? 'bg-golf-50' : ''}`}
+                          >
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-[10px] leading-none text-gray-400">·</span>}
+                            {gross !== undefined && scoreBadge(gross, hole.par)}
+                          </td>
+                        )
+                      })}
+                      {/* Hole number */}
+                      <td
+                        onClick={() => setInfoHole(hole.hole_number)}
+                        className="w-8 px-1 py-2 text-center font-medium text-gray-700 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                      >
+                        {hole.hole_number}
+                      </td>
+                      {/* Running match play status */}
+                      <td className="w-10 px-1 py-2 text-center font-semibold text-[11px]">
+                        {status && (
+                          <span className={
+                            lead > 0 ? 'text-golf-700' :
+                            lead < 0 ? 'text-blue-600' :
+                            'text-gray-500'
+                          }>
+                            {status}
+                          </span>
+                        )}
+                      </td>
+                      {/* Par */}
+                      <td
+                        onClick={() => setInfoHole(hole.hole_number)}
+                        className="w-8 px-1 py-2 text-center text-gray-500 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                      >
+                        {hole.par}
+                      </td>
+                      {/* Team B player scores */}
+                      {teamAssignments.team_b.map(tpId => {
+                        const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
+                        const gross = score?.gross_score
+                        const strokes = playerStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
+                        const net = gross !== undefined ? gross - strokes : undefined
+                        const isTeamBest = net !== undefined && bBest !== null && net === bBest
+                        return (
+                          <td
+                            key={tpId}
+                            onClick={() => openCell(hole.hole_number, tpId)}
+                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100 ${isTeamBest ? 'bg-blue-50' : ''}`}
+                          >
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-[10px] leading-none text-gray-400">·</span>}
+                            {gross !== undefined && scoreBadge(gross, hole.par)}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))
+
+                  const parSum = nineHoles.reduce((s, d) => s + d.hole.par, 0)
+                  const nineStatus = (() => {
+                    const last = [...nineHoles].reverse().find(d => d.status !== null)
+                    return last ?? null
+                  })()
+
+                  const subtotalRow = (
+                    <tr key={`${nine.label}-sub`} className="border-b-2 border-gray-300 bg-gray-50 font-bold">
+                      {teamAssignments.team_a.map(tpId => {
+                        let grossSum = 0
+                        const allScored = nineHoles.every(({ hole }) => {
+                          const s = data.roundScores.find(sc => sc.hole_id === hole.id && sc.trip_player_id === tpId)
+                          if (s) grossSum += s.gross_score
+                          return !!s
+                        })
+                        return (
+                          <td key={tpId} className="px-1 py-2 text-center border-r border-gray-200 text-golf-800">
+                            {allScored ? grossSum : ''}
+                          </td>
+                        )
+                      })}
+                      <td className="px-1 py-2 text-center text-gray-600 text-[10px]">{nine.label}</td>
+                      <td className="px-1 py-2 text-center text-[10px] font-semibold">
+                        {nineStatus?.status && (
+                          <span className={
+                            nineStatus.lead > 0 ? 'text-golf-700' :
+                            nineStatus.lead < 0 ? 'text-blue-600' :
+                            'text-gray-500'
+                          }>
+                            {nineStatus.status}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-1 py-2 text-center text-gray-600">{parSum}</td>
+                      {teamAssignments.team_b.map(tpId => {
+                        let grossSum = 0
+                        const allScored = nineHoles.every(({ hole }) => {
+                          const s = data.roundScores.find(sc => sc.hole_id === hole.id && sc.trip_player_id === tpId)
+                          if (s) grossSum += s.gross_score
+                          return !!s
+                        })
+                        return (
+                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-blue-700">
+                            {allScored ? grossSum : ''}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+
+                  return [...holeRows, subtotalRow]
+                })}
+
+                {/* Total row */}
+                {holes.length > 0 && (() => {
+                  const finalStatus = [...matchPlayData].reverse().find(d => d.status !== null)
+                  return (
+                    <tr className="bg-gray-100 font-bold">
+                      {teamAssignments.team_a.map(tpId => {
+                        let grossSum = 0
+                        const allScored = holes.every(h => {
+                          const s = data.roundScores.find(sc => sc.hole_id === h.id && sc.trip_player_id === tpId)
+                          if (s) grossSum += s.gross_score
+                          return !!s
+                        })
+                        return (
+                          <td key={tpId} className="px-1 py-2 text-center border-r border-gray-200 text-golf-800">
+                            {allScored ? grossSum : ''}
+                          </td>
+                        )
+                      })}
+                      <td className="px-1 py-2 text-center text-gray-600 text-[10px]">Total</td>
+                      <td className="px-1 py-2 text-center text-[10px] font-semibold">
+                        {finalStatus?.status && (
+                          <span className={
+                            finalStatus.lead > 0 ? 'text-golf-700' :
+                            finalStatus.lead < 0 ? 'text-blue-600' :
+                            'text-gray-500'
+                          }>
+                            {finalStatus.status}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-1 py-2 text-center text-gray-600">{holes.reduce((s, h) => s + h.par, 0)}</td>
+                      {teamAssignments.team_b.map(tpId => {
+                        let grossSum = 0
+                        const allScored = holes.every(h => {
+                          const s = data.roundScores.find(sc => sc.hole_id === h.id && sc.trip_player_id === tpId)
+                          if (s) grossSum += s.gross_score
+                          return !!s
+                        })
+                        return (
+                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-blue-700">
+                            {allScored ? grossSum : ''}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })()}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+        /* Flat scorecard — standard / non-Best Ball rounds */
         <div className="-mx-4 overflow-x-auto">
           <table className="min-w-full text-xs border-collapse">
             <thead>
@@ -700,6 +1035,7 @@ export default function LiveScoringClient({
             </tbody>
           </table>
         </div>
+        )}
 
         {/* All holes done */}
         {nextUnscoredHole === null && holes.length > 0 && (
