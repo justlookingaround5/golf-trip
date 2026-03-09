@@ -111,27 +111,27 @@ function scoreBadge(gross: number, par: number) {
   const diff = gross - par
   if (diff <= -2) {
     return (
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-red-600 text-red-600 font-semibold">
-        <span className="inline-flex items-center justify-center w-3 h-3 rounded-full border border-red-600 text-[8px]">{gross}</span>
+      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-red-600 text-red-600 font-semibold">
+        <span className="inline-flex items-center justify-center w-[14px] h-[14px] rounded-full border border-red-600 text-[10px]">{gross}</span>
       </span>
     )
   }
   if (diff === -1) {
     return (
-      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-red-600 text-red-600 font-semibold text-[10px]">{gross}</span>
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-red-600 text-red-600 font-semibold text-xs">{gross}</span>
     )
   }
   if (diff === 0) {
-    return <span className="text-[10px] text-gray-700">{gross}</span>
+    return <span className="text-xs text-gray-700">{gross}</span>
   }
   if (diff === 1) {
     return (
-      <span className="inline-flex items-center justify-center w-4 h-4 border border-blue-500 text-blue-600 text-[10px]">{gross}</span>
+      <span className="inline-flex items-center justify-center w-5 h-5 border border-blue-500 text-blue-600 text-xs">{gross}</span>
     )
   }
   return (
-    <span className="inline-flex items-center justify-center w-5 h-5 border border-blue-500 text-blue-600">
-      <span className="inline-flex items-center justify-center w-3 h-3 border border-blue-500 text-[8px]">{gross}</span>
+    <span className="inline-flex items-center justify-center w-6 h-6 border border-blue-500 text-blue-600">
+      <span className="inline-flex items-center justify-center w-[14px] h-[14px] border border-blue-500 text-[10px]">{gross}</span>
     </span>
   )
 }
@@ -545,8 +545,8 @@ export default function ScorerPage() {
           <table className="min-w-full text-xs border-collapse">
             <thead>
               <tr className="bg-gray-100">
-                <th className="sticky left-0 z-10 bg-gray-100 w-9 px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-gray-200">Hole</th>
-                <th className="sticky left-9 z-10 bg-gray-100 w-9 px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">Par</th>
+                <th className="sticky left-0 z-10 bg-gray-100 w-9 px-1 py-2 text-center font-semibold text-gray-600 border-b border-gray-200">Hole</th>
+                <th className="sticky left-9 z-10 bg-gray-100 w-9 px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200">Par</th>
                 {teamAPlayers.map(mp => {
                   const mpScores = data.scores.filter(s => s.trip_player_id === mp.trip_player_id)
                   const grossTotal = mpScores.reduce((sum, s) => sum + s.gross_score, 0)
@@ -557,12 +557,12 @@ export default function ScorerPage() {
                   const vsPar = mpScores.length > 0 ? grossTotal - parTotal : null
                   const vsParLabel = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                   return (
-                    <th key={mp.id} className="px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
+                    <th key={mp.id} className="px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
                       {playerName(mp).split(' ')[0]}{vsParLabel && <span className="font-normal text-gray-400">{vsParLabel}</span>}
                     </th>
                   )
                 })}
-                <th className="px-1 py-1.5 text-center font-semibold text-gray-500 border-b border-l border-gray-200">vs</th>
+                <th className="px-1 py-2 text-center font-semibold text-gray-500 border-b border-l border-gray-200">vs</th>
                 {teamBPlayers.map(mp => {
                   const mpScores = data.scores.filter(s => s.trip_player_id === mp.trip_player_id)
                   const grossTotal = mpScores.reduce((sum, s) => sum + s.gross_score, 0)
@@ -573,7 +573,7 @@ export default function ScorerPage() {
                   const vsPar = mpScores.length > 0 ? grossTotal - parTotal : null
                   const vsParLabel = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                   return (
-                    <th key={mp.id} className="px-1 py-1.5 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
+                    <th key={mp.id} className="px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
                       {playerName(mp).split(' ')[0]}{vsParLabel && <span className="font-normal text-gray-400">{vsParLabel}</span>}
                     </th>
                   )
@@ -603,26 +603,26 @@ export default function ScorerPage() {
                       onClick={() => openHole(hole.hole_number)}
                       className="cursor-pointer hover:bg-gray-50 active:bg-gray-100 border-b border-gray-100"
                     >
-                      <td className="sticky left-0 z-10 bg-white w-9 px-1 py-1.5 text-center font-medium text-gray-700">{hole.hole_number}</td>
-                      <td className="sticky left-9 z-10 bg-white w-9 px-1 py-1.5 text-center text-gray-500 border-l border-gray-200">{hole.par}</td>
+                      <td className="sticky left-0 z-10 bg-white w-9 px-1 py-2 text-center font-medium text-gray-700">{hole.hole_number}</td>
+                      <td className="sticky left-9 z-10 bg-white w-9 px-1 py-2 text-center text-gray-500 border-l border-gray-200">{hole.par}</td>
                       {teamAPlayers.map(mp => {
                         const score = data.scores.find(s => s.hole_id === hole.id && s.trip_player_id === mp.trip_player_id)
                         const gross = score?.gross_score
                         const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
                         return (
-                          <td key={mp.id} className="relative px-1 py-1.5 text-center border-l border-gray-200">
+                          <td key={mp.id} className="relative px-1 py-2 text-center border-l border-gray-200">
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
                           </td>
                         )
                       })}
-                      <td className={`px-1 py-1.5 text-center font-bold border-l border-gray-200 ${vsCls}`}>{vsLabel}</td>
+                      <td className={`px-1 py-2 text-center font-bold border-l border-gray-200 ${vsCls}`}>{vsLabel}</td>
                       {teamBPlayers.map(mp => {
                         const score = data.scores.find(s => s.hole_id === hole.id && s.trip_player_id === mp.trip_player_id)
                         const gross = score?.gross_score
                         const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
                         return (
-                          <td key={mp.id} className="relative px-1 py-1.5 text-center border-l border-gray-200">
+                          <td key={mp.id} className="relative px-1 py-2 text-center border-l border-gray-200">
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
                           </td>
@@ -635,8 +635,8 @@ export default function ScorerPage() {
                 const parSum = nineHoles.reduce((s, h) => s + h.par, 0)
                 const subtotalRow = (
                   <tr key={`${nine.label}-sub`} className="border-b-2 border-gray-300 bg-gray-50 font-bold">
-                    <td className="sticky left-0 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-700">{nine.label}</td>
-                    <td className="sticky left-9 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{parSum}</td>
+                    <td className="sticky left-0 z-10 bg-gray-50 px-1 py-2 text-center text-gray-700">{nine.label}</td>
+                    <td className="sticky left-9 z-10 bg-gray-50 px-1 py-2 text-center text-gray-600 border-l border-gray-200">{parSum}</td>
                     {teamAPlayers.map(mp => {
                       let grossSum = 0
                       const allScored = nineHoles.every(h => {
@@ -645,7 +645,7 @@ export default function ScorerPage() {
                         return !!s
                       })
                       return (
-                        <td key={mp.id} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
+                        <td key={mp.id} className="px-1 py-2 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
                       )
                     })}
                     <td className="border-l border-gray-200" />
@@ -657,7 +657,7 @@ export default function ScorerPage() {
                         return !!s
                       })
                       return (
-                        <td key={mp.id} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
+                        <td key={mp.id} className="px-1 py-2 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
                       )
                     })}
                   </tr>
@@ -668,8 +668,8 @@ export default function ScorerPage() {
               {/* Total row */}
               {holes.length > 0 && (
                 <tr className="bg-gray-100 font-bold">
-                  <td className="sticky left-0 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-700">Total</td>
-                  <td className="sticky left-9 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{holes.reduce((s, h) => s + h.par, 0)}</td>
+                  <td className="sticky left-0 z-10 bg-gray-100 px-1 py-2 text-center text-gray-700">Total</td>
+                  <td className="sticky left-9 z-10 bg-gray-100 px-1 py-2 text-center text-gray-600 border-l border-gray-200">{holes.reduce((s, h) => s + h.par, 0)}</td>
                   {teamAPlayers.map(mp => {
                     let grossSum = 0
                     const allScored = holes.every(h => {
@@ -678,7 +678,7 @@ export default function ScorerPage() {
                       return !!s
                     })
                     return (
-                      <td key={mp.id} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
+                      <td key={mp.id} className="px-1 py-2 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
                     )
                   })}
                   <td className="border-l border-gray-200" />
@@ -690,7 +690,7 @@ export default function ScorerPage() {
                       return !!s
                     })
                     return (
-                      <td key={mp.id} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
+                      <td key={mp.id} className="px-1 py-2 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>
                     )
                   })}
                 </tr>
