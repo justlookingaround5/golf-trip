@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import posthog from 'posthog-js'
@@ -41,6 +41,13 @@ interface PlayerSlot {
   team: 'team_a' | 'team_b' | ''
 }
 
+interface Friend {
+  userId: string
+  displayName: string
+  avatarUrl: string | null
+  handicap: number | null
+}
+
 interface GameFormat {
   id: string
   name: string
@@ -51,7 +58,17 @@ interface GameFormat {
   team_based: boolean
 }
 
-export default function QuickRoundClient({ userName, userHandicap, gameFormats }: { userName: string; userHandicap: number | null; gameFormats: GameFormat[] }) {
+export default function QuickRoundClient({
+  userName,
+  userHandicap,
+  userId,
+  gameFormats,
+}: {
+  userName: string
+  userHandicap: number | null
+  userId: string
+  gameFormats: GameFormat[]
+}) {
   const router = useRouter()
 
   // Course search state
@@ -73,8 +90,17 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
     { name: userName, handicap: userHandicap != null ? String(userHandicap) : '', tee: '', team: '' },
   ])
 
+  // Add-player picker
+  const [showAddPicker, setShowAddPicker] = useState(false)
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [friendsLoaded, setFriendsLoaded] = useState(false)
+  const [loadingFriends, setLoadingFriends] = useState(false)
+
   // Game selection state: gameId -> buy-in amount
   const [selectedGames, setSelectedGames] = useState<Map<string, number>>(new Map())
+
+  // Team names
+  const [teamNames, setTeamNames] = useState({ team_a: 'Team A', team_b: 'Team B' })
 
   // Submit state
   const [submitting, setSubmitting] = useState(false)
@@ -84,6 +110,17 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
   const searchTimeoutRef = useState<NodeJS.Timeout | null>(null)
 
   const availableTees = courseDetail?.tees?.[teeGender] || []
+
+  // Load friends when picker opens
+  useEffect(() => {
+    if (!showAddPicker || friendsLoaded) return
+    setLoadingFriends(true)
+    fetch(`/api/friends?userId=${userId}`)
+      .then(r => r.ok ? r.json() : { friends: [] })
+      .then(data => { setFriends(data.friends || []); setFriendsLoaded(true) })
+      .catch(() => setFriendsLoaded(true))
+      .finally(() => setLoadingFriends(false))
+  }, [showAddPicker, friendsLoaded, userId])
 
   const searchCourses = useCallback(
     async (query: string) => {
@@ -149,10 +186,29 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
     posthog.capture('course_selected', { course_name: courseQuery, source: 'manual' })
   }
 
-  function addPlayer() {
+  function openAddPicker() {
     if (players.length >= 4) return
-    setPlayers([...players, { name: '', handicap: '', tee: availableTees[0]?.tee_name || '', team: '' }])
-    posthog.capture('player_added', { player_count: players.length + 1 })
+    setShowAddPicker(true)
+  }
+
+  function addFriendPlayer(friend: Friend) {
+    setShowAddPicker(false)
+    setPlayers(prev => [
+      ...prev,
+      {
+        name: friend.displayName,
+        handicap: friend.handicap != null ? String(friend.handicap) : '',
+        tee: availableTees[0]?.tee_name || '',
+        team: '',
+      },
+    ])
+    posthog.capture('player_added', { player_count: players.length + 1, source: 'friend' })
+  }
+
+  function addManualPlayer() {
+    setShowAddPicker(false)
+    setPlayers(prev => [...prev, { name: '', handicap: '', tee: availableTees[0]?.tee_name || '', team: '' }])
+    posthog.capture('player_added', { player_count: players.length + 1, source: 'manual' })
   }
 
   function removePlayer(index: number) {
@@ -176,6 +232,13 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
     players.every(p => p.team === 'team_a' || p.team === 'team_b') &&
     players.some(p => p.team === 'team_a') &&
     players.some(p => p.team === 'team_b')
+  )
+
+  // Games are gated behind all players having name + handicap (and tee if course loaded)
+  const playersReady = players.every(p =>
+    p.name.trim() !== '' &&
+    p.handicap.trim() !== '' &&
+    (availableTees.length === 0 || p.tee !== '')
   )
 
   function toggleGame(id: string) {
@@ -229,7 +292,12 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
           })),
           games: Array.from(selectedGames.entries()).map(([id, buyIn]) => {
             const fmt = gameFormats.find(g => g.id === id)
-            return { formatId: id, buyIn, team_based: fmt?.team_based ?? false }
+            return {
+              formatId: id,
+              buyIn,
+              team_based: fmt?.team_based ?? false,
+              teamNames: fmt?.team_based ? teamNames : undefined,
+            }
           }),
         }),
       })
@@ -255,6 +323,11 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
     }
   }
 
+  // Friends already assigned as players (to avoid duplicates in picker)
+  const addedFriendIds = new Set(
+    players.flatMap(p => friends.filter(f => f.displayName === p.name).map(f => f.userId))
+  )
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -278,9 +351,7 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
         {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
-            <button onClick={() => setError(null)} className="ml-2 font-bold">
-              x
-            </button>
+            <button onClick={() => setError(null)} className="ml-2 font-bold">×</button>
           </div>
         )}
 
@@ -300,11 +371,7 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
                   </p>
                 </div>
                 <button
-                  onClick={() => {
-                    setSelectedCourse(null)
-                    setCourseDetail(null)
-                    setCourseQuery('')
-                  }}
+                  onClick={() => { setSelectedCourse(null); setCourseDetail(null); setCourseQuery('') }}
                   className="text-sm font-medium text-golf-700 hover:text-golf-900"
                 >
                   Change
@@ -317,45 +384,42 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
 
               {courseDetail && (
                 <div className="mt-3 space-y-2">
-                  {/* Gender toggle */}
                   {(courseDetail.tees?.female?.length ?? 0) > 0 && (
                     <div className="flex gap-2">
                       <button
                         onClick={() => setTeeGender('male')}
-                        className={`rounded-md px-3 py-1 text-xs font-medium ${
-                          teeGender === 'male'
-                            ? 'bg-golf-700 text-white'
-                            : 'border border-gray-300 bg-white text-gray-700'
-                        }`}
+                        className={`rounded-md px-3 py-1 text-xs font-medium ${teeGender === 'male' ? 'bg-golf-700 text-white' : 'border border-gray-300 bg-white text-gray-700'}`}
                       >
                         Men&apos;s Tees
                       </button>
                       <button
                         onClick={() => setTeeGender('female')}
-                        className={`rounded-md px-3 py-1 text-xs font-medium ${
-                          teeGender === 'female'
-                            ? 'bg-golf-700 text-white'
-                            : 'border border-gray-300 bg-white text-gray-700'
-                        }`}
+                        className={`rounded-md px-3 py-1 text-xs font-medium ${teeGender === 'female' ? 'bg-golf-700 text-white' : 'border border-gray-300 bg-white text-gray-700'}`}
                       >
                         Women&apos;s Tees
                       </button>
                     </div>
                   )}
 
-                  {/* Tee card grid */}
                   <div className="grid grid-cols-2 gap-2">
-                    {availableTees.map(tee => (
-                      <button
-                        key={tee.tee_name}
-                        onClick={() => setPlayers(prev => prev.map(p => ({ ...p, tee: tee.tee_name })))}
-                        className="rounded-md border border-gray-200 bg-white p-2 text-left text-xs hover:border-golf-300 hover:bg-golf-50 transition"
-                      >
-                        <p className="font-semibold text-gray-900">{tee.tee_name}</p>
-                        <p className="text-gray-600">Slope {tee.slope_rating} · Rating {tee.course_rating}</p>
-                        <p className="text-gray-600">{tee.total_yards?.toLocaleString()} yds · Par {tee.par_total}</p>
-                      </button>
-                    ))}
+                    {availableTees.map(tee => {
+                      const allOnTee = players.length > 0 && players.every(p => p.tee === tee.tee_name)
+                      return (
+                        <button
+                          key={tee.tee_name}
+                          onClick={() => setPlayers(prev => prev.map(p => ({ ...p, tee: tee.tee_name })))}
+                          className={`rounded-md p-2 text-left text-xs transition ${
+                            allOnTee
+                              ? 'border-2 border-golf-800 bg-golf-50'
+                              : 'border border-gray-200 bg-white hover:border-golf-300 hover:bg-golf-50'
+                          }`}
+                        >
+                          <p className="font-semibold text-gray-900">{tee.tee_name}</p>
+                          <p className="text-gray-600">Slope {tee.slope_rating} · Rating {tee.course_rating}</p>
+                          <p className="text-gray-600">{tee.total_yards?.toLocaleString()} yds · Par {tee.par_total}</p>
+                        </button>
+                      )
+                    })}
                   </div>
                   <p className="text-xs text-gray-400">
                     Tap a tee to apply to all players. Change individually below.
@@ -374,11 +438,7 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
                   placeholder="Course name"
                 />
                 <button
-                  onClick={() => {
-                    setUseManual(false)
-                    setManualCourse('')
-                    setCourseQuery('')
-                  }}
+                  onClick={() => { setUseManual(false); setManualCourse(''); setCourseQuery('') }}
                   className="ml-3 text-sm font-medium text-golf-700 hover:text-golf-900"
                 >
                   Change
@@ -405,7 +465,6 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
                 )}
               </div>
 
-              {/* Search results */}
               {courseResults.length > 0 && (
                 <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm">
                   {courseResults.map(course => (
@@ -414,18 +473,13 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
                       onClick={() => selectCourse(course)}
                       className="w-full border-b border-gray-100 px-4 py-3 text-left last:border-0 hover:bg-golf-50"
                     >
-                      <p className="font-medium text-gray-900">
-                        {course.course_name || course.club_name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {course.location?.city}, {course.location?.state}
-                      </p>
+                      <p className="font-medium text-gray-900">{course.course_name || course.club_name}</p>
+                      <p className="text-sm text-gray-500">{course.location?.city}, {course.location?.state}</p>
                     </button>
                   ))}
                 </div>
               )}
 
-              {/* Manual fallback */}
               {hasSearched && !searching && courseQuery.length >= 3 && courseResults.length === 0 && (
                 <button
                   onClick={useManualCourse}
@@ -435,7 +489,6 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
                 </button>
               )}
 
-              {/* Always show manual option when there are results */}
               {courseResults.length > 0 && courseQuery.length >= 3 && (
                 <button
                   onClick={useManualCourse}
@@ -454,7 +507,7 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
             <h2 className="text-lg font-bold text-gray-900">Players</h2>
             {players.length < 4 && (
               <button
-                onClick={addPlayer}
+                onClick={openAddPicker}
                 className="rounded-md bg-golf-100 px-3 py-1.5 text-sm font-medium text-golf-700 hover:bg-golf-200"
               >
                 + Add Player
@@ -464,10 +517,7 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
 
           <div className="space-y-3">
             {players.map((player, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2"
-              >
+              <div key={index} className="flex items-center gap-2">
                 <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-golf-600 text-xs font-bold text-white">
                     {index + 1}
@@ -498,18 +548,6 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
                       ))}
                     </select>
                   )}
-                  {hasTeamGame && (
-                    <div className="flex gap-1 shrink-0">
-                      <button
-                        onClick={() => updatePlayer(index, 'team', player.team === 'team_a' ? '' : 'team_a')}
-                        className={`w-7 h-7 rounded-full text-xs font-bold border transition ${player.team === 'team_a' ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-500 border-gray-300'}`}
-                      >A</button>
-                      <button
-                        onClick={() => updatePlayer(index, 'team', player.team === 'team_b' ? '' : 'team_b')}
-                        className={`w-7 h-7 rounded-full text-xs font-bold border transition ${player.team === 'team_b' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-300'}`}
-                      >B</button>
-                    </div>
-                  )}
                 </div>
                 {players.length > 1 && (
                   <button
@@ -530,60 +568,167 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
               {4 - players.length} more player{4 - players.length !== 1 ? 's' : ''} can be added
             </p>
           )}
-          {hasTeamGame && !teamsValid && (
-            <p className="mt-2 text-xs text-amber-600 font-medium">
-              Assign each player to Team A or Team B before starting.
-            </p>
-          )}
         </div>
 
-        {/* Game Selection */}
+        {/* Game Selection — gated until all player details are filled */}
         {availableGames.length > 0 && (
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className={`rounded-xl border border-gray-200 bg-white p-5 shadow-sm ${!playersReady ? 'opacity-60' : ''}`}>
             <h2 className="mb-1 text-lg font-bold text-gray-900">Games</h2>
-            <p className="mb-3 text-xs text-gray-400">
-              Optional — pick any games for {players.length} player{players.length !== 1 ? 's' : ''}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {availableGames.map(game => {
-                const selected = selectedGames.has(game.id)
-                return (
-                  <div key={game.id} className="flex flex-col">
-                    <button
-                      onClick={() => toggleGame(game.id)}
-                      className={`rounded-lg border px-3 py-3 text-left transition ${
-                        selected
-                          ? 'border-golf-500 bg-golf-50 ring-1 ring-golf-500'
-                          : 'border-gray-200 hover:border-golf-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{game.icon}</span>
-                        <span className={`text-sm font-medium ${selected ? 'text-golf-800' : 'text-gray-900'}`}>
-                          {game.name}
-                        </span>
+
+            {!playersReady ? (
+              <p className="text-xs text-gray-500">
+                Enter each player&apos;s{availableTees.length > 0 ? ' handicap and tee' : ' handicap'} above to unlock game options.
+              </p>
+            ) : (
+              <>
+                <p className="mb-3 text-xs text-gray-400">
+                  Optional — pick any games for {players.length} player{players.length !== 1 ? 's' : ''}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {availableGames.map(game => {
+                    const selected = selectedGames.has(game.id)
+                    return (
+                      <div key={game.id} className="flex flex-col">
+                        <button
+                          onClick={() => toggleGame(game.id)}
+                          className={`rounded-lg border px-3 py-3 text-left transition ${
+                            selected
+                              ? 'border-golf-500 bg-golf-50 ring-1 ring-golf-500'
+                              : 'border-gray-200 hover:border-golf-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{game.icon}</span>
+                            <span className={`text-sm font-medium ${selected ? 'text-golf-800' : 'text-gray-900'}`}>
+                              {game.name}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-gray-500 line-clamp-2">{game.description}</p>
+                        </button>
+                        {selected && (
+                          <div className="mt-1 space-y-1 px-1">
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={selectedGames.get(game.id) || ''}
+                                onChange={e => setGameBuyIn(game.id, parseFloat(e.target.value) || 0)}
+                                placeholder="0"
+                                className="w-16 rounded border border-gray-200 px-2 py-1 text-xs text-gray-700 outline-none focus:border-golf-500"
+                              />
+                              <span className="text-xs text-gray-400">buy-in</span>
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">
+                              {players.filter(p => p.name).map(p => p.name).join(' · ')}
+                            </p>
+                          </div>
+                        )}
                       </div>
-                      <p className="mt-1 text-xs text-gray-500 line-clamp-2">{game.description}</p>
-                    </button>
-                    {selected && (
-                      <div className="mt-1 flex items-center gap-1 px-1">
-                        <span className="text-xs text-gray-500">$</span>
+                    )
+                  })}
+                </div>
+
+                {/* Team assignment — shown when a team-based game is selected */}
+                {hasTeamGame && (
+                  <div className="mt-5 border-t border-gray-100 pt-4 space-y-4">
+                    <p className="text-sm font-semibold text-gray-800">Teams</p>
+
+                    {/* Team name inputs */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-500">Team A Name</label>
                         <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={selectedGames.get(game.id) || ''}
-                          onChange={e => setGameBuyIn(game.id, parseFloat(e.target.value) || 0)}
-                          placeholder="0"
-                          className="w-16 rounded border border-gray-200 px-2 py-1 text-xs text-gray-700 outline-none focus:border-golf-500"
+                          value={teamNames.team_a}
+                          onChange={e => setTeamNames(prev => ({ ...prev, team_a: e.target.value }))}
+                          placeholder="Team A"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none"
                         />
-                        <span className="text-xs text-gray-400">buy-in</span>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-500">Team B Name</label>
+                        <input
+                          value={teamNames.team_b}
+                          onChange={e => setTeamNames(prev => ({ ...prev, team_b: e.target.value }))}
+                          placeholder="Team B"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Two-column roster */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Team A */}
+                      <div className="rounded-xl border-2 border-golf-800 p-3 min-h-[80px]">
+                        <p className="text-xs font-bold text-golf-800 mb-2">{teamNames.team_a || 'Team A'}</p>
+                        {players.map((p, idx) => p.team === 'team_a' && (
+                          <div key={idx} className="flex items-center justify-between py-0.5">
+                            <span className="text-sm text-gray-800 font-medium truncate">{p.name || `Player ${idx + 1}`}</span>
+                            <button
+                              onClick={() => updatePlayer(idx, 'team', '')}
+                              className="ml-1 shrink-0 text-gray-400 hover:text-red-400 text-xs leading-none"
+                            >✕</button>
+                          </div>
+                        ))}
+                        {!players.some(p => p.team === 'team_a') && (
+                          <p className="text-xs text-gray-400 italic">No players</p>
+                        )}
+                      </div>
+
+                      {/* Team B */}
+                      <div className="rounded-xl border-2 border-blue-500 p-3 min-h-[80px]">
+                        <p className="text-xs font-bold text-blue-800 mb-2">{teamNames.team_b || 'Team B'}</p>
+                        {players.map((p, idx) => p.team === 'team_b' && (
+                          <div key={idx} className="flex items-center justify-between py-0.5">
+                            <span className="text-sm text-gray-800 font-medium truncate">{p.name || `Player ${idx + 1}`}</span>
+                            <button
+                              onClick={() => updatePlayer(idx, 'team', '')}
+                              className="ml-1 shrink-0 text-gray-400 hover:text-red-400 text-xs leading-none"
+                            >✕</button>
+                          </div>
+                        ))}
+                        {!players.some(p => p.team === 'team_b') && (
+                          <p className="text-xs text-gray-400 italic">No players</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Unassigned players */}
+                    {players.some(p => !p.team) && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-500">Assign to a team:</p>
+                        {players.map((p, idx) => !p.team && (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="flex-1 text-sm font-medium text-gray-800 truncate">
+                              {p.name || `Player ${idx + 1}`}
+                            </span>
+                            <button
+                              onClick={() => updatePlayer(idx, 'team', 'team_a')}
+                              className="rounded-md bg-golf-100 px-2.5 py-1 text-xs font-semibold text-golf-800 hover:bg-golf-200"
+                            >
+                              {teamNames.team_a || 'Team A'}
+                            </button>
+                            <button
+                              onClick={() => updatePlayer(idx, 'team', 'team_b')}
+                              className="rounded-md bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800 hover:bg-blue-200"
+                            >
+                              {teamNames.team_b || 'Team B'}
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     )}
+
+                    {!teamsValid && (
+                      <p className="text-xs text-amber-600 font-medium">
+                        Assign each player to a team before starting.
+                      </p>
+                    )}
                   </div>
-                )
-              })}
-            </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -607,6 +752,83 @@ export default function QuickRoundClient({ userName, userHandicap, gameFormats }
           )}
         </button>
       </div>
+
+      {/* Add Player Picker — bottom sheet */}
+      {showAddPicker && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          onClick={() => setShowAddPicker(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-2xl bg-white px-5 pt-5 pb-10 max-h-[72vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">Add Player</h3>
+              <button
+                onClick={() => setShowAddPicker(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >×</button>
+            </div>
+
+            {loadingFriends && (
+              <div className="flex items-center justify-center py-6">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-golf-600 border-t-transparent" />
+              </div>
+            )}
+
+            {!loadingFriends && friends.length > 0 && (
+              <div className="mb-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">From Friends</p>
+                <div className="space-y-2">
+                  {friends
+                    .filter(f => !addedFriendIds.has(f.userId))
+                    .map(friend => (
+                      <button
+                        key={friend.userId}
+                        onClick={() => addFriendPlayer(friend)}
+                        className="flex w-full items-center gap-3 rounded-lg border border-gray-200 p-3 text-left hover:bg-golf-50"
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-golf-200 overflow-hidden">
+                          {friend.avatarUrl ? (
+                            <img src={friend.avatarUrl} className="h-9 w-9 object-cover" alt="" />
+                          ) : (
+                            <span className="text-sm font-bold text-golf-800">
+                              {friend.displayName[0]?.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900">{friend.displayName}</p>
+                          {friend.handicap != null && (
+                            <p className="text-xs text-gray-500">Handicap {friend.handicap}</p>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  {friends.every(f => addedFriendIds.has(f.userId)) && (
+                    <p className="text-xs text-gray-400 text-center py-2">All friends already added</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!loadingFriends && friends.length === 0 && friendsLoaded && (
+              <div className="mb-4 rounded-lg bg-gray-50 px-4 py-3 text-xs text-gray-500">
+                No friends yet.{' '}
+                <Link href="/home" className="text-golf-700 underline">Add friends</Link> to quickly add them to rounds.
+              </div>
+            )}
+
+            <button
+              onClick={addManualPlayer}
+              className="w-full rounded-lg border border-dashed border-gray-300 py-3 text-sm text-gray-600 hover:border-golf-400 hover:bg-golf-50"
+            >
+              + Enter player manually
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

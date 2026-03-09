@@ -30,6 +30,7 @@ export default async function QuickRoundPage() {
     <QuickRoundClient
       userName={profile?.display_name || ''}
       userHandicap={profile?.handicap_index ?? null}
+      userId={user.id}
       gameFormats={gameFormats || []}
     />
   )

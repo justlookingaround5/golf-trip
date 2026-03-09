@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     latitude?: number | null
     longitude?: number | null
     players: PlayerInput[]
-    games?: { formatId: string; buyIn: number; team_based?: boolean }[]
+    games?: { formatId: string; buyIn: number; team_based?: boolean; teamNames?: { team_a: string; team_b: string } }[]
   }
 
   if (!courseName) {
@@ -277,6 +277,9 @@ export async function POST(request: NextRequest) {
           buy_in: g.buyIn || 0,
           status: 'active',
           created_by: user.id,
+          config: g.team_based && g.teamNames
+            ? { team_a_name: g.teamNames.team_a || 'Team A', team_b_name: g.teamNames.team_b || 'Team B' }
+            : {},
         })
         .select('id')
         .single()
