@@ -498,7 +498,7 @@ export default function ScorerPage() {
                         const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
                         return (
                           <td key={mp.id} onClick={() => openCell(hole.hole_number, mp.trip_player_id)} className="relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100">
-                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-[10px] leading-none text-gray-500">*</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
                           </td>
                         )
@@ -510,7 +510,7 @@ export default function ScorerPage() {
                         const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
                         return (
                           <td key={mp.id} onClick={() => openCell(hole.hole_number, mp.trip_player_id)} className="relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100">
-                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-[10px] leading-none text-gray-500">*</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
                           </td>
                         )
