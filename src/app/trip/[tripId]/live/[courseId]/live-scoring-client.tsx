@@ -482,10 +482,18 @@ export default function LiveScoringClient({
     }
   }, [bestBallGame])
 
-  const bbTeamNames = useMemo(() => ({
-    team_a: (bestBallGame?.config?.team_a_name as string) || 'Team A',
-    team_b: (bestBallGame?.config?.team_b_name as string) || 'Team B',
-  }), [bestBallGame])
+  const bbTeamNames = useMemo(() => {
+    const getName = (tpId: string) => {
+      const tp = data?.tripPlayers.find(t => t.id === tpId)
+      return tp ? getPlayerName(tp) : ''
+    }
+    const teamANames = teamAssignments.team_a.map(getName).filter(Boolean)
+    const teamBNames = teamAssignments.team_b.map(getName).filter(Boolean)
+    return {
+      team_a: teamANames.length ? teamANames.join(' & ') : 'Team A',
+      team_b: teamBNames.length ? teamBNames.join(' & ') : 'Team B',
+    }
+  }, [teamAssignments, data])
 
   const isBestBallMatchPlay = bestBallGame !== null &&
     teamAssignments.team_a.length > 0 &&
@@ -1297,29 +1305,6 @@ export default function LiveScoringClient({
                     </div>
                   </div>
 
-                  {puttsScores.length > 0 && (() => {
-                    const sorted = [...puttsScores].sort((a, b) => {
-                      const ha = holes.find(h => h.id === a.hole_id)?.hole_number ?? 0
-                      const hb = holes.find(h => h.id === b.hole_id)?.hole_number ?? 0
-                      return ha - hb
-                    })
-                    let running = 0
-                    return (
-                      <div className="rounded-xl bg-gray-50 p-3 flex flex-col gap-0.5 max-h-36 overflow-y-auto">
-                        {sorted.map(s => {
-                          const holeNum = holes.find(h => h.id === s.hole_id)?.hole_number ?? '?'
-                          running += s.putts ?? 0
-                          return (
-                            <div key={s.hole_id} className="flex items-center justify-between text-xs">
-                              <span className="text-gray-400 w-8">H{holeNum}</span>
-                              <span className="text-gray-700">{s.putts} putt{s.putts !== 1 ? 's' : ''}</span>
-                              <span className="text-gray-400 w-12 text-right">{running} total</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })()}
                 </div>
               )}
             </div>

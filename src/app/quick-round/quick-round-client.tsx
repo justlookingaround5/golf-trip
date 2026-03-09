@@ -99,9 +99,6 @@ export default function QuickRoundClient({
   // Game selection state: gameId -> buy-in amount
   const [selectedGames, setSelectedGames] = useState<Map<string, number>>(new Map())
 
-  // Team names
-  const [teamNames, setTeamNames] = useState({ team_a: 'Team A', team_b: 'Team B' })
-
   // Submit state
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -228,11 +225,21 @@ export default function QuickRoundClient({
 
   const hasTeamGame = availableGames.some(g => selectedGames.has(g.id) && g.team_based)
 
+  const teamACount = players.filter(p => p.team === 'team_a').length
+  const teamBCount = players.filter(p => p.team === 'team_b').length
+
   const teamsValid = !hasTeamGame || (
     players.every(p => p.team === 'team_a' || p.team === 'team_b') &&
     players.some(p => p.team === 'team_a') &&
-    players.some(p => p.team === 'team_b')
+    players.some(p => p.team === 'team_b') &&
+    teamACount <= 2 &&
+    teamBCount <= 2
   )
+
+  const teamAPlayers = players.filter(p => p.team === 'team_a').map(p => p.name || '?')
+  const teamBPlayers = players.filter(p => p.team === 'team_b').map(p => p.name || '?')
+  const teamALabel = teamAPlayers.length ? teamAPlayers.join(' & ') : 'Team A'
+  const teamBLabel = teamBPlayers.length ? teamBPlayers.join(' & ') : 'Team B'
 
   // Games are gated behind all players having name + handicap (and tee if course loaded)
   const playersReady = players.every(p =>
@@ -296,7 +303,6 @@ export default function QuickRoundClient({
               formatId: id,
               buyIn,
               team_based: fmt?.team_based ?? false,
-              teamNames: fmt?.team_based ? teamNames : undefined,
             }
           }),
         }),
@@ -633,35 +639,16 @@ export default function QuickRoundClient({
                 {/* Team assignment — shown when a team-based game is selected */}
                 {hasTeamGame && (
                   <div className="mt-5 border-t border-gray-100 pt-4 space-y-4">
-                    <p className="text-sm font-semibold text-gray-800">Teams</p>
-
-                    {/* Team name inputs */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-500">Team A Name</label>
-                        <input
-                          value={teamNames.team_a}
-                          onChange={e => setTeamNames(prev => ({ ...prev, team_a: e.target.value }))}
-                          placeholder="Team A"
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-500">Team B Name</label>
-                        <input
-                          value={teamNames.team_b}
-                          onChange={e => setTeamNames(prev => ({ ...prev, team_b: e.target.value }))}
-                          placeholder="Team B"
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-golf-500 focus:outline-none"
-                        />
-                      </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-800">Teams</p>
+                      <p className="text-xs text-gray-400">2v2 Best Ball: max 2 per team</p>
                     </div>
 
                     {/* Two-column roster */}
                     <div className="grid grid-cols-2 gap-3">
                       {/* Team A */}
                       <div className="rounded-xl border-2 border-golf-800 p-3 min-h-[80px]">
-                        <p className="text-xs font-bold text-golf-800 mb-2">{teamNames.team_a || 'Team A'}</p>
+                        <p className="text-xs font-bold text-golf-800 mb-2 truncate">{teamALabel}</p>
                         {players.map((p, idx) => p.team === 'team_a' && (
                           <div key={idx} className="flex items-center justify-between py-0.5">
                             <span className="text-sm text-gray-800 font-medium truncate">{p.name || `Player ${idx + 1}`}</span>
@@ -671,14 +658,17 @@ export default function QuickRoundClient({
                             >✕</button>
                           </div>
                         ))}
-                        {!players.some(p => p.team === 'team_a') && (
+                        {teamACount === 0 && (
                           <p className="text-xs text-gray-400 italic">No players</p>
+                        )}
+                        {teamACount >= 2 && (
+                          <p className="text-xs text-golf-600 font-medium mt-1">Full</p>
                         )}
                       </div>
 
                       {/* Team B */}
                       <div className="rounded-xl border-2 border-blue-500 p-3 min-h-[80px]">
-                        <p className="text-xs font-bold text-blue-800 mb-2">{teamNames.team_b || 'Team B'}</p>
+                        <p className="text-xs font-bold text-blue-800 mb-2 truncate">{teamBLabel}</p>
                         {players.map((p, idx) => p.team === 'team_b' && (
                           <div key={idx} className="flex items-center justify-between py-0.5">
                             <span className="text-sm text-gray-800 font-medium truncate">{p.name || `Player ${idx + 1}`}</span>
@@ -688,8 +678,11 @@ export default function QuickRoundClient({
                             >✕</button>
                           </div>
                         ))}
-                        {!players.some(p => p.team === 'team_b') && (
+                        {teamBCount === 0 && (
                           <p className="text-xs text-gray-400 italic">No players</p>
+                        )}
+                        {teamBCount >= 2 && (
+                          <p className="text-xs text-blue-600 font-medium mt-1">Full</p>
                         )}
                       </div>
                     </div>
@@ -705,15 +698,25 @@ export default function QuickRoundClient({
                             </span>
                             <button
                               onClick={() => updatePlayer(idx, 'team', 'team_a')}
-                              className="rounded-md bg-golf-100 px-2.5 py-1 text-xs font-semibold text-golf-800 hover:bg-golf-200"
+                              disabled={teamACount >= 2}
+                              className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
+                                teamACount >= 2
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-golf-100 text-golf-800 hover:bg-golf-200'
+                              }`}
                             >
-                              {teamNames.team_a || 'Team A'}
+                              Team A
                             </button>
                             <button
                               onClick={() => updatePlayer(idx, 'team', 'team_b')}
-                              className="rounded-md bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800 hover:bg-blue-200"
+                              disabled={teamBCount >= 2}
+                              className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
+                                teamBCount >= 2
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                              }`}
                             >
-                              {teamNames.team_b || 'Team B'}
+                              Team B
                             </button>
                           </div>
                         ))}
