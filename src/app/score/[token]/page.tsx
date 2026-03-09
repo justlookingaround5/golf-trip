@@ -606,34 +606,34 @@ export default function ScorerPage() {
                     <td className="sticky left-0 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-700">{nine.label}</td>
                     <td className="sticky left-9 z-10 bg-gray-50 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{parSum}</td>
                     {teamAPlayers.map(mp => {
-                      let grossSum = 0, netSum = 0, hasScore = false
-                      for (const h of nineHoles) {
+                      let grossSum = 0, netSum = 0
+                      const allScored = nineHoles.every(h => {
                         const s = data.scores.find(sc => sc.hole_id === h.id && sc.trip_player_id === mp.trip_player_id)
                         if (s) {
-                          hasScore = true
                           grossSum += s.gross_score
                           netSum += s.gross_score - (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0)
                         }
-                      }
+                        return !!s
+                      })
                       return [
-                        <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
-                        <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                        <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>,
+                        <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{allScored ? netSum : ''}</td>,
                       ]
                     })}
                     <td className="border-l border-gray-200" />
                     {teamBPlayers.map(mp => {
-                      let grossSum = 0, netSum = 0, hasScore = false
-                      for (const h of nineHoles) {
+                      let grossSum = 0, netSum = 0
+                      const allScored = nineHoles.every(h => {
                         const s = data.scores.find(sc => sc.hole_id === h.id && sc.trip_player_id === mp.trip_player_id)
                         if (s) {
-                          hasScore = true
                           grossSum += s.gross_score
                           netSum += s.gross_score - (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0)
                         }
-                      }
+                        return !!s
+                      })
                       return [
-                        <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
-                        <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                        <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>,
+                        <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{allScored ? netSum : ''}</td>,
                       ]
                     })}
                   </tr>
@@ -647,34 +647,34 @@ export default function ScorerPage() {
                   <td className="sticky left-0 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-700">Total</td>
                   <td className="sticky left-9 z-10 bg-gray-100 px-1 py-1.5 text-center text-gray-600 border-l border-gray-200">{holes.reduce((s, h) => s + h.par, 0)}</td>
                   {teamAPlayers.map(mp => {
-                    let grossSum = 0, netSum = 0, hasScore = false
-                    for (const h of holes) {
+                    let grossSum = 0, netSum = 0
+                    const allScored = holes.every(h => {
                       const s = data.scores.find(sc => sc.hole_id === h.id && sc.trip_player_id === mp.trip_player_id)
                       if (s) {
-                        hasScore = true
                         grossSum += s.gross_score
                         netSum += s.gross_score - (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0)
                       }
-                    }
+                      return !!s
+                    })
                     return [
-                      <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
-                      <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                      <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>,
+                      <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{allScored ? netSum : ''}</td>,
                     ]
                   })}
                   <td className="border-l border-gray-200" />
                   {teamBPlayers.map(mp => {
-                    let grossSum = 0, netSum = 0, hasScore = false
-                    for (const h of holes) {
+                    let grossSum = 0, netSum = 0
+                    const allScored = holes.every(h => {
                       const s = data.scores.find(sc => sc.hole_id === h.id && sc.trip_player_id === mp.trip_player_id)
                       if (s) {
-                        hasScore = true
                         grossSum += s.gross_score
                         netSum += s.gross_score - (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0)
                       }
-                    }
+                      return !!s
+                    })
                     return [
-                      <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{hasScore ? grossSum : ''}</td>,
-                      <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{hasScore ? netSum : ''}</td>,
+                      <td key={`${mp.id}-g`} className="px-1 py-1.5 text-center border-l border-gray-200">{allScored ? grossSum : ''}</td>,
+                      <td key={`${mp.id}-n`} className="px-1 py-1.5 text-center">{allScored ? netSum : ''}</td>,
                     ]
                   })}
                 </tr>
