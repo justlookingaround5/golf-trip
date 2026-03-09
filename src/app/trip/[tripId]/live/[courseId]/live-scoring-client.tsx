@@ -142,6 +142,7 @@ export default function LiveScoringClient({
   const [confirmAction, setConfirmAction] = useState<'end' | 'delete' | null>(null)
   const [roundActionLoading, setRoundActionLoading] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const [statsPlayerId, setStatsPlayerId] = useState<string | null>(null)
 
   // Close menu on outside click
   useEffect(() => {
@@ -457,6 +458,14 @@ export default function LiveScoringClient({
     }))
   }, [data, playerNameMap, holes])
 
+  const activeTeeNames = useMemo(() => {
+    const names = new Set<string>()
+    for (const pt of data?.playerTees || []) {
+      if (pt.tee_name) names.add(pt.tee_name)
+    }
+    return names
+  }, [data])
+
   // Best Ball match play data
   const bestBallGame = useMemo(() =>
     data?.roundGames.find(rg => rg.game_format?.name === 'Best Ball') ?? null,
@@ -596,6 +605,9 @@ export default function LiveScoringClient({
             <h1 className="text-lg font-bold">{courseName}</h1>
             <p className="text-sm text-golf-200">
               Live Scoring &middot; Par {data.course.par}
+              {data.roundGames.length > 0 && (
+                <span> &middot; {data.roundGames.map(rg => rg.game_format?.name || 'Game').join(' · ')}</span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -734,7 +746,7 @@ export default function LiveScoringClient({
                     const vsPar = tpScores.length > 0 ? gross - par : null
                     const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                     return (
-                      <th key={tpId} className="px-1 py-1.5 text-center font-semibold text-golf-800 border-b border-l border-gray-200">
+                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-golf-800 border-b border-l border-gray-200 cursor-pointer hover:bg-golf-50">
                         {(playerNameMap.get(tpId) || '—').split(' ')[0]}
                         {label && <span className="font-normal text-gray-400">{label}</span>}
                       </th>
@@ -751,7 +763,7 @@ export default function LiveScoringClient({
                     const vsPar = tpScores.length > 0 ? gross - par : null
                     const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                     return (
-                      <th key={tpId} className="px-1 py-1.5 text-center font-semibold text-blue-700 border-b border-l border-gray-200">
+                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-blue-700 border-b border-l border-gray-200 cursor-pointer hover:bg-blue-50">
                         {(playerNameMap.get(tpId) || '—').split(' ')[0]}
                         {label && <span className="font-normal text-gray-400">{label}</span>}
                       </th>
@@ -957,7 +969,7 @@ export default function LiveScoringClient({
                   const vsPar = tpScores.length > 0 ? grossTotal - parTotal : null
                   const vsParLabel = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                   return (
-                    <th key={tp.id} className="px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200">
+                    <th key={tp.id} onClick={() => setStatsPlayerId(tp.id)} className="px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200 cursor-pointer hover:bg-gray-50">
                       {getPlayerName(tp).split(' ')[0]}{vsParLabel && <span className="font-normal text-gray-400">{vsParLabel}</span>}
                     </th>
                   )
@@ -1067,19 +1079,25 @@ export default function LiveScoringClient({
                   <div className="text-2xl font-bold text-gray-800">{hole.handicap_index}</div>
                 </div>
               </div>
-              {hole.yardage && Object.keys(hole.yardage).length > 0 && (
-                <div className="mt-3 rounded-lg bg-gray-50 p-3">
-                  <div className="text-xs text-gray-500 mb-2">Yardage</div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {Object.entries(hole.yardage).map(([tee, yards]) => (
-                      <div key={tee} className="text-center">
-                        <div className="text-xs text-gray-500">{tee}</div>
-                        <div className="font-semibold text-gray-800">{yards}</div>
-                      </div>
-                    ))}
+              {hole.yardage && (() => {
+                const entries = Object.entries(hole.yardage).filter(([tee]) =>
+                  activeTeeNames.size === 0 ? true : activeTeeNames.has(tee)
+                )
+                if (entries.length === 0) return null
+                return (
+                  <div className="mt-3 rounded-lg bg-gray-50 p-3">
+                    <div className="text-xs text-gray-500 mb-2">Yardage</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {entries.map(([tee, yards]) => (
+                        <div key={tee} className="text-center">
+                          <div className="text-xs text-gray-500">{tee}</div>
+                          <div className="font-semibold text-gray-800">{yards}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
             </div>
           </div>
         )
@@ -1119,20 +1137,22 @@ export default function LiveScoringClient({
 
               {/* Stats */}
               <div className="mb-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Fairway Hit</span>
-                    <div className="flex gap-1">
-                      {([true, false] as const).map(val => (
-                        <button
-                          key={String(val)}
-                          onClick={() => setCellStats(s => ({ ...s, fairway_hit: s.fairway_hit === val ? null : val }))}
-                          className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.fairway_hit === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
-                        >
-                          {val ? 'Yes' : 'No'}
-                        </button>
-                      ))}
+                  {hole.par > 3 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">Fairway Hit</span>
+                      <div className="flex gap-1">
+                        {([true, false] as const).map(val => (
+                          <button
+                            key={String(val)}
+                            onClick={() => setCellStats(s => ({ ...s, fairway_hit: s.fairway_hit === val ? null : val }))}
+                            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.fairway_hit === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
+                          >
+                            {val ? 'Yes' : 'No'}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700">GIR</span>
                     <div className="flex gap-1">
@@ -1170,6 +1190,91 @@ export default function LiveScoringClient({
               >
                 {saving ? 'Saving...' : 'Save Score'}
               </button>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Player stats popup */}
+      {statsPlayerId !== null && (() => {
+        const tp = data.tripPlayers.find(t => t.id === statsPlayerId)
+        if (!tp) return null
+        const name = getPlayerName(tp)
+        const scores = data.roundScores.filter(s => s.trip_player_id === statsPlayerId)
+        const holesPlayed = scores.length
+
+        // Fairways: non-par-3 holes only, where fairway_hit was recorded
+        const fairwayScores = scores.filter(s => {
+          const hole = holes.find(h => h.id === s.hole_id)
+          return hole && hole.par > 3 && s.fairway_hit !== null
+        })
+        const fairwaysHit = fairwayScores.filter(s => s.fairway_hit === true).length
+
+        // GIR: holes where gir was recorded
+        const girScores = scores.filter(s => s.gir !== null)
+        const girHit = girScores.filter(s => s.gir === true).length
+
+        // Putts: holes where putts was recorded
+        const puttsScores = scores.filter(s => s.putts !== null)
+        const totalPutts = puttsScores.reduce((sum, s) => sum + (s.putts ?? 0), 0)
+
+        const ch = data.courseHandicaps.find(c => c.trip_player_id === statsPlayerId)
+        const tee = data.playerTees.find(t => t.trip_player_id === statsPlayerId)
+
+        return (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={() => setStatsPlayerId(null)}>
+            <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">{name}</h3>
+                  <p className="text-xs text-gray-500">
+                    {holesPlayed} hole{holesPlayed !== 1 ? 's' : ''} played
+                    {ch && <span> &middot; {ch.handicap_strokes} strokes</span>}
+                    {tee && <span> &middot; {tee.tee_name}</span>}
+                  </p>
+                </div>
+                <button onClick={() => setStatsPlayerId(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              </div>
+
+              {holesPlayed === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">No scores yet</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-xl bg-gray-50 p-3 text-center">
+                    <div className="text-xs text-gray-500 mb-1">Fairways</div>
+                    {fairwayScores.length > 0 ? (
+                      <>
+                        <div className="text-xl font-bold text-gray-800">{fairwaysHit}/{fairwayScores.length}</div>
+                        <div className="text-xs text-gray-400">{Math.round(fairwaysHit / fairwayScores.length * 100)}%</div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-400">—</div>
+                    )}
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-3 text-center">
+                    <div className="text-xs text-gray-500 mb-1">GIR</div>
+                    {girScores.length > 0 ? (
+                      <>
+                        <div className="text-xl font-bold text-gray-800">{girHit}/{girScores.length}</div>
+                        <div className="text-xs text-gray-400">{Math.round(girHit / girScores.length * 100)}%</div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-400">—</div>
+                    )}
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-3 text-center">
+                    <div className="text-xs text-gray-500 mb-1">Putts</div>
+                    {puttsScores.length > 0 ? (
+                      <>
+                        <div className="text-xl font-bold text-gray-800">{totalPutts}</div>
+                        <div className="text-xs text-gray-400">{(totalPutts / puttsScores.length).toFixed(1)}/hole</div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-400">—</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )
