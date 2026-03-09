@@ -754,7 +754,6 @@ export default function LiveScoringClient({
         const hole = holes.find(h => h.hole_number === editCell.holeNumber)
         if (!hole) return null
         const playerName = playerNameMap.get(editCell.tripPlayerId) || 'Player'
-        const isOwn = editCell.tripPlayerId === currentTripPlayerId
         return (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditCell(null)}>
             <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
@@ -782,9 +781,8 @@ export default function LiveScoringClient({
                 </div>
               </div>
 
-              {/* Stats (own player only) */}
-              {isOwn && (
-                <div className="mb-4 space-y-2">
+              {/* Stats */}
+              <div className="mb-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700">Fairway Hit</span>
                     <div className="flex gap-1">
@@ -827,8 +825,7 @@ export default function LiveScoringClient({
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
+              </div>
 
               <button
                 onClick={saveCellScore}
