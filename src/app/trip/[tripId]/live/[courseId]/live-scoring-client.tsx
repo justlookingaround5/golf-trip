@@ -808,7 +808,7 @@ export default function LiveScoringClient({
                           <td
                             key={tpId}
                             onClick={() => openCell(hole.hole_number, tpId)}
-                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100 ${isTeamBest ? 'bg-golf-50' : ''}`}
+                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-golf-100 ${isTeamBest ? 'bg-golf-100' : 'bg-golf-50'}`}
                           >
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-xs leading-none text-gray-400">·</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
@@ -817,13 +817,11 @@ export default function LiveScoringClient({
                       })}
                       {/* Running match play status */}
                       <td className="w-10 px-1 py-2 text-center font-semibold text-[11px] border-l border-gray-200">
-                        {status && (
-                          <span className={
-                            lead > 0 ? 'text-golf-700' :
-                            lead < 0 ? 'text-blue-600' :
-                            'text-gray-500'
-                          }>
-                            {status}
+                        {status && lead !== 0 && (
+                          <span className={`flex items-center justify-center gap-0.5 ${lead > 0 ? 'text-golf-700' : 'text-blue-600'}`}>
+                            {lead > 0 && <span>◀</span>}
+                            <span>{status}</span>
+                            {lead < 0 && <span>▶</span>}
                           </span>
                         )}
                       </td>
@@ -838,7 +836,7 @@ export default function LiveScoringClient({
                           <td
                             key={tpId}
                             onClick={() => openCell(hole.hole_number, tpId)}
-                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100 ${isTeamBest ? 'bg-blue-50' : ''}`}
+                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-blue-100 ${isTeamBest ? 'bg-blue-100' : 'bg-blue-50'}`}
                           >
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-xs leading-none text-gray-400">·</span>}
                             {gross !== undefined && scoreBadge(gross, hole.par)}
@@ -872,13 +870,11 @@ export default function LiveScoringClient({
                         )
                       })}
                       <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200">
-                        {nineStatus?.status && (
-                          <span className={
-                            nineStatus.lead > 0 ? 'text-golf-700' :
-                            nineStatus.lead < 0 ? 'text-blue-600' :
-                            'text-gray-500'
-                          }>
-                            {nineStatus.status}
+                        {nineStatus?.status && nineStatus.lead !== 0 && (
+                          <span className={`flex items-center justify-center gap-0.5 ${nineStatus.lead > 0 ? 'text-golf-700' : 'text-blue-600'}`}>
+                            {nineStatus.lead > 0 && <span>◀</span>}
+                            <span>{nineStatus.status}</span>
+                            {nineStatus.lead < 0 && <span>▶</span>}
                           </span>
                         )}
                       </td>
@@ -922,13 +918,11 @@ export default function LiveScoringClient({
                         )
                       })}
                       <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200">
-                        {finalStatus?.status && (
-                          <span className={
-                            finalStatus.lead > 0 ? 'text-golf-700' :
-                            finalStatus.lead < 0 ? 'text-blue-600' :
-                            'text-gray-500'
-                          }>
-                            {finalStatus.status}
+                        {finalStatus?.status && finalStatus.lead !== 0 && (
+                          <span className={`flex items-center justify-center gap-0.5 ${finalStatus.lead > 0 ? 'text-golf-700' : 'text-blue-600'}`}>
+                            {finalStatus.lead > 0 && <span>◀</span>}
+                            <span>{finalStatus.status}</span>
+                            {finalStatus.lead < 0 && <span>▶</span>}
                           </span>
                         )}
                       </td>
@@ -1239,37 +1233,62 @@ export default function LiveScoringClient({
               {holesPlayed === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-4">No scores yet</p>
               ) : (
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-xl bg-gray-50 p-3 text-center">
-                    <div className="text-xs text-gray-500 mb-1">Fairways</div>
-                    {fairwayScores.length > 0 ? (
-                      <>
-                        <div className="text-xl font-bold text-gray-800">{fairwaysHit}/{fairwayScores.length}</div>
-                        <div className="text-xs text-gray-400">{Math.round(fairwaysHit / fairwayScores.length * 100)}%</div>
-                      </>
-                    ) : (
-                      <div className="text-sm text-gray-400">—</div>
-                    )}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-gray-50 p-3 text-center">
+                      <div className="text-xs text-gray-500 mb-1">Fairways</div>
+                      {fairwayScores.length > 0 ? (
+                        <>
+                          <div className="text-xl font-bold text-gray-800">{fairwaysHit}/{fairwayScores.length}</div>
+                          <div className="text-xs text-gray-400">{Math.round(fairwaysHit / fairwayScores.length * 100)}%</div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-400">—</div>
+                      )}
+                    </div>
+                    <div className="rounded-xl bg-gray-50 p-3 text-center">
+                      <div className="text-xs text-gray-500 mb-1">GIR</div>
+                      {girScores.length > 0 ? (
+                        <>
+                          <div className="text-xl font-bold text-gray-800">{girHit}/{girScores.length}</div>
+                          <div className="text-xs text-gray-400">{Math.round(girHit / girScores.length * 100)}%</div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-400">—</div>
+                      )}
+                    </div>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3 text-center">
-                    <div className="text-xs text-gray-500 mb-1">GIR</div>
-                    {girScores.length > 0 ? (
-                      <>
-                        <div className="text-xl font-bold text-gray-800">{girHit}/{girScores.length}</div>
-                        <div className="text-xs text-gray-400">{Math.round(girHit / girScores.length * 100)}%</div>
-                      </>
-                    ) : (
-                      <div className="text-sm text-gray-400">—</div>
-                    )}
-                  </div>
-                  <div className="rounded-xl bg-gray-50 p-3 text-center">
-                    <div className="text-xs text-gray-500 mb-1">Putts</div>
-                    {puttsScores.length > 0 ? (
-                      <>
-                        <div className="text-xl font-bold text-gray-800">{totalPutts}</div>
-                        <div className="text-xs text-gray-400">{(totalPutts / puttsScores.length).toFixed(1)}/hole</div>
-                      </>
-                    ) : (
+
+                  <div className="rounded-xl bg-gray-50 p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs text-gray-500">Putts</div>
+                      {puttsScores.length > 0 && (
+                        <div className="text-xs font-semibold text-gray-700">{totalPutts} total</div>
+                      )}
+                    </div>
+                    {puttsScores.length > 0 ? (() => {
+                      const sorted = [...puttsScores].sort((a, b) => {
+                        const ha = holes.find(h => h.id === a.hole_id)?.hole_number ?? 0
+                        const hb = holes.find(h => h.id === b.hole_id)?.hole_number ?? 0
+                        return ha - hb
+                      })
+                      let running = 0
+                      return (
+                        <div className="flex flex-col gap-0.5 max-h-36 overflow-y-auto">
+                          {sorted.map(s => {
+                            const holeNum = holes.find(h => h.id === s.hole_id)?.hole_number ?? '?'
+                            running += s.putts ?? 0
+                            return (
+                              <div key={s.hole_id} className="flex items-center justify-between text-xs">
+                                <span className="text-gray-400 w-8">H{holeNum}</span>
+                                <span className="text-gray-700">{s.putts} putt{s.putts !== 1 ? 's' : ''}</span>
+                                <span className="text-gray-400 w-12 text-right">{running} total</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })() : (
                       <div className="text-sm text-gray-400">—</div>
                     )}
                   </div>
