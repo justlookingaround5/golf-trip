@@ -5,10 +5,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getStrokesPerHole } from '@/lib/handicap'
 import type { ActivityFeedItem, RoundScore, SideBet, SideBetHit } from '@/lib/types'
-import HoleView from './components/HoleView'
-import LiveDashboard from './components/LiveDashboard'
-import StatsCard from './components/StatsCard'
-import ScoreIndicator from '@/components/ScoreIndicator'
 import posthog from 'posthog-js'
 
 interface HoleData {
@@ -134,21 +130,11 @@ export default function LiveScoringClient({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [activeHole, setActiveHole] = useState<number | null>(null)
-  const [holeScores, setHoleScores] = useState<Record<string, number>>({})
-  const [statsEnabled, setStatsEnabled] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(`stats-enabled-${courseId}`) === 'true'
-    }
-    return false
-  })
-  const [touchedPlayers, setTouchedPlayers] = useState<Set<string>>(new Set())
-  const [holeStats, setHoleStats] = useState<Record<string, { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }>>({})
+  const [infoHole, setInfoHole] = useState<number | null>(null)
+  const [editCell, setEditCell] = useState<{ holeNumber: number; tripPlayerId: string } | null>(null)
+  const [cellScore, setCellScore] = useState(4)
+  const [cellStats, setCellStats] = useState<{ fairway_hit: boolean | null; gir: boolean | null; putts: number | null }>({ fairway_hit: null, gir: null, putts: null })
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    localStorage.setItem(`stats-enabled-${courseId}`, String(statsEnabled))
-  }, [statsEnabled, courseId])
 
   // Round management state
   const router = useRouter()
@@ -307,13 +293,6 @@ export default function LiveScoringClient({
     return map
   }, [data])
 
-  // Current player's tee
-  const currentPlayerTee = useMemo(() => {
-    if (!data || !currentTripPlayerId) return undefined
-    const tee = data.playerTees.find(t => t.trip_player_id === currentTripPlayerId)
-    return tee?.tee_name
-  }, [data, currentTripPlayerId])
-
   // Completed holes (where current player has a score)
   const completedHoles = useMemo(() => {
     if (!data || !currentTripPlayerId) return new Set<number>()
@@ -334,171 +313,73 @@ export default function LiveScoringClient({
     return null
   }, [holes, completedHoles])
 
-  // Open a hole for scoring
-  function openHole(holeNumber: number) {
-    if (!data || !currentTripPlayerId) return
+  function openCell(holeNumber: number, tripPlayerId: string) {
+    if (!data) return
     const hole = holes.find(h => h.hole_number === holeNumber)
     if (!hole) return
-
-    const initial: Record<string, number> = {}
-    const initialTouched = new Set<string>()
-
-    // All trip players
-    for (const tp of data.tripPlayers) {
-      const existing = data.roundScores.find(
-        s => s.hole_id === hole.id && s.trip_player_id === tp.id
-      )
-      if (existing) {
-        initial[tp.id] = existing.gross_score
-        initialTouched.add(tp.id)
-      } else if (tp.id === currentTripPlayerId) {
-        initial[tp.id] = hole.par
-        initialTouched.add(tp.id)
-      } else {
-        // Partners default to par but are NOT marked as touched
-        initial[tp.id] = hole.par
-      }
-    }
-
-    // Load existing stats for current player
-    const existingScore = data.roundScores.find(
-      s => s.hole_id === hole.id && s.trip_player_id === currentTripPlayerId
-    )
-    setHoleStats({
-      [currentTripPlayerId]: {
-        fairway_hit: existingScore?.fairway_hit ?? null,
-        gir: existingScore?.gir ?? null,
-        putts: existingScore?.putts ?? null,
-      }
+    const existing = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tripPlayerId)
+    setCellScore(existing?.gross_score ?? hole.par)
+    setCellStats({
+      fairway_hit: existing?.fairway_hit ?? null,
+      gir: existing?.gir ?? null,
+      putts: existing?.putts ?? null,
     })
-
-    setHoleScores(initial)
-    setTouchedPlayers(initialTouched)
-    setActiveHole(holeNumber)
+    setEditCell({ holeNumber, tripPlayerId })
   }
 
-  function adjustScore(tripPlayerId: string, delta: number) {
-    if (navigator.vibrate) navigator.vibrate(10)
-    setTouchedPlayers(prev => new Set(prev).add(tripPlayerId))
-    setHoleScores(prev => {
-      const current = prev[tripPlayerId] ?? 4
-      const next = Math.max(1, Math.min(20, current + delta))
-      return { ...prev, [tripPlayerId]: next }
-    })
-  }
-
-  function setScore(tripPlayerId: string, value: number) {
-    if (navigator.vibrate) navigator.vibrate(10)
-    setTouchedPlayers(prev => new Set(prev).add(tripPlayerId))
-    setHoleScores(prev => ({ ...prev, [tripPlayerId]: value }))
-  }
-
-  function updateStats(stats: { fairway_hit?: boolean | null; gir?: boolean | null; putts?: number | null }) {
-    if (!currentTripPlayerId) return
-    setHoleStats(prev => ({
-      ...prev,
-      [currentTripPlayerId]: { ...prev[currentTripPlayerId], ...stats },
-    }))
-  }
-
-  async function submitHoleScores() {
-    if (navigator.vibrate) navigator.vibrate([20, 50, 20])
-    if (!data || activeHole === null || !currentTripPlayerId) return
-    const hole = holes.find(h => h.hole_number === activeHole)
+  async function saveCellScore() {
+    if (!editCell || !data) return
+    const hole = holes.find(h => h.hole_number === editCell.holeNumber)
     if (!hole) return
 
-    // Build scores array — only include own score and partners whose scores were explicitly touched
-    const scoresToSubmit = Object.entries(holeScores)
-      .filter(([tpId]) => touchedPlayers.has(tpId))
-      .map(([trip_player_id, gross_score]) => {
-        const entry: Record<string, unknown> = { trip_player_id, gross_score }
-        // Attach stats for own player
-        if (trip_player_id === currentTripPlayerId) {
-          const stats = holeStats[currentTripPlayerId]
-          if (stats) {
-            if (stats.fairway_hit !== null && stats.fairway_hit !== undefined) entry.fairway_hit = stats.fairway_hit
-            if (stats.gir !== null && stats.gir !== undefined) entry.gir = stats.gir
-            if (stats.putts !== null && stats.putts !== undefined) entry.putts = stats.putts
-          }
-        }
-        return entry
-      })
+    const entry: Record<string, unknown> = { trip_player_id: editCell.tripPlayerId, gross_score: cellScore }
+    if (editCell.tripPlayerId === currentTripPlayerId) {
+      if (cellStats.fairway_hit !== null) entry.fairway_hit = cellStats.fairway_hit
+      if (cellStats.gir !== null) entry.gir = cellStats.gir
+      if (cellStats.putts !== null) entry.putts = cellStats.putts
+    }
 
-    // Optimistic update
-    const optimisticScores: RoundScore[] = scoresToSubmit.map(s => ({
-      id: `optimistic-${s.trip_player_id}-${hole.id}`,
+    const optimistic: RoundScore = {
+      id: `optimistic-${editCell.tripPlayerId}-${hole.id}`,
       course_id: courseId,
-      trip_player_id: s.trip_player_id as string,
+      trip_player_id: editCell.tripPlayerId,
       hole_id: hole.id,
-      gross_score: s.gross_score as number,
+      gross_score: cellScore,
       entered_by: null,
-      fairway_hit: (s.fairway_hit as boolean) ?? null,
-      gir: (s.gir as boolean) ?? null,
-      putts: (s.putts as number) ?? null,
+      fairway_hit: (entry.fairway_hit as boolean) ?? null,
+      gir: (entry.gir as boolean) ?? null,
+      putts: (entry.putts as number) ?? null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    }))
+    }
 
     setData(prev => {
       if (!prev) return prev
-      const otherScores = prev.roundScores.filter(s => {
-        const isThisHole = s.hole_id === hole.id
-        const isSubmitted = scoresToSubmit.some(sub => sub.trip_player_id === s.trip_player_id)
-        return !(isThisHole && isSubmitted)
-      })
-      return { ...prev, roundScores: [...otherScores, ...optimisticScores] }
+      const others = prev.roundScores.filter(s => !(s.hole_id === hole.id && s.trip_player_id === editCell.tripPlayerId))
+      return { ...prev, roundScores: [...others, optimistic] }
     })
+    setEditCell(null)
 
-    // Auto-advance
-    const currentHole = activeHole
-    setActiveHole(null)
-    setTimeout(() => {
-      const updatedCompleted = new Set(completedHoles)
-      updatedCompleted.add(currentHole)
-      for (const h of holes) {
-        if (!updatedCompleted.has(h.hole_number)) {
-          openHole(h.hole_number)
-          return
-        }
-      }
-    }, 100)
-
-    // Save in background
     setSaving(true)
     try {
       const res = await fetch(`/api/live/${courseId}/scores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hole_id: hole.id, scores: scoresToSubmit }),
+        body: JSON.stringify({ hole_id: hole.id, scores: [entry] }),
       })
-
       if (res.ok) {
         const result = await res.json()
-        setData(prev => {
-          if (!prev) return prev
-          return { ...prev, roundScores: result.roundScores }
-        })
-        posthog.capture('score_saved', { hole_number: currentHole, course_id: courseId })
-
-        // Check if all holes are now scored
-        const updatedCompleted = new Set(completedHoles)
-        updatedCompleted.add(currentHole)
-        if (updatedCompleted.size === holes.length && holes.length > 0) {
-          posthog.capture('round_completed', { course_id: courseId, total_holes: holes.length })
-        }
+        setData(prev => prev ? { ...prev, roundScores: result.roundScores } : prev)
+        posthog.capture('score_saved', { hole_number: editCell.holeNumber, course_id: courseId })
       } else {
-        // Revert optimistic
         setData(prev => {
           if (!prev) return prev
-          const reverted = prev.roundScores.filter(s => !s.id.startsWith('optimistic-'))
-          return { ...prev, roundScores: reverted }
+          return { ...prev, roundScores: prev.roundScores.filter(s => !s.id.startsWith('optimistic-')) }
         })
-        posthog.capture('score_save_failed', { hole_number: currentHole, type: 'api_error' })
-        setError('Failed to save. Tap the hole to retry.')
+        setError('Failed to save. Tap the cell to retry.')
       }
     } catch {
-      posthog.capture('score_save_failed', { hole_number: currentHole, type: 'network_error' })
-      setError('Connection lost. Score saved locally.')
+      setError('Connection lost. Score may not be saved.')
     } finally {
       setSaving(false)
     }
@@ -610,23 +491,6 @@ export default function LiveScoringClient({
     )
   }
 
-  const activeHoleData = activeHole
-    ? holes.find(h => h.hole_number === activeHole)
-    : null
-
-  const ownPlayerName = playerNameMap.get(currentTripPlayerId) || 'You'
-
-
-  const partners = data.tripPlayers
-    .filter(tp => tp.id !== currentTripPlayerId)
-    .map(tp => ({
-      tripPlayerId: tp.id,
-      name: getPlayerName(tp),
-      strokes: playerStrokesMap.get(tp.id)?.get(activeHoleData?.hole_number ?? 0) ?? 0,
-      score: holeScores[tp.id] ?? (activeHoleData?.par ?? 4),
-      touched: touchedPlayers.has(tp.id),
-    }))
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Confirmation dialog */}
@@ -675,16 +539,6 @@ export default function LiveScoringClient({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setStatsEnabled(!statsEnabled)}
-              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
-                statsEnabled
-                  ? 'bg-golf-500 text-white'
-                  : 'border border-golf-600 text-golf-300 hover:bg-golf-700'
-              }`}
-            >
-              {statsEnabled ? 'Stats ON' : 'Stats'}
-            </button>
             {!data.isQuickRound && (
               <a
                 href={`/trip/${tripId}`}
@@ -733,32 +587,6 @@ export default function LiveScoringClient({
           </div>
         </div>
       </header>
-
-      {/* Active hole entry */}
-      {activeHole !== null && activeHoleData && (
-        <HoleView
-          hole={activeHoleData}
-          holes={holes}
-          completedHoles={completedHoles}
-          ownTripPlayerId={currentTripPlayerId}
-          ownPlayerName={ownPlayerName}
-          ownStrokes={playerStrokesMap.get(currentTripPlayerId)?.get(activeHoleData.hole_number) ?? 0}
-          ownScore={holeScores[currentTripPlayerId] ?? activeHoleData.par}
-          partners={partners}
-          playerTee={currentPlayerTee}
-          saving={saving}
-          onAdjustScore={adjustScore}
-          onSetScore={setScore}
-          onSubmit={submitHoleScores}
-          onNavigate={openHole}
-          onClose={() => setActiveHole(null)}
-          fairwayHit={holeStats[currentTripPlayerId]?.fairway_hit}
-          girHit={holeStats[currentTripPlayerId]?.gir}
-          puttsCount={holeStats[currentTripPlayerId]?.putts}
-          onStatsChange={updateStats}
-          statsEnabled={statsEnabled}
-        />
-      )}
 
       <div className="mx-auto max-w-lg px-4 py-4">
         {/* Error banner */}
@@ -812,17 +640,16 @@ export default function LiveScoringClient({
                 const holeRows = nineHoles.map(hole => (
                   <tr
                     key={hole.id}
-                    onClick={() => openHole(hole.hole_number)}
-                    className="cursor-pointer hover:bg-gray-50 active:bg-gray-100 border-b border-gray-100"
+                    className="border-b border-gray-100"
                   >
-                    <td className="sticky left-0 z-10 bg-white w-9 px-1 py-2 text-center font-medium text-gray-700">{hole.hole_number}</td>
-                    <td className="sticky left-9 z-10 bg-white w-9 px-1 py-2 text-center text-gray-500 border-l border-gray-200">{hole.par}</td>
+                    <td onClick={() => setInfoHole(hole.hole_number)} className="sticky left-0 z-10 bg-white w-9 px-1 py-2 text-center font-medium text-gray-700 cursor-pointer hover:bg-gray-50 active:bg-gray-100">{hole.hole_number}</td>
+                    <td onClick={() => setInfoHole(hole.hole_number)} className="sticky left-9 z-10 bg-white w-9 px-1 py-2 text-center text-gray-500 border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100">{hole.par}</td>
                     {data.tripPlayers.map(tp => {
                       const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tp.id)
                       const gross = score?.gross_score
                       const strokes = playerStrokesMap.get(tp.id)?.get(hole.hole_number) ?? 0
                       return (
-                        <td key={tp.id} className="relative px-1 py-2 text-center border-l border-gray-200">
+                        <td key={tp.id} onClick={() => openCell(hole.hole_number, tp.id)} className="relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100">
                           {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
                           {gross !== undefined && scoreBadge(gross, hole.par)}
                         </td>
@@ -874,31 +701,146 @@ export default function LiveScoringClient({
           </table>
         </div>
 
-        {/* Quick start button */}
-        {nextUnscoredHole && activeHole === null && (
-          <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white p-4 shadow-lg z-10">
-            <div className="mx-auto max-w-lg">
+        {/* All holes done */}
+        {nextUnscoredHole === null && holes.length > 0 && (
+          <div className="mt-4 rounded-xl bg-golf-100 p-6 text-center">
+            <p className="text-lg font-bold text-golf-800">All holes scored!</p>
+            <p className="mt-1 text-sm text-golf-600">Tap any cell to edit scores.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Hole info popup */}
+      {infoHole !== null && (() => {
+        const hole = holes.find(h => h.hole_number === infoHole)
+        if (!hole) return null
+        return (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={() => setInfoHole(null)}>
+            <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-gray-900">Hole {hole.hole_number}</h3>
+                <button onClick={() => setInfoHole(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg bg-gray-50 p-3 text-center">
+                  <div className="text-xs text-gray-500 mb-1">Par</div>
+                  <div className="text-2xl font-bold text-gray-800">{hole.par}</div>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-3 text-center">
+                  <div className="text-xs text-gray-500 mb-1">Handicap</div>
+                  <div className="text-2xl font-bold text-gray-800">{hole.handicap_index}</div>
+                </div>
+              </div>
+              {hole.yardage && Object.keys(hole.yardage).length > 0 && (
+                <div className="mt-3 rounded-lg bg-gray-50 p-3">
+                  <div className="text-xs text-gray-500 mb-2">Yardage</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {Object.entries(hole.yardage).map(([tee, yards]) => (
+                      <div key={tee} className="text-center">
+                        <div className="text-xs text-gray-500">{tee}</div>
+                        <div className="font-semibold text-gray-800">{yards}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Cell edit popup */}
+      {editCell !== null && (() => {
+        const hole = holes.find(h => h.hole_number === editCell.holeNumber)
+        if (!hole) return null
+        const playerName = playerNameMap.get(editCell.tripPlayerId) || 'Player'
+        const isOwn = editCell.tripPlayerId === currentTripPlayerId
+        return (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditCell(null)}>
+            <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">{playerName}</h3>
+                  <p className="text-xs text-gray-500">Hole {hole.hole_number} &middot; Par {hole.par}</p>
+                </div>
+                <button onClick={() => setEditCell(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              </div>
+
+              {/* Score selector */}
+              <div className="mb-4">
+                <label className="text-xs font-medium text-gray-500 mb-2 block">Score</label>
+                <div className="flex items-center gap-3 justify-center">
+                  <button
+                    onClick={() => setCellScore(s => Math.max(1, s - 1))}
+                    className="w-10 h-10 rounded-full border-2 border-gray-300 text-xl font-bold text-gray-600 hover:border-golf-600 hover:text-golf-700"
+                  >−</button>
+                  <span className="text-3xl font-bold text-gray-900 w-10 text-center">{cellScore}</span>
+                  <button
+                    onClick={() => setCellScore(s => s + 1)}
+                    className="w-10 h-10 rounded-full border-2 border-gray-300 text-xl font-bold text-gray-600 hover:border-golf-600 hover:text-golf-700"
+                  >+</button>
+                </div>
+              </div>
+
+              {/* Stats (own player only) */}
+              {isOwn && (
+                <div className="mb-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Fairway Hit</span>
+                    <div className="flex gap-1">
+                      {([true, false] as const).map(val => (
+                        <button
+                          key={String(val)}
+                          onClick={() => setCellStats(s => ({ ...s, fairway_hit: s.fairway_hit === val ? null : val }))}
+                          className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.fairway_hit === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
+                        >
+                          {val ? 'Yes' : 'No'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">GIR</span>
+                    <div className="flex gap-1">
+                      {([true, false] as const).map(val => (
+                        <button
+                          key={String(val)}
+                          onClick={() => setCellStats(s => ({ ...s, gir: s.gir === val ? null : val }))}
+                          className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.gir === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
+                        >
+                          {val ? 'Yes' : 'No'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Putts</span>
+                    <div className="flex gap-1">
+                      {[0, 1, 2, 3, 4].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setCellStats(s => ({ ...s, putts: s.putts === n ? null : n }))}
+                          className={`w-8 h-8 rounded-full text-xs font-medium border transition ${cellStats.putts === n ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <button
-                onClick={() => openHole(nextUnscoredHole)}
-                className="w-full rounded-xl bg-golf-700 py-4 text-lg font-bold text-white shadow-lg active:bg-golf-800"
+                onClick={saveCellScore}
+                disabled={saving}
+                className="w-full rounded-xl bg-golf-700 py-3 text-sm font-bold text-white shadow active:bg-golf-800 disabled:opacity-50"
               >
-                Score Hole {nextUnscoredHole}
+                {saving ? 'Saving...' : 'Save Score'}
               </button>
             </div>
           </div>
-        )}
-
-        {/* All holes done */}
-        {nextUnscoredHole === null && holes.length > 0 && activeHole === null && (
-          <div className="rounded-xl bg-golf-100 p-6 text-center">
-            <p className="text-lg font-bold text-golf-800">All holes scored!</p>
-            <p className="mt-1 text-sm text-golf-600">Tap any hole to edit scores.</p>
-          </div>
-        )}
-
-        {/* Spacer for fixed bottom button */}
-        {nextUnscoredHole && <div className="h-24" />}
-      </div>
+        )
+      })()}
     </div>
   )
 }
