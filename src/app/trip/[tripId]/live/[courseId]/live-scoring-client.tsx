@@ -792,10 +792,13 @@ export default function LiveScoringClient({
                       const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tp.id)
                       const gross = score?.gross_score
                       const strokes = playerStrokesMap.get(tp.id)?.get(hole.hole_number) ?? 0
-                      const bg = gross !== undefined && gross >= hole.par + 2 ? 'bg-yellow-100' : strokes > 0 ? 'bg-yellow-50' : ''
+                      const bg = gross !== undefined && gross >= hole.par + 2 ? 'bg-yellow-100' : ''
                       const text = gross !== undefined && gross < hole.par ? 'text-red-600 font-semibold' : ''
                       return (
-                        <td key={tp.id} className={`px-1 py-1.5 text-center border-l border-gray-200 ${bg} ${text}`}>{gross ?? ''}</td>
+                        <td key={tp.id} className={`relative px-1 py-1.5 text-center border-l border-gray-200 ${bg} ${text}`}>
+                          {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
+                          {gross ?? ''}
+                        </td>
                       )
                     })}
                   </tr>

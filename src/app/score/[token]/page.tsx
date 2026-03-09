@@ -580,10 +580,13 @@ export default function ScorerPage() {
                         const score = data.scores.find(s => s.hole_id === hole.id && s.trip_player_id === mp.trip_player_id)
                         const gross = score?.gross_score
                         const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
-                        const bg = gross !== undefined && gross >= hole.par + 2 ? 'bg-yellow-100' : strokes > 0 ? 'bg-yellow-50' : ''
+                        const bg = gross !== undefined && gross >= hole.par + 2 ? 'bg-yellow-100' : ''
                         const text = gross !== undefined && gross < hole.par ? 'text-red-600 font-semibold' : ''
                         return (
-                          <td key={mp.id} className={`px-1 py-1.5 text-center border-l border-gray-200 ${bg} ${text}`}>{gross ?? ''}</td>
+                          <td key={mp.id} className={`relative px-1 py-1.5 text-center border-l border-gray-200 ${bg} ${text}`}>
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
+                            {gross ?? ''}
+                          </td>
                         )
                       })}
                       <td className={`px-1 py-1.5 text-center font-bold border-l border-gray-200 ${vsCls}`}>{vsLabel}</td>
@@ -591,10 +594,13 @@ export default function ScorerPage() {
                         const score = data.scores.find(s => s.hole_id === hole.id && s.trip_player_id === mp.trip_player_id)
                         const gross = score?.gross_score
                         const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
-                        const bg = gross !== undefined && gross >= hole.par + 2 ? 'bg-yellow-100' : strokes > 0 ? 'bg-yellow-50' : ''
+                        const bg = gross !== undefined && gross >= hole.par + 2 ? 'bg-yellow-100' : ''
                         const text = gross !== undefined && gross < hole.par ? 'text-red-600 font-semibold' : ''
                         return (
-                          <td key={mp.id} className={`px-1 py-1.5 text-center border-l border-gray-200 ${bg} ${text}`}>{gross ?? ''}</td>
+                          <td key={mp.id} className={`relative px-1 py-1.5 text-center border-l border-gray-200 ${bg} ${text}`}>
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
+                            {gross ?? ''}
+                          </td>
                         )
                       })}
                     </tr>
