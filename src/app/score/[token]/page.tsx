@@ -107,6 +107,35 @@ function sidePlayerNames(players: MatchPlayerData[]): string {
   return players.map(playerName).join(' & ')
 }
 
+function scoreBadge(gross: number, par: number) {
+  const diff = gross - par
+  if (diff <= -2) {
+    return (
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-red-600 text-red-600 font-semibold">
+        <span className="inline-flex items-center justify-center w-3 h-3 rounded-full border border-red-600 text-[8px]">{gross}</span>
+      </span>
+    )
+  }
+  if (diff === -1) {
+    return (
+      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-red-600 text-red-600 font-semibold text-[10px]">{gross}</span>
+    )
+  }
+  if (diff === 0) {
+    return <span className="text-[10px] text-gray-700">{gross}</span>
+  }
+  if (diff === 1) {
+    return (
+      <span className="inline-flex items-center justify-center w-4 h-4 border border-blue-500 text-blue-600 text-[10px]">{gross}</span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center justify-center w-5 h-5 border border-blue-500 text-blue-600">
+      <span className="inline-flex items-center justify-center w-3 h-3 border border-blue-500 text-[8px]">{gross}</span>
+    </span>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -580,12 +609,10 @@ export default function ScorerPage() {
                         const score = data.scores.find(s => s.hole_id === hole.id && s.trip_player_id === mp.trip_player_id)
                         const gross = score?.gross_score
                         const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
-                        const bg = gross !== undefined && gross >= hole.par + 2 ? 'bg-yellow-100' : ''
-                        const text = gross !== undefined && gross < hole.par ? 'text-red-600 font-semibold' : ''
                         return (
-                          <td key={mp.id} className={`relative px-1 py-1.5 text-center border-l border-gray-200 ${bg} ${text}`}>
+                          <td key={mp.id} className="relative px-1 py-1.5 text-center border-l border-gray-200">
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
-                            {gross ?? ''}
+                            {gross !== undefined && scoreBadge(gross, hole.par)}
                           </td>
                         )
                       })}
@@ -594,12 +621,10 @@ export default function ScorerPage() {
                         const score = data.scores.find(s => s.hole_id === hole.id && s.trip_player_id === mp.trip_player_id)
                         const gross = score?.gross_score
                         const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
-                        const bg = gross !== undefined && gross >= hole.par + 2 ? 'bg-yellow-100' : ''
-                        const text = gross !== undefined && gross < hole.par ? 'text-red-600 font-semibold' : ''
                         return (
-                          <td key={mp.id} className={`relative px-1 py-1.5 text-center border-l border-gray-200 ${bg} ${text}`}>
+                          <td key={mp.id} className="relative px-1 py-1.5 text-center border-l border-gray-200">
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-[8px] leading-none text-gray-400">*</span>}
-                            {gross ?? ''}
+                            {gross !== undefined && scoreBadge(gross, hole.par)}
                           </td>
                         )
                       })}
