@@ -945,15 +945,7 @@ export default function LiveScoringClient({
                           </td>
                         )
                       })}
-                      <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200">
-                        {nineStatus?.status && nineStatus.lead !== 0 && (
-                          <span className={`flex items-center justify-center gap-0.5 ${nineStatus.lead > 0 ? 'text-golf-700' : 'text-blue-600'}`}>
-                            {nineStatus.lead > 0 && <span>◀</span>}
-                            <span>{nineStatus.status}</span>
-                            {nineStatus.lead < 0 && <span>▶</span>}
-                          </span>
-                        )}
-                      </td>
+                      <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200" />
                       {teamAssignments.team_b.map(tpId => {
                         let grossSum = 0
                         const allScored = nineHoles.every(({ hole }) => {
@@ -975,7 +967,6 @@ export default function LiveScoringClient({
 
                 {/* Total row */}
                 {holes.length > 0 && (() => {
-                  const finalStatus = [...matchPlayData].reverse().find(d => d.status !== null)
                   return (
                     <tr className="bg-gray-100 font-bold">
                       <td className="px-1 py-2 text-center text-gray-600 text-[10px]">Total</td>
@@ -993,15 +984,7 @@ export default function LiveScoringClient({
                           </td>
                         )
                       })}
-                      <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200">
-                        {finalStatus?.status && finalStatus.lead !== 0 && (
-                          <span className={`flex items-center justify-center gap-0.5 ${finalStatus.lead > 0 ? 'text-golf-700' : 'text-blue-600'}`}>
-                            {finalStatus.lead > 0 && <span>◀</span>}
-                            <span>{finalStatus.status}</span>
-                            {finalStatus.lead < 0 && <span>▶</span>}
-                          </span>
-                        )}
-                      </td>
+                      <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200" />
                       {teamAssignments.team_b.map(tpId => {
                         let grossSum = 0
                         const allScored = holes.every(h => {
@@ -1207,20 +1190,20 @@ export default function LiveScoringClient({
                       <span className="text-gray-500">Score</span>
                       <span className="font-bold text-gray-900">{cellScore}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Putts</span>
-                      <span className="font-semibold text-gray-800">{cellStats.putts !== null ? cellStats.putts : '—'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">GIR</span>
-                      <span className="font-semibold text-gray-800">{cellStats.gir !== null ? (cellStats.gir ? 'Yes' : 'No') : '—'}</span>
-                    </div>
                     {hole.par > 3 && (
                       <div className="flex justify-between">
                         <span className="text-gray-500">Fairway</span>
                         <span className="font-semibold text-gray-800">{cellStats.fairway_hit !== null ? (cellStats.fairway_hit ? 'Yes' : 'No') : '—'}</span>
                       </div>
                     )}
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">GIR</span>
+                      <span className="font-semibold text-gray-800">{cellStats.gir !== null ? (cellStats.gir ? 'Yes' : 'No') : '—'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Putts</span>
+                      <span className="font-semibold text-gray-800">{cellStats.putts !== null ? cellStats.putts : '—'}</span>
+                    </div>
                   </div>
                   <button
                     onClick={() => setScoreCellViewMode(false)}
