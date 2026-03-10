@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import PlayerProfileTabs from './player-profile-tabs'
 import FriendsSection from '@/components/FriendsSection'
+import CourseMapSection from '@/app/profile/[userId]/course-map-section'
 import type { CoursePinData } from '@/components/CourseMap'
 import type { FriendProfile, PendingItem, ViewerFriendship } from '@/components/FriendsSection'
 
@@ -472,9 +473,16 @@ export default async function PlayerProfilePage({
             matches={matchRows}
             earnings={earningsByTrip}
             careerTotal={careerTotal}
-            mapPins={mapPins}
           />
         </div>
+
+        {/* Map section */}
+        {mapPins.length > 0 && (
+          <div>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">Map</h2>
+            <CourseMapSection pins={mapPins} />
+          </div>
+        )}
 
         {/* Friends section */}
         {profileUserId && (

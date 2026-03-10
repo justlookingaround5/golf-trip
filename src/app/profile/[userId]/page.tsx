@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import PlayerProfileTabs from '@/app/trip/[tripId]/players/[tripPlayerId]/player-profile-tabs'
 import FriendsSection from '@/components/FriendsSection'
+import CourseMapSection from './course-map-section'
 import type { CoursePinData } from '@/components/CourseMap'
 import type { FriendProfile, PendingItem, ViewerFriendship } from '@/components/FriendsSection'
 
@@ -421,12 +422,26 @@ export default async function GlobalProfilePage({
     <div className="min-h-screen bg-gray-50">
       <header className="bg-golf-800 px-4 py-6 text-white">
         <div className="mx-auto max-w-lg">
-          <Link
-            href="/"
-            className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white"
-          >
-            &larr; Home
-          </Link>
+          <div className="flex items-center justify-between mb-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white"
+            >
+              &larr; Home
+            </Link>
+            {isOwnProfile && (
+              <Link
+                href="/settings"
+                className="flex items-center justify-center h-8 w-8 rounded-full text-golf-300 hover:text-white hover:bg-white/10 transition"
+                aria-label="Settings"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </Link>
+            )}
+          </div>
 
           <div className="flex items-center gap-4">
             {avatarUrl ? (
@@ -464,9 +479,15 @@ export default async function GlobalProfilePage({
             matches={matchRows}
             earnings={earningsByTrip}
             careerTotal={careerTotal}
-            mapPins={mapPins}
           />
         </div>
+
+        {mapPins.length > 0 && (
+          <div>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">Map</h2>
+            <CourseMapSection pins={mapPins} />
+          </div>
+        )}
 
         <FriendsSection
           currentUserId={currentUserId}

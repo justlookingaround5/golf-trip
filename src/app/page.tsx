@@ -11,7 +11,7 @@ export default async function Home() {
   // Fetch user's trips via membership
   const { data: memberships } = await supabase
     .from('trip_members')
-    .select('role, trip:trips(id, name, location, year, status)')
+    .select('role, trip:trips(id, name, location, year, status, is_quick_round)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -22,7 +22,7 @@ export default async function Home() {
       const trip = Array.isArray(m.trip) ? m.trip[0] : m.trip
       return { ...trip, role: m.role }
     })
-    .filter((t: any) => t.id != null)
+    .filter((t: any) => t.id != null && !t.is_quick_round)
 
   // Detect today's round across active trips
   const today = new Date().toISOString().split('T')[0]

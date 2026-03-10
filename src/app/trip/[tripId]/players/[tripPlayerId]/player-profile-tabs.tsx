@@ -1,13 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import dynamic from 'next/dynamic'
-import type { CoursePinData } from '@/components/CourseMap'
-
-const CourseMap = dynamic(() => import('@/components/CourseMap'), { ssr: false })
+import Link from 'next/link'
 
 interface RoundRow {
   courseId: string
+  tripId: string
   courseName: string
   roundNumber: number
   roundDate: string | null
@@ -45,7 +43,6 @@ interface PlayerProfileTabsProps {
   matches: MatchRow[]
   earnings: EarningsByTrip[]
   careerTotal: number
-  mapPins: CoursePinData[]
 }
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -55,14 +52,14 @@ const FORMAT_LABELS: Record<string, string> = {
   '2v2_alternate_shot': 'Alt Shot',
 }
 
-export default function PlayerProfileTabs({ rounds, matches, earnings, careerTotal, mapPins }: PlayerProfileTabsProps) {
-  const [tab, setTab] = useState<'scores' | 'matches' | 'earnings' | 'map'>('scores')
+export default function PlayerProfileTabs({ rounds, matches, earnings, careerTotal }: PlayerProfileTabsProps) {
+  const [tab, setTab] = useState<'scores' | 'matches' | 'earnings'>('scores')
 
   return (
     <div>
       {/* Tab bar */}
       <div className="flex rounded-lg bg-gray-100 p-1 mb-5">
-        {(['scores', 'matches', 'earnings', 'map'] as const).map((t) => (
+        {(['scores', 'matches', 'earnings'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -72,7 +69,7 @@ export default function PlayerProfileTabs({ rounds, matches, earnings, careerTot
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t === 'scores' ? 'Scores' : t === 'matches' ? 'Matches' : t === 'earnings' ? 'Earnings' : 'Map'}
+            {t === 'scores' ? 'Scores' : t === 'matches' ? 'Matches' : 'Earnings'}
           </button>
         ))}
       </div>
@@ -80,7 +77,6 @@ export default function PlayerProfileTabs({ rounds, matches, earnings, careerTot
       {tab === 'scores' && <ScoreHistory rounds={rounds} />}
       {tab === 'matches' && <MatchHistory matches={matches} />}
       {tab === 'earnings' && <EarningsTab earnings={earnings} careerTotal={careerTotal} />}
-      {tab === 'map' && <CourseMap pins={mapPins} />}
     </div>
   )
 }
@@ -102,9 +98,10 @@ function ScoreHistory({ rounds }: { rounds: RoundRow[] }) {
         const partial = r.holesPlayed > 0 && r.holesPlayed < 18
 
         return (
-          <div
+          <Link
             key={r.courseId}
-            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+            href={`/trip/${r.tripId}/rounds/${r.courseId}/scorecard`}
+            className="block rounded-xl border border-gray-200 bg-white p-4 shadow-sm active:bg-gray-50 transition"
           >
             <div className="flex items-start justify-between mb-3">
               <div>
@@ -120,19 +117,24 @@ function ScoreHistory({ rounds }: { rounds: RoundRow[] }) {
                   {partial && ` · ${r.holesPlayed} holes`}
                 </p>
               </div>
-              {grossVsPar != null && (
-                <span
-                  className={`text-sm font-bold ${
-                    grossVsPar < 0
-                      ? 'text-red-600'
-                      : grossVsPar > 0
-                        ? 'text-blue-600'
-                        : 'text-gray-600'
-                  }`}
-                >
-                  {grossVsPar === 0 ? 'E' : grossVsPar > 0 ? `+${grossVsPar}` : `${grossVsPar}`}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {grossVsPar != null && (
+                  <span
+                    className={`text-sm font-bold ${
+                      grossVsPar < 0
+                        ? 'text-red-600'
+                        : grossVsPar > 0
+                          ? 'text-blue-600'
+                          : 'text-gray-600'
+                    }`}
+                  >
+                    {grossVsPar === 0 ? 'E' : grossVsPar > 0 ? `+${grossVsPar}` : `${grossVsPar}`}
+                  </span>
+                )}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -160,7 +162,7 @@ function ScoreHistory({ rounds }: { rounds: RoundRow[] }) {
                 }
               />
             </div>
-          </div>
+          </Link>
         )
       })}
     </div>
