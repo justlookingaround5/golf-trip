@@ -1239,7 +1239,7 @@ export default function LiveScoringClient({
                             <button
                               key={String(val)}
                               onClick={() => setCellStats(s => ({ ...s, fairway_hit: s.fairway_hit === val ? null : val }))}
-                              className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.fairway_hit === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
+                              className={`px-4 py-2 rounded-full text-sm font-medium border transition ${cellStats.fairway_hit === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
                             >
                               {val ? 'Yes' : 'No'}
                             </button>
@@ -1254,7 +1254,7 @@ export default function LiveScoringClient({
                           <button
                             key={String(val)}
                             onClick={() => setCellStats(s => ({ ...s, gir: s.gir === val ? null : val }))}
-                            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.gir === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
+                            className={`px-4 py-2 rounded-full text-sm font-medium border transition ${cellStats.gir === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
                           >
                             {val ? 'Yes' : 'No'}
                           </button>
