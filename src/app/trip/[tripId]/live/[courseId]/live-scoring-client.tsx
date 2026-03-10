@@ -135,6 +135,8 @@ export default function LiveScoringClient({
   const [cellScore, setCellScore] = useState(4)
   const [cellStats, setCellStats] = useState<{ fairway_hit: boolean | null; gir: boolean | null; putts: number | null }>({ fairway_hit: null, gir: null, putts: null })
   const [saving, setSaving] = useState(false)
+  const [scoreCellViewMode, setScoreCellViewMode] = useState(false)
+  const [editCellIsExisting, setEditCellIsExisting] = useState(false)
 
   // Round management state
   const router = useRouter()
@@ -326,7 +328,36 @@ export default function LiveScoringClient({
       gir: existing?.gir ?? null,
       putts: existing?.putts ?? null,
     })
+    setEditCellIsExisting(!!existing)
+    setScoreCellViewMode(!!existing)
     setEditCell({ holeNumber, tripPlayerId })
+  }
+
+  async function deleteCellScore() {
+    if (!editCell || !data) return
+    const hole = holes.find(h => h.hole_number === editCell.holeNumber)
+    if (!hole) return
+
+    setData(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        roundScores: prev.roundScores.filter(
+          s => !(s.hole_id === hole.id && s.trip_player_id === editCell.tripPlayerId)
+        ),
+      }
+    })
+    setEditCell(null)
+
+    try {
+      await fetch(`/api/live/${courseId}/scores`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hole_id: hole.id, trip_player_id: editCell.tripPlayerId }),
+      })
+    } catch {
+      setError('Failed to delete score.')
+    }
   }
 
   async function saveCellScore() {
@@ -465,6 +496,16 @@ export default function LiveScoringClient({
     })
   }, [data, playerNameMap])
 
+  // All players have a gross score on every hole → prompt to finish
+  const allGrossScoresSaved = useMemo(() => {
+    if (!data || holes.length === 0) return false
+    return data.tripPlayers.every(tp =>
+      holes.every(hole =>
+        data.roundScores.some(s => s.hole_id === hole.id && s.trip_player_id === tp.id)
+      )
+    )
+  }, [data, holes])
+
   // Build side bet hits with names
   const enrichedHits = useMemo(() => {
     if (!data) return []
@@ -564,10 +605,12 @@ export default function LiveScoringClient({
 
       const lead = aWins - bWins
       const hasResult = allPlayersScored && aBest !== null && bBest !== null
+      const holeWasDecided = hasResult && aBest !== bBest
+      const isFirstResult = hasResult && !firstResultSeen
       if (hasResult) firstResultSeen = true
 
-      // Show status on every completed hole so the scorecard reads like a real match play card
-      const showStatus = hasResult
+      // Show only when the hole was won/lost, or on the very first scored hole (AS)
+      const showStatus = holeWasDecided || isFirstResult
 
       const status = hasResult
         ? (lead === 0 ? 'AS' : `${Math.abs(lead)}UP`)
@@ -1077,10 +1120,16 @@ export default function LiveScoringClient({
         )}
 
         {/* All holes done */}
-        {nextUnscoredHole === null && holes.length > 0 && (
-          <div className="mt-4 rounded-xl bg-golf-100 p-6 text-center">
-            <p className="text-lg font-bold text-golf-800">All holes scored!</p>
-            <p className="mt-1 text-sm text-golf-600">Tap any cell to edit scores.</p>
+        {allGrossScoresSaved && (
+          <div className="mt-4 rounded-xl bg-golf-700 p-6 text-center shadow-lg">
+            <p className="text-lg font-bold text-white">All Holes Complete!</p>
+            <p className="mt-1 text-sm text-golf-200">All scores are in. Ready to finish.</p>
+            <button
+              onClick={() => setConfirmAction('end')}
+              className="mt-4 w-full rounded-xl bg-white py-3 text-sm font-bold text-golf-800 active:bg-golf-50"
+            >
+              End Round
+            </button>
           </div>
         )}
       </div>
@@ -1135,6 +1184,10 @@ export default function LiveScoringClient({
         const hole = holes.find(h => h.hole_number === editCell.holeNumber)
         if (!hole) return null
         const playerName = playerNameMap.get(editCell.tripPlayerId) || 'Player'
+        const allStatsEntered =
+          cellStats.putts !== null &&
+          cellStats.gir !== null &&
+          (hole.par <= 3 || cellStats.fairway_hit !== null)
         return (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditCell(null)}>
             <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
@@ -1146,77 +1199,119 @@ export default function LiveScoringClient({
                 <button onClick={() => setEditCell(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
               </div>
 
-              {/* Score selector */}
-              <div className="mb-4">
-                <label className="text-xs font-medium text-gray-500 mb-2 block">Score</label>
-                <div className="flex items-center gap-3 justify-center">
+              {scoreCellViewMode ? (
+                <>
+                  {/* View mode — tap Edit to modify or delete */}
+                  <div className="mb-5 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Score</span>
+                      <span className="font-bold text-gray-900">{cellScore}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Putts</span>
+                      <span className="font-semibold text-gray-800">{cellStats.putts !== null ? cellStats.putts : '—'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">GIR</span>
+                      <span className="font-semibold text-gray-800">{cellStats.gir !== null ? (cellStats.gir ? 'Yes' : 'No') : '—'}</span>
+                    </div>
+                    {hole.par > 3 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Fairway</span>
+                        <span className="font-semibold text-gray-800">{cellStats.fairway_hit !== null ? (cellStats.fairway_hit ? 'Yes' : 'No') : '—'}</span>
+                      </div>
+                    )}
+                  </div>
                   <button
-                    onClick={() => setCellScore(s => Math.max(1, s - 1))}
-                    className="w-10 h-10 rounded-full border-2 border-gray-300 text-xl font-bold text-gray-600 hover:border-golf-600 hover:text-golf-700"
-                  >−</button>
-                  <span className="text-3xl font-bold text-gray-900 w-10 text-center">{cellScore}</span>
-                  <button
-                    onClick={() => setCellScore(s => s + 1)}
-                    className="w-10 h-10 rounded-full border-2 border-gray-300 text-xl font-bold text-gray-600 hover:border-golf-600 hover:text-golf-700"
-                  >+</button>
-                </div>
-              </div>
+                    onClick={() => setScoreCellViewMode(false)}
+                    className="w-full rounded-xl border border-gray-300 py-3 text-sm font-bold text-gray-700 active:bg-gray-50"
+                  >
+                    Edit Score
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Edit mode */}
+                  <div className="mb-4">
+                    <label className="text-xs font-medium text-gray-500 mb-2 block">Score</label>
+                    <div className="flex items-center gap-3 justify-center">
+                      <button
+                        onClick={() => setCellScore(s => Math.max(1, s - 1))}
+                        className="w-10 h-10 rounded-full border-2 border-gray-300 text-xl font-bold text-gray-600 hover:border-golf-600 hover:text-golf-700"
+                      >−</button>
+                      <span className="text-3xl font-bold text-gray-900 w-10 text-center">{cellScore}</span>
+                      <button
+                        onClick={() => setCellScore(s => s + 1)}
+                        className="w-10 h-10 rounded-full border-2 border-gray-300 text-xl font-bold text-gray-600 hover:border-golf-600 hover:text-golf-700"
+                      >+</button>
+                    </div>
+                  </div>
 
-              {/* Stats */}
-              <div className="mb-4 space-y-2">
-                  {hole.par > 3 && (
+                  <div className="mb-4 space-y-2">
+                    {hole.par > 3 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700">Fairway Hit</span>
+                        <div className="flex gap-1">
+                          {([true, false] as const).map(val => (
+                            <button
+                              key={String(val)}
+                              onClick={() => setCellStats(s => ({ ...s, fairway_hit: s.fairway_hit === val ? null : val }))}
+                              className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.fairway_hit === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
+                            >
+                              {val ? 'Yes' : 'No'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">Fairway Hit</span>
+                      <span className="text-sm text-gray-700">GIR</span>
                       <div className="flex gap-1">
                         {([true, false] as const).map(val => (
                           <button
                             key={String(val)}
-                            onClick={() => setCellStats(s => ({ ...s, fairway_hit: s.fairway_hit === val ? null : val }))}
-                            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.fairway_hit === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
+                            onClick={() => setCellStats(s => ({ ...s, gir: s.gir === val ? null : val }))}
+                            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.gir === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
                           >
                             {val ? 'Yes' : 'No'}
                           </button>
                         ))}
                       </div>
                     </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">GIR</span>
-                    <div className="flex gap-1">
-                      {([true, false] as const).map(val => (
-                        <button
-                          key={String(val)}
-                          onClick={() => setCellStats(s => ({ ...s, gir: s.gir === val ? null : val }))}
-                          className={`px-3 py-1 rounded-full text-xs font-medium border transition ${cellStats.gir === val ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
-                        >
-                          {val ? 'Yes' : 'No'}
-                        </button>
-                      ))}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700">Putts</span>
+                      <div className="flex gap-1">
+                        {[0, 1, 2, 3, 4].map(n => (
+                          <button
+                            key={n}
+                            onClick={() => setCellStats(s => ({ ...s, putts: s.putts === n ? null : n }))}
+                            className={`w-8 h-8 rounded-full text-xs font-medium border transition ${cellStats.putts === n ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
+                          >
+                            {n}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Putts</span>
-                    <div className="flex gap-1">
-                      {[0, 1, 2, 3, 4].map(n => (
-                        <button
-                          key={n}
-                          onClick={() => setCellStats(s => ({ ...s, putts: s.putts === n ? null : n }))}
-                          className={`w-8 h-8 rounded-full text-xs font-medium border transition ${cellStats.putts === n ? 'bg-golf-700 text-white border-golf-700' : 'bg-white text-gray-600 border-gray-300'}`}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-              </div>
 
-              <button
-                onClick={saveCellScore}
-                disabled={saving}
-                className="w-full rounded-xl bg-golf-700 py-3 text-sm font-bold text-white shadow active:bg-golf-800 disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save Score'}
-              </button>
+                  <button
+                    onClick={saveCellScore}
+                    disabled={saving || !allStatsEntered}
+                    className="w-full rounded-xl bg-golf-700 py-3 text-sm font-bold text-white shadow active:bg-golf-800 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Save Score'}
+                  </button>
+
+                  {editCellIsExisting && (
+                    <button
+                      onClick={deleteCellScore}
+                      className="mt-2 w-full rounded-xl border border-red-200 py-2.5 text-sm font-medium text-red-600 active:bg-red-50"
+                    >
+                      Delete Score
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )

@@ -97,7 +97,12 @@ export default async function GlobalProfilePage({
         holesPlayed: (rs.holes_played as number) || 0,
       })
     }
-    rounds.sort((a, b) => a.roundNumber - b.roundNumber)
+    rounds.sort((a, b) => {
+      if (a.roundDate && b.roundDate) return new Date(b.roundDate).getTime() - new Date(a.roundDate).getTime()
+      if (a.roundDate) return -1
+      if (b.roundDate) return 1
+      return 0
+    })
   }
 
   // ── Map Pins (all trips) ────────────────────────────────────────────────────
