@@ -85,9 +85,9 @@ export default function QuickRoundClient({
   const [teeGender, setTeeGender] = useState<'male' | 'female'>('male')
   const [loadingDetail, setLoadingDetail] = useState(false)
 
-  // Player state
+  // Player state — use first name only for display
   const [players, setPlayers] = useState<PlayerSlot[]>([
-    { name: userName, handicap: userHandicap != null ? String(userHandicap) : '', tee: '', team: '' },
+    { name: userName.split(' ')[0] || userName, handicap: userHandicap != null ? String(userHandicap) : '', tee: '', team: '' },
   ])
 
   // Add-player picker
@@ -193,7 +193,7 @@ export default function QuickRoundClient({
     setPlayers(prev => [
       ...prev,
       {
-        name: friend.displayName,
+        name: friend.displayName.split(' ')[0] || friend.displayName,
         handicap: friend.handicap != null ? String(friend.handicap) : '',
         tee: availableTees[0]?.tee_name || '',
         team: '',

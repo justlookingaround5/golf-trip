@@ -353,6 +353,11 @@ export default function LiveScoringClient({
       updated_at: new Date().toISOString(),
     }
 
+    // Capture previous score so we can restore it if the save fails
+    const previousScore = data.roundScores.find(
+      s => s.hole_id === hole.id && s.trip_player_id === editCell.tripPlayerId
+    ) || null
+
     setData(prev => {
       if (!prev) return prev
       const others = prev.roundScores.filter(s => !(s.hole_id === hole.id && s.trip_player_id === editCell.tripPlayerId))
@@ -372,13 +377,26 @@ export default function LiveScoringClient({
         setData(prev => prev ? { ...prev, roundScores: result.roundScores } : prev)
         posthog.capture('score_saved', { hole_number: editCell.holeNumber, course_id: courseId })
       } else {
+        // Restore the previous score so the cell doesn't go blank
         setData(prev => {
           if (!prev) return prev
-          return { ...prev, roundScores: prev.roundScores.filter(s => !s.id.startsWith('optimistic-')) }
+          const withoutOptimistic = prev.roundScores.filter(s => !s.id.startsWith('optimistic-'))
+          return {
+            ...prev,
+            roundScores: previousScore ? [...withoutOptimistic, previousScore] : withoutOptimistic,
+          }
         })
         setError('Failed to save. Tap the cell to retry.')
       }
     } catch {
+      setData(prev => {
+        if (!prev) return prev
+        const withoutOptimistic = prev.roundScores.filter(s => !s.id.startsWith('optimistic-'))
+        return {
+          ...prev,
+          roundScores: previousScore ? [...withoutOptimistic, previousScore] : withoutOptimistic,
+        }
+      })
       setError('Connection lost. Score may not be saved.')
     } finally {
       setSaving(false)
@@ -546,12 +564,10 @@ export default function LiveScoringClient({
 
       const lead = aWins - bWins
       const hasResult = allPlayersScored && aBest !== null && bBest !== null
-      const holeWasDecided = hasResult && aBest !== bBest
-      const isFirstResult = hasResult && !firstResultSeen
       if (hasResult) firstResultSeen = true
 
-      // Show result if: the hole was won/lost, OR it's the first completed hole (shows AS if tied)
-      const showStatus = holeWasDecided || isFirstResult
+      // Show status on every completed hole so the scorecard reads like a real match play card
+      const showStatus = hasResult
 
       const status = hasResult
         ? (lead === 0 ? 'AS' : `${Math.abs(lead)}UP`)
