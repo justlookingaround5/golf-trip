@@ -35,14 +35,14 @@ export default async function Home() {
     .filter((t: any) => t.status === 'active')
     .map((t: any) => t.id)
 
-  const activeRounds: {
+  let activeRound: {
     tripId: string
     tripName: string
     courseId: string
     courseName: string
     courseDate: string
     isQuickRound: boolean
-  }[] = []
+  } | null = null
 
   if (allActiveTripIds.length > 0) {
     const { data: todayCourses } = await supabase
@@ -50,19 +50,20 @@ export default async function Home() {
       .select('id, name, round_date, trip_id')
       .in('trip_id', allActiveTripIds)
       .eq('round_date', today)
+      .limit(1)
+      .maybeSingle()
 
-    for (const course of todayCourses || []) {
+    if (todayCourses) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const matchingTrip = allTrips.find((t: any) => t.id === course.trip_id)
-      if (!matchingTrip) continue
-      activeRounds.push({
-        tripId: course.trip_id,
-        tripName: matchingTrip.name || 'Trip',
-        courseId: course.id,
-        courseName: course.name,
-        courseDate: course.round_date || today,
-        isQuickRound: !!matchingTrip.is_quick_round,
-      })
+      const matchingTrip = allTrips.find((t: any) => t.id === todayCourses.trip_id)
+      activeRound = {
+        tripId: todayCourses.trip_id,
+        tripName: matchingTrip?.name || 'Trip',
+        courseId: todayCourses.id,
+        courseName: todayCourses.name,
+        courseDate: todayCourses.round_date || today,
+        isQuickRound: !!matchingTrip?.is_quick_round,
+      }
     }
   }
 
@@ -86,7 +87,7 @@ export default async function Home() {
   return (
     <HomeClient
       trips={trips}
-      activeRounds={activeRounds}
+      activeRound={activeRound}
       pendingInvites={pendingInvites}
     />
   )
