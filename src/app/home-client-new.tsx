@@ -20,26 +20,27 @@ interface ActiveRound {
   courseId: string
   courseName: string
   courseDate: string
+  isQuickRound: boolean
 }
 
 interface HomeClientProps {
   trips: Trip[]
-  activeRound: ActiveRound | null
+  activeRounds: ActiveRound[]
   pendingInvites: { id: string; token: string; tripName: string }[]
 }
 
 type TripTab = 'active' | 'upcoming' | 'past'
 
-export default function HomeClient({ trips, activeRound, pendingInvites }: HomeClientProps) {
+export default function HomeClient({ trips, activeRounds, pendingInvites }: HomeClientProps) {
   const [tripTab, setTripTab] = useState<TripTab>(() => {
     if (trips.some((t) => t.status === 'active')) return 'active'
     if (trips.some((t) => t.status === 'setup')) return 'upcoming'
     return 'past'
   })
 
-  // Exclude the trip that has a live round today — it's already shown in the active round card
-  const activeRoundTripId = activeRound?.tripId ?? null
-  const activeTrips = trips.filter((t) => t.status === 'active' && t.id !== activeRoundTripId)
+  // Exclude trips that already have a live round card shown above
+  const activeRoundTripIds = new Set(activeRounds.map((r) => r.tripId))
+  const activeTrips = trips.filter((t) => t.status === 'active' && !activeRoundTripIds.has(t.id))
   const upcomingTrips = trips.filter((t) => t.status === 'setup')
   const pastTrips = trips.filter((t) => t.status === 'completed')
 
@@ -78,18 +79,21 @@ export default function HomeClient({ trips, activeRound, pendingInvites }: HomeC
           </div>
         )}
 
-        {/* Active round card */}
-        {activeRound && (
+        {/* Active round cards */}
+        {activeRounds.map((round) => (
           <Link
-            href={`/trip/${activeRound.tripId}/live/${activeRound.courseId}`}
+            key={round.courseId}
+            href={`/trip/${round.tripId}/live/${round.courseId}`}
             className="flex flex-col items-center gap-2 rounded-xl bg-green-600 py-7 text-white shadow-lg active:bg-green-700 transition"
           >
             <span className="text-4xl">&#9971;</span>
             <span className="text-xl font-bold">Live Scoring</span>
-            <span className="text-sm text-green-100">{activeRound.courseName}</span>
-            <span className="text-xs text-green-200 mt-0.5">{activeRound.tripName}</span>
+            <span className="text-sm text-green-100">{round.courseName}</span>
+            <span className="text-xs text-green-200 mt-0.5">
+              {round.isQuickRound ? 'Quick Round' : round.tripName}
+            </span>
           </Link>
-        )}
+        ))}
 
         {/* My Trips */}
         <div>
@@ -137,7 +141,7 @@ export default function HomeClient({ trips, activeRound, pendingInvites }: HomeC
         </div>
 
         {/* Start a Round — primary action, full width */}
-        {!activeRound && (
+        {activeRounds.length === 0 && (
           <Link
             href="/quick-round"
             className="flex items-center justify-center gap-3 w-full rounded-xl bg-golf-800 py-4 text-white font-semibold shadow-md hover:bg-golf-700 active:scale-95 transition"
