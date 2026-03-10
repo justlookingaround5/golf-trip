@@ -189,7 +189,7 @@ export default function DashboardClient({
               {topStandings.map((stat, i) => {
                 const tp = stat.trip_player
                 const player = Array.isArray(tp?.player) ? tp?.player[0] : tp?.player
-                const name = player?.name || 'Unknown'
+                const name = (player?.name || 'Unknown').split(' ')[0]
                 const diff = (stat.total_gross || 0) - (stat.total_par || 0)
                 const diffStr = diff === 0 ? 'E' : diff > 0 ? `+${diff}` : `${diff}`
                 return (

@@ -211,7 +211,7 @@ export default function SettlementClient({
                     <div>
                       <p className="font-medium text-gray-900 text-sm">{exp.description}</p>
                       <p className="text-xs text-gray-500">
-                        Paid by {(payer as { name: string } | null)?.name || 'Unknown'} &middot; {exp.category}
+                        Paid by {((payer as { name: string } | null)?.name || 'Unknown').split(' ')[0]} &middot; {exp.category}
                       </p>
                     </div>
                     <span className="font-bold text-gray-900">${exp.amount}</span>

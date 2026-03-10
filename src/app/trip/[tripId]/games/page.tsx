@@ -47,7 +47,7 @@ export default async function GamesPage({
     const players = (g.round_game_players ?? []).map((rgp: any) => {
       const tp = Array.isArray(rgp.trip_player) ? rgp.trip_player[0] : rgp.trip_player
       const p = tp ? (Array.isArray(tp.player) ? tp.player[0] : tp.player) : null
-      return { name: p?.name || 'Unknown', side: rgp.side as string | null }
+      return { name: (p?.name || 'Unknown').split(' ')[0], side: rgp.side as string | null }
     })
     return {
       id: g.id as string,

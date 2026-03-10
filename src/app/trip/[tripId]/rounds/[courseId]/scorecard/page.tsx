@@ -62,7 +62,7 @@ export default async function RoundScorecardPage({
     const p = Array.isArray(tp.player) ? tp.player[0] : tp.player as any
     const userId = p?.user_id as string | undefined
     const fallbackName = (p?.name as string) || 'Unknown'
-    const displayName = (userId ? displayNameMap.get(userId) : undefined) || fallbackName
+    const displayName = ((userId ? displayNameMap.get(userId) : undefined) || fallbackName).split(' ')[0]
     return { tripPlayerId: tp.id, displayName }
   })
 

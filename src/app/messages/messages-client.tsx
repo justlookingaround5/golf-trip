@@ -75,7 +75,7 @@ export default function MessagesClient({ trips, friends }: MessagesClientProps) 
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{f.displayName}</p>
+                      <p className="font-semibold text-gray-900 truncate">{f.displayName.split(' ')[0]}</p>
                       <p className="text-xs text-gray-400">Tap to view profile</p>
                     </div>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">

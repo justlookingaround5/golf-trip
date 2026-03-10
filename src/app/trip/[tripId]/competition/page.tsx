@@ -134,7 +134,7 @@ export default async function CompetitionPage({
 
     for (const tp of players ?? []) {
       const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
-      if (player) playerNames.set(tp.id, (player as { name: string }).name)
+      if (player) playerNames.set(tp.id, ((player as { name: string }).name).split(' ')[0])
     }
   }
 
@@ -157,7 +157,7 @@ export default async function CompetitionPage({
         const p = Array.isArray(tripPlayer.player)
           ? tripPlayer.player[0]
           : tripPlayer.player
-        return (p as { name: string } | null)?.name ?? 'Unknown'
+        return ((p as { name: string } | null)?.name ?? 'Unknown').split(' ')[0]
       })
       .filter(Boolean) as string[]
   }

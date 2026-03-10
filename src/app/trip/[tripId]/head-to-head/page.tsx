@@ -49,7 +49,7 @@ export default async function HeadToHeadPage({
     const displayName = p?.user_id ? profileMap.get(p.user_id) : undefined
     return {
       tripPlayerId: tp.id,
-      name: displayName || p?.name || 'Unknown',
+      name: (displayName || p?.name || 'Unknown').split(' ')[0],
     }
   })
 

@@ -219,7 +219,7 @@ export default async function PlayerProfilePage({
         const tp = Array.isArray(mp.trip_player) ? mp.trip_player[0] : mp.trip_player
         const p = Array.isArray(tp?.player) ? tp.player[0] : tp?.player
         const name = (p?.user_id ? profileNameMap.get(p.user_id) : undefined) || p?.name || 'Unknown'
-        opponents.push(name)
+        opponents.push(name.split(' ')[0])
       }
 
       matchRows.push({

@@ -610,7 +610,7 @@ export default function LiveScoringClient({
       if (hasResult) firstResultSeen = true
 
       // Show only when the hole was won/lost, or on the very first scored hole (AS)
-      const showStatus = hasResult
+      const showStatus = holeWasDecided || isFirstResult
 
       const status = hasResult
         ? (lead === 0 ? 'AS' : `${Math.abs(lead)}UP`)
@@ -823,7 +823,7 @@ export default function LiveScoringClient({
                     const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                     return (
                       <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-golf-800 border-b border-l border-gray-200 cursor-pointer hover:bg-golf-50">
-                        {playerNameMap.get(tpId) || '—'}
+                        {(playerNameMap.get(tpId) || '—').split(' ')[0]}
                         {label && <span className="font-normal text-gray-400">{label}</span>}
                       </th>
                     )
@@ -840,7 +840,7 @@ export default function LiveScoringClient({
                     const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                     return (
                       <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-blue-700 border-b border-l border-gray-200 cursor-pointer hover:bg-blue-50">
-                        {playerNameMap.get(tpId) || '—'}
+                        {(playerNameMap.get(tpId) || '—').split(' ')[0]}
                         {label && <span className="font-normal text-gray-400">{label}</span>}
                       </th>
                     )
@@ -1023,7 +1023,7 @@ export default function LiveScoringClient({
                   const vsParLabel = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                   return (
                     <th key={tp.id} onClick={() => setStatsPlayerId(tp.id)} className="px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200 cursor-pointer hover:bg-gray-50">
-                      {getPlayerName(tp)}{vsParLabel && <span className="font-normal text-gray-400">{vsParLabel}</span>}
+                      {getPlayerName(tp).split(' ')[0]}{vsParLabel && <span className="font-normal text-gray-400">{vsParLabel}</span>}
                     </th>
                   )
                 })}

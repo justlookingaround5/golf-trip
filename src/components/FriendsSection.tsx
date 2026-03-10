@@ -168,7 +168,7 @@ export default function FriendsSection({
     <div className="flex items-center justify-between gap-3">
       <Link href={`/profile/${profile.userId}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition">
         <Avatar profile={profile} />
-        <span className="text-sm font-medium text-gray-900 truncate">{profile.displayName}</span>
+        <span className="text-sm font-medium text-gray-900 truncate">{profile.displayName.split(' ')[0]}</span>
       </Link>
       {isOwnProfile && currentUserId && friendshipId && (
         <button
@@ -292,7 +292,7 @@ export default function FriendsSection({
             <div key={item.friendshipId} className="flex items-center justify-between gap-3">
               <Link href={`/profile/${item.user.userId}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition">
                 <Avatar profile={item.user} />
-                <span className="text-sm font-medium text-gray-900 truncate">{item.user.displayName}</span>
+                <span className="text-sm font-medium text-gray-900 truncate">{item.user.displayName.split(' ')[0]}</span>
               </Link>
               <div className="flex gap-2 shrink-0">
                 <button
@@ -337,7 +337,7 @@ export default function FriendsSection({
             <div key={s.userId} className="flex items-center justify-between gap-3">
               <Link href={`/profile/${s.userId}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition">
                 <Avatar profile={s} />
-                <span className="text-sm font-medium text-gray-900 truncate">{s.displayName}</span>
+                <span className="text-sm font-medium text-gray-900 truncate">{s.displayName.split(' ')[0]}</span>
               </Link>
               <button
                 onClick={() => sendRequest(s.userId)}
@@ -361,7 +361,7 @@ export default function FriendsSection({
             <div key={item.friendshipId} className="flex items-center justify-between gap-3">
               <Link href={`/profile/${item.user.userId}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition">
                 <Avatar profile={item.user} />
-                <span className="text-sm font-medium text-gray-900 truncate">{item.user.displayName}</span>
+                <span className="text-sm font-medium text-gray-900 truncate">{item.user.displayName.split(' ')[0]}</span>
               </Link>
               <button
                 onClick={() => removeFriendship(item.friendshipId, item.user.userId)}
@@ -413,7 +413,7 @@ export default function FriendsSection({
                         {r.displayName[0]?.toUpperCase() || '?'}
                       </div>
                     )}
-                    <span className="text-sm font-medium text-gray-900 truncate">{r.displayName}</span>
+                    <span className="text-sm font-medium text-gray-900 truncate">{r.displayName.split(' ')[0]}</span>
                   </Link>
                   <SearchResultAction result={r} onSend={sendRequest} loadingIds={loadingIds} />
                 </div>

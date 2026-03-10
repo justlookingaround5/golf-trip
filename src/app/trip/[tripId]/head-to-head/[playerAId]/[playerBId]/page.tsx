@@ -51,8 +51,8 @@ export default async function HeadToHeadComparisonPage({
     }
   }
 
-  const nameA = (pA?.user_id ? profileMap.get(pA.user_id) : undefined) || pA?.name || 'Player A'
-  const nameB = (pB?.user_id ? profileMap.get(pB.user_id) : undefined) || pB?.name || 'Player B'
+  const nameA = ((pA?.user_id ? profileMap.get(pA.user_id) : undefined) || pA?.name || 'Player A').split(' ')[0]
+  const nameB = ((pB?.user_id ? profileMap.get(pB.user_id) : undefined) || pB?.name || 'Player B').split(' ')[0]
 
   // Find matches both players participated in
   const { data: matchPlayersA } = await supabase

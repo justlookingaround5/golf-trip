@@ -53,7 +53,7 @@ export interface LeaderboardData {
 // ---------------------------------------------------------------------------
 
 function getPlayerName(tripPlayer: TripPlayer): string {
-  return tripPlayer.player?.name ?? 'Unknown'
+  return (tripPlayer.player?.name ?? 'Unknown').split(' ')[0]
 }
 
 /**

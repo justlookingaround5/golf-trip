@@ -43,7 +43,7 @@ export default async function SettlementPage({
     const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
     if (player) {
       const p = player as { name: string; user_id: string | null }
-      playerNames.set(tp.id, p.name)
+      playerNames.set(tp.id, p.name.split(' ')[0])
       if (p.user_id) tpToUserId.set(tp.id, p.user_id)
     }
   }
@@ -102,7 +102,7 @@ export default async function SettlementPage({
       expenses={expensesRes.data || []}
       tripPlayers={(playersRes.data || []).map(tp => {
         const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
-        return { id: tp.id, name: (player as { name: string } | null)?.name || 'Unknown' }
+        return { id: tp.id, name: ((player as { name: string } | null)?.name || 'Unknown').split(' ')[0] }
       })}
       currentPlayerId={currentPlayerId}
       settledAt={trip.settled_at || null}

@@ -31,7 +31,7 @@ interface MatchScorecardProps {
 // ---------------------------------------------------------------------------
 
 function playerName(mp: MatchScorecardProps['matchPlayers'][number]): string {
-  return mp.trip_player?.player?.name ?? 'Unknown'
+  return (mp.trip_player?.player?.name ?? 'Unknown').split(' ')[0]
 }
 
 // ---------------------------------------------------------------------------
