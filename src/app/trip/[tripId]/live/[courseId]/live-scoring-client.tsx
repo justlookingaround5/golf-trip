@@ -610,7 +610,7 @@ export default function LiveScoringClient({
       if (hasResult) firstResultSeen = true
 
       // Show only when the hole was won/lost, or on the very first scored hole (AS)
-      const showStatus = holeWasDecided || isFirstResult
+      const showStatus = hasResult
 
       const status = hasResult
         ? (lead === 0 ? 'AS' : `${Math.abs(lead)}UP`)
@@ -805,13 +805,13 @@ export default function LiveScoringClient({
 
         {/* Scorecard table — Best Ball match play layout */}
         {isBestBallMatchPlay && matchPlayData ? (
-          <div className="-mx-4 overflow-auto" style={{ maxHeight: 'calc(100dvh - 220px)' }}>
+          <div className="-mx-4 overflow-x-auto">
             <table className="min-w-full text-xs border-collapse">
-              <thead className="sticky top-0 z-10">
+              <thead>
                 {/* Player name headers */}
                 <tr className="bg-gray-50">
-                  <th className="w-8 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200 bg-gray-50">Hole</th>
-                  <th className="w-7 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200 bg-gray-50">Par</th>
+                  <th className="w-8 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Hole</th>
+                  <th className="w-7 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Par</th>
                   {teamAssignments.team_a.map(tpId => {
                     const tpScores = data.roundScores.filter(s => s.trip_player_id === tpId)
                     const gross = tpScores.reduce((sum, s) => sum + s.gross_score, 0)
@@ -822,13 +822,13 @@ export default function LiveScoringClient({
                     const vsPar = tpScores.length > 0 ? gross - par : null
                     const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                     return (
-                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-golf-800 border-b border-l border-gray-200 bg-gray-50 cursor-pointer hover:bg-golf-50">
-                        {(playerNameMap.get(tpId) || '—').split(' ')[0]}
+                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-golf-800 border-b border-l border-gray-200 cursor-pointer hover:bg-golf-50">
+                        {playerNameMap.get(tpId) || '—'}
                         {label && <span className="font-normal text-gray-400">{label}</span>}
                       </th>
                     )
                   })}
-                  <th className="w-10 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-l border-gray-200 bg-gray-50">Match</th>
+                  <th className="w-10 px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-l border-gray-200">Match</th>
                   {teamAssignments.team_b.map(tpId => {
                     const tpScores = data.roundScores.filter(s => s.trip_player_id === tpId)
                     const gross = tpScores.reduce((sum, s) => sum + s.gross_score, 0)
@@ -839,8 +839,8 @@ export default function LiveScoringClient({
                     const vsPar = tpScores.length > 0 ? gross - par : null
                     const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                     return (
-                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-blue-700 border-b border-l border-gray-200 bg-gray-50 cursor-pointer hover:bg-blue-50">
-                        {(playerNameMap.get(tpId) || '—').split(' ')[0]}
+                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-blue-700 border-b border-l border-gray-200 cursor-pointer hover:bg-blue-50">
+                        {playerNameMap.get(tpId) || '—'}
                         {label && <span className="font-normal text-gray-400">{label}</span>}
                       </th>
                     )
@@ -1006,9 +1006,9 @@ export default function LiveScoringClient({
           </div>
         ) : (
         /* Flat scorecard — standard / non-Best Ball rounds */
-        <div className="-mx-4 overflow-auto" style={{ maxHeight: 'calc(100dvh - 220px)' }}>
+        <div className="-mx-4 overflow-x-auto">
           <table className="min-w-full text-xs border-collapse">
-            <thead className="sticky top-0 z-10">
+            <thead>
               <tr className="bg-gray-100">
                 <th className="sticky left-0 z-10 bg-gray-100 w-9 px-1 py-2 text-center font-semibold text-gray-600 border-b border-gray-200">Hole</th>
                 <th className="sticky left-9 z-10 bg-gray-100 w-9 px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200">Par</th>
@@ -1022,8 +1022,8 @@ export default function LiveScoringClient({
                   const vsPar = tpScores.length > 0 ? grossTotal - parTotal : null
                   const vsParLabel = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                   return (
-                    <th key={tp.id} onClick={() => setStatsPlayerId(tp.id)} className="px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200 bg-gray-100 cursor-pointer hover:bg-gray-50">
-                      {getPlayerName(tp).split(' ')[0]}{vsParLabel && <span className="font-normal text-gray-400">{vsParLabel}</span>}
+                    <th key={tp.id} onClick={() => setStatsPlayerId(tp.id)} className="px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200 cursor-pointer hover:bg-gray-50">
+                      {getPlayerName(tp)}{vsParLabel && <span className="font-normal text-gray-400">{vsParLabel}</span>}
                     </th>
                   )
                 })}
