@@ -6,7 +6,7 @@
 import { use } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { STUB_FRIENDS, STUB_PINS, STUB_PLAYER_STATS, STUB_ALL_ROUNDS } from '@/lib/v2/stub-data'
+import { STUB_FRIENDS, STUB_PINS, STUB_PLAYER_STATS, STUB_ALL_ROUNDS, STUB_EARNINGS } from '@/lib/v2/stub-data'
 
 const CourseMapV2 = dynamic(() => import('@/components/v2/CourseMapV2'), { ssr: false })
 
@@ -27,6 +27,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
     .slice(0, 10)
 
   const friendStats = STUB_PLAYER_STATS.find(s => s.player.id === userId)
+  const friendEarnings = STUB_EARNINGS.find(e => e.player.id === userId)
   const friendRounds = STUB_ALL_ROUNDS.slice(0, 3)
 
   return (
@@ -106,6 +107,37 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
           ) : (
             <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
               <p className="text-sm text-gray-400">No stats available for {friend.name} yet.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Earnings */}
+        <div>
+          <h2 className="text-base font-bold text-gray-900 mb-3">Earnings</h2>
+          {friendEarnings ? (
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <span className="text-sm font-semibold text-gray-900">Net total</span>
+                <span className={`text-sm font-black ${friendEarnings.net >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                  {friendEarnings.net >= 0 ? '+' : '−'}${Math.abs(friendEarnings.net).toFixed(2)}
+                </span>
+              </div>
+              {[
+                { label: 'Match play', value: friendEarnings.matchPlay },
+                { label: 'Skins',      value: friendEarnings.skins     },
+                { label: 'Side bets',  value: friendEarnings.sideBets  },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0">
+                  <span className="text-sm text-gray-500">{label}</span>
+                  <span className={`text-sm font-semibold ${value >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                    {value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
+              <p className="text-sm text-gray-400">No earnings data for {friend.name} yet.</p>
             </div>
           )}
         </div>
