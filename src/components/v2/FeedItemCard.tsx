@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import type { FeedItemV2 } from '@/lib/v2/types'
+import type { FeedEventV2 } from '@/lib/v2/types'
 
 interface FeedItemCardProps {
-  item: FeedItemV2
+  item: FeedEventV2
   onMessage?: (userId: string) => void
 }
 
@@ -24,65 +24,9 @@ function Avatar({ name, url }: { name: string; url: string | null }) {
     return <img src={url} alt={name} className="h-10 w-10 rounded-full object-cover" />
   }
   return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-golf-600 text-sm font-bold text-white">
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-golf-600 text-sm font-bold text-white shrink-0">
       {name[0]?.toUpperCase()}
     </div>
-  )
-}
-
-function RoundBody({ item }: { item: FeedItemV2 }) {
-  const vsPar = item.grossScore != null && item.par != null ? item.grossScore - item.par : null
-  const vsParStr = vsPar == null ? null : vsPar === 0 ? 'E' : vsPar > 0 ? `+${vsPar}` : `${vsPar}`
-  return (
-    <div>
-      <p className="text-sm text-gray-900">
-        Posted a round at <span className="font-semibold">{item.courseName}</span>
-        {item.tripName && <span className="text-gray-500"> · {item.tripName}</span>}
-      </p>
-      {item.grossScore != null && (
-        <div className="mt-1.5 flex items-center gap-3">
-          <ScoreChip label="Gross" value={item.grossScore} />
-          {item.netScore != null && <ScoreChip label="Net" value={item.netScore} />}
-          {vsParStr && (
-            <ScoreChip
-              label="vs Par"
-              value={vsParStr}
-              valueClass={vsPar! < 0 ? 'text-red-600' : vsPar! > 0 ? 'text-blue-600' : 'text-gray-700'}
-            />
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function MatchBody({ item }: { item: FeedItemV2 }) {
-  return (
-    <p className="text-sm text-gray-900">
-      <span className="font-semibold">{item.matchFormat}</span>
-      {item.matchResult && <span className="text-gray-600"> — {item.matchResult}</span>}
-    </p>
-  )
-}
-
-function EarningsBody({ item }: { item: FeedItemV2 }) {
-  const pos = (item.amount ?? 0) >= 0
-  return (
-    <p className="text-sm text-gray-900">
-      {item.earningsSource && <span className="text-gray-500">{item.earningsSource} · </span>}
-      <span className={`font-bold ${pos ? 'text-green-600' : 'text-red-600'}`}>
-        {pos ? '+' : ''}${Math.abs(item.amount ?? 0)}
-      </span>
-    </p>
-  )
-}
-
-function SkinBody({ item }: { item: FeedItemV2 }) {
-  return (
-    <p className="text-sm text-gray-900">
-      Won a skin on <span className="font-semibold">Hole {item.holeNumber}</span>
-      {item.courseName && <span className="text-gray-500"> · {item.courseName}</span>}
-    </p>
   )
 }
 
@@ -103,50 +47,79 @@ function ScoreChip({
   )
 }
 
-const TYPE_ICON: Record<FeedItemV2['type'], string> = {
-  round:    '⛳',
-  match:    '🏆',
-  earnings: '💰',
-  skin:     '🎯',
-}
-
 export default function FeedItemCard({ item, onMessage }: FeedItemCardProps) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-      <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <Link href={`/v2/profile/${item.userId}`} className="shrink-0 mt-0.5">
+      {/* Header: avatar + name + timestamp */}
+      <div className="flex items-center gap-3 mb-2.5">
+        <Link href={`/v2/profile/${item.userId}`} className="shrink-0">
           <Avatar name={item.userName} url={item.userAvatarUrl} />
         </Link>
-
-        <div className="flex-1 min-w-0">
-          {/* Name + time */}
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <Link
-              href={`/v2/profile/${item.userId}`}
-              className="text-sm font-semibold text-gray-900 hover:text-golf-700 transition"
-            >
-              {item.userName}
-            </Link>
-            <span className="text-xs text-gray-400 shrink-0">{relativeTime(item.timestamp)}</span>
-          </div>
-
-          {/* Type icon + body */}
-          <div className="flex items-start gap-2">
-            <span className="text-base leading-snug">{TYPE_ICON[item.type]}</span>
-            <div className="flex-1 min-w-0">
-              {item.type === 'round'    && <RoundBody    item={item} />}
-              {item.type === 'match'    && <MatchBody    item={item} />}
-              {item.type === 'earnings' && <EarningsBody item={item} />}
-              {item.type === 'skin'     && <SkinBody     item={item} />}
-            </div>
-          </div>
+        <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+          <Link
+            href={`/v2/profile/${item.userId}`}
+            className="text-sm font-semibold text-gray-900 hover:text-golf-700 transition"
+          >
+            {item.userName}
+          </Link>
+          <span className="text-xs text-gray-400 shrink-0">{relativeTime(item.timestamp)}</span>
         </div>
+      </div>
+
+      {/* Event rows — only render rows that exist */}
+      <div className="space-y-2.5">
+        {item.round && (() => {
+          const { courseName, grossScore, netScore, par, tripName } = item.round
+          const diff = grossScore - par
+          const vsParStr = diff === 0 ? 'E' : diff > 0 ? `+${diff}` : `${diff}`
+          return (
+            <div className="flex items-start gap-2">
+              <span className="text-base leading-snug shrink-0">⛳</span>
+              <div>
+                <p className="text-sm text-gray-900">
+                  Round at <span className="font-semibold">{courseName}</span>
+                  {tripName && <span className="text-gray-500"> · {tripName}</span>}
+                </p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <ScoreChip label="Gross" value={grossScore} />
+                  {netScore != null && <ScoreChip label="Net" value={netScore} />}
+                  <ScoreChip
+                    label="vs Par"
+                    value={vsParStr}
+                    valueClass={diff < 0 ? 'text-red-600' : diff > 0 ? 'text-blue-600' : 'text-gray-700'}
+                  />
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
+        {item.match && (
+          <div className="flex items-start gap-2">
+            <span className="text-base leading-snug shrink-0">🏆</span>
+            <p className="text-sm text-gray-900">
+              <span className="font-semibold">{item.match.format}</span>
+              <span className="text-gray-600"> — {item.match.result}</span>
+            </p>
+          </div>
+        )}
+
+        {item.earnings != null && (
+          <div className="flex items-start gap-2">
+            <span className="text-base leading-snug shrink-0">💰</span>
+            <p className="text-sm">
+              <span className={`font-bold ${item.earnings.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {item.earnings.net >= 0 ? '+' : ''}${Math.abs(item.earnings.net)}
+              </span>
+              <span className="text-gray-500"> on the day</span>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Quick message */}
       {onMessage && (
-        <div className="mt-2 flex justify-end">
+        <div className="mt-3 flex justify-end">
           <button
             onClick={() => onMessage(item.userId)}
             className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-500 hover:border-golf-400 hover:text-golf-700 transition"

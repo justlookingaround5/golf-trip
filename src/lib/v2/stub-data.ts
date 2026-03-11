@@ -6,7 +6,7 @@ import type {
   MatchV2,
   TripV2,
   RoundV2,
-  FeedItemV2,
+  FeedEventV2,
   PlayerLeaderboardStats,
   HoleLeaderboardStats,
   PlayerEarnings,
@@ -175,38 +175,34 @@ export const STUB_HOLE_STATS: HoleLeaderboardStats[] = Array.from({ length: 18 }
 export const STUB_EARNINGS: PlayerEarnings[] = [
   {
     player: STUB_PLAYERS[0],
-    netEarnings: 47,
+    netEarnings: 54,
     breakdown: [
       { label: 'Match results', amount: 30 },
       { label: 'Skins', amount: 24 },
-      { label: 'Side bets', amount: -7 },
     ],
   },
   {
     player: STUB_PLAYERS[2],
-    netEarnings: 18,
+    netEarnings: 22,
     breakdown: [
       { label: 'Match results', amount: -10 },
       { label: 'Skins', amount: 32 },
-      { label: 'Side bets', amount: -4 },
     ],
   },
   {
     player: STUB_PLAYERS[1],
-    netEarnings: -22,
+    netEarnings: -2,
     breakdown: [
       { label: 'Match results', amount: -10 },
       { label: 'Skins', amount: 8 },
-      { label: 'Side bets', amount: -20 },
     ],
   },
   {
     player: STUB_PLAYERS[3],
-    netEarnings: -43,
+    netEarnings: -26,
     breakdown: [
       { label: 'Match results', amount: -10 },
       { label: 'Skins', amount: -16 },
-      { label: 'Side bets', amount: -17 },
     ],
   },
 ]
@@ -365,30 +361,38 @@ export const STUB_UPCOMING_TRIPS: TripV2[] = [
 export const STUB_FRIENDS: PlayerV2[] = STUB_PLAYERS.slice(1)
 
 // ─── Feed ─────────────────────────────────────────────────────────────────────
+// Consolidated events — each card groups a player's round, match result,
+// and earnings from a single session.
 
-export const STUB_FEED: FeedItemV2[] = [
+export const STUB_FEED: FeedEventV2[] = [
   {
-    id: 'f1', type: 'round', userId: 'p2', userName: 'Jake', userAvatarUrl: null,
-    timestamp: '2025-06-10T18:30:00Z', courseName: 'Pebble Beach Golf Links',
-    grossScore: 83, netScore: 71, par: 72, tripName: 'Pebble Beach 2025',
+    id: 'fe1',
+    userId: 'p2', userName: 'Jake', userAvatarUrl: null,
+    timestamp: '2025-06-10T20:05:00Z',
+    round:    { courseName: 'Pebble Beach Golf Links', grossScore: 83, netScore: 71, par: 72, tripName: 'Pebble Beach 2025' },
+    match:    { result: 'Lost 2 & 1', format: '2v2 Best Ball' },
+    earnings: { net: -18 },
   },
   {
-    id: 'f2', type: 'match', userId: 'p3', userName: 'Mike', userAvatarUrl: null,
-    timestamp: '2025-06-10T20:00:00Z', matchResult: 'Mike wins 3&2',
-    matchFormat: '1v1 Match Play', courseName: 'Pebble Beach Golf Links',
+    id: 'fe2',
+    userId: 'p3', userName: 'Mike', userAvatarUrl: null,
+    timestamp: '2025-06-10T20:00:00Z',
+    match:    { result: 'Wins 3 & 2', format: '1v1 Match Play' },
+    earnings: { net: 22 },
   },
   {
-    id: 'f3', type: 'earnings', userId: 'p2', userName: 'Jake', userAvatarUrl: null,
-    timestamp: '2025-06-10T20:05:00Z', amount: -28, earningsSource: 'Skins',
+    id: 'fe3',
+    userId: 'p4', userName: 'Tom', userAvatarUrl: null,
+    timestamp: '2025-06-09T21:00:00Z',
+    round:    { courseName: 'Spyglass Hill', grossScore: 91, netScore: 73, par: 72, tripName: 'Pebble Beach 2025' },
+    match:    { result: 'Lost by 2', format: '1v1 Stroke Play' },
+    earnings: { net: -26 },
   },
   {
-    id: 'f4', type: 'skin', userId: 'p3', userName: 'Mike', userAvatarUrl: null,
-    timestamp: '2025-06-09T17:45:00Z', holeNumber: 7, courseName: 'Cypress Point',
-  },
-  {
-    id: 'f5', type: 'round', userId: 'p2', userName: 'Jake', userAvatarUrl: null,
-    timestamp: '2025-05-28T19:00:00Z', courseName: 'TPC Sawgrass',
-    grossScore: 79, netScore: 67, par: 72,
+    id: 'fe4',
+    userId: 'p2', userName: 'Jake', userAvatarUrl: null,
+    timestamp: '2025-05-28T19:00:00Z',
+    round: { courseName: 'TPC Sawgrass', grossScore: 79, netScore: 67, par: 72 },
   },
 ]
 

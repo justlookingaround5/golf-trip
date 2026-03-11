@@ -79,29 +79,27 @@ export interface RoundV2 {
   longitude: number | null
 }
 
-export type FeedEventType = 'round' | 'match' | 'earnings' | 'skin'
-
-export interface FeedItemV2 {
+// Consolidated feed event — groups round, match, and earnings from a single session
+export interface FeedEventV2 {
   id: string
-  type: FeedEventType
   userId: string
   userName: string
   userAvatarUrl: string | null
   timestamp: string
-  // round
-  courseName?: string
-  grossScore?: number
-  netScore?: number
-  par?: number
-  tripName?: string
-  // match
-  matchResult?: string
-  matchFormat?: string
-  // earnings
-  amount?: number
-  earningsSource?: string
-  // skin
-  holeNumber?: number
+  round?: {
+    courseName: string
+    grossScore: number
+    netScore?: number
+    par: number
+    tripName?: string
+  }
+  match?: {
+    result: string
+    format: string
+  }
+  earnings?: {
+    net: number
+  }
 }
 
 export interface PlayerLeaderboardStats {

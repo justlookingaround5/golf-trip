@@ -17,7 +17,10 @@ function RoundRow({ round }: { round: RoundV2 }) {
   const vsParStr = vsPar == null ? null : vsPar === 0 ? 'E' : vsPar > 0 ? `+${vsPar}` : `${vsPar}`
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0">
+    <Link
+      href={`/v2/round/${round.id}`}
+      className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 transition"
+    >
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-gray-900 truncate">{round.courseName}</p>
         <p className="text-xs text-gray-400 mt-0.5">
@@ -26,9 +29,9 @@ function RoundRow({ round }: { round: RoundV2 }) {
           {round.isQuickRound && <> · Quick Round</>}
         </p>
       </div>
-      <div className="shrink-0 ml-3 text-right">
+      <div className="shrink-0 ml-3 flex items-center gap-2">
         {round.grossTotal != null ? (
-          <>
+          <div className="text-right">
             <p className="text-sm font-bold text-gray-900 tabular-nums">{round.grossTotal}</p>
             {vsParStr && (
               <p className={`text-xs font-semibold tabular-nums ${
@@ -37,12 +40,15 @@ function RoundRow({ round }: { round: RoundV2 }) {
                 {vsParStr}
               </p>
             )}
-          </>
+          </div>
         ) : (
           <p className="text-xs text-gray-400">In progress</p>
         )}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -75,8 +81,6 @@ function MatchRecord() {
         {[
           { label: 'Matches played', value: played },
           { label: 'Win rate',       value: played > 0 ? `${Math.round((wins / played) * 100)}%` : '—' },
-          { label: 'Total points',   value: me.points % 1 === 0 ? me.points : me.points.toFixed(1) },
-          { label: 'Skins won',      value: me.skinsWon },
         ].map(({ label, value }) => (
           <div key={label} className="flex items-center justify-between px-4 py-3">
             <span className="text-sm text-gray-600">{label}</span>

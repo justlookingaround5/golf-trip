@@ -89,13 +89,11 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
               {/* Key stats */}
               <div className="rounded-xl border border-gray-200 bg-white shadow-sm divide-y divide-gray-100">
                 {[
-                  { label: 'Total points',  value: friendStats.points % 1 === 0 ? friendStats.points : friendStats.points.toFixed(1) },
-                  { label: 'Gross avg',     value: friendStats.grossAvg?.toFixed(1) ?? '—' },
-                  { label: 'Net avg',       value: friendStats.netAvg?.toFixed(1) ?? '—'   },
-                  { label: 'Skins won',     value: friendStats.skinsWon                    },
-                  { label: 'Fairway hit%',  value: friendStats.fairwayPct != null ? `${Math.round(friendStats.fairwayPct)}%` : '—' },
-                  { label: 'GIR%',          value: friendStats.girPct != null ? `${Math.round(friendStats.girPct)}%` : '—'        },
-                  { label: 'Putts/round',   value: friendStats.puttsAvg?.toFixed(1) ?? '—' },
+                  { label: 'Gross avg',    value: friendStats.grossAvg?.toFixed(1) ?? '—' },
+                  { label: 'Net avg',      value: friendStats.netAvg?.toFixed(1) ?? '—'   },
+                  { label: 'Fairway hit%', value: friendStats.fairwayPct != null ? `${Math.round(friendStats.fairwayPct)}%` : '—' },
+                  { label: 'GIR%',         value: friendStats.girPct != null ? `${Math.round(friendStats.girPct)}%` : '—'        },
+                  { label: 'Putts/round',  value: friendStats.puttsAvg?.toFixed(1) ?? '—' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center justify-between px-4 py-3">
                     <span className="text-sm text-gray-600">{label}</span>
