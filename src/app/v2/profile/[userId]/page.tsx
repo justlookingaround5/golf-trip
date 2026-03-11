@@ -75,8 +75,9 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
           <h2 className="text-base font-bold text-gray-900 mb-3">Course Ratings</h2>
           {ratedPins.length > 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100 shadow-sm overflow-hidden">
-              {ratedPins.map(p => (
-                <div key={p.courseId} className="flex items-center justify-between px-4 py-3">
+              {ratedPins.map((p, i) => (
+                <div key={p.courseId} className="flex items-center gap-3 px-4 py-3">
+                  <span className="shrink-0 w-5 text-xs font-bold text-gray-400 tabular-nums text-right">{i + 1}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-gray-900 truncate">{p.courseName}</p>
                     <p className="text-xs text-gray-400 mt-0.5">

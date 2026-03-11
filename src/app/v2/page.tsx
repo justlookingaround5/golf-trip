@@ -46,11 +46,6 @@ export default function HomeV2() {
   const hasActiveTrip  = true
   const hasActiveRound = true
 
-  function handleMessage(userId: string) {
-    // TODO: navigate to /v2/messages/dm-{userId}
-    console.log('message', userId)
-  }
-
   return (
     <div className="min-h-screen bg-background pb-28">
       {/* Header */}
@@ -100,7 +95,6 @@ export default function HomeV2() {
                         <p className="text-[10px] text-gray-400">vs par</p>
                       </div>
                     }
-                    onMessage={() => handleMessage(fr.userId)}
                   />
                 )
               })}
@@ -116,7 +110,6 @@ export default function HomeV2() {
               <FeedItemCard
                 key={item.id}
                 item={item}
-                onMessage={() => handleMessage(item.userId)}
               />
             ))}
           </div>

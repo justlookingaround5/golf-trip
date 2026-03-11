@@ -5,7 +5,6 @@ import type { FeedEventV2 } from '@/lib/v2/types'
 
 interface FeedItemCardProps {
   item: FeedEventV2
-  onMessage?: (userId: string) => void
 }
 
 function relativeTime(ts: string): string {
@@ -47,7 +46,7 @@ function ScoreChip({
   )
 }
 
-export default function FeedItemCard({ item, onMessage }: FeedItemCardProps) {
+export default function FeedItemCard({ item }: FeedItemCardProps) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
       {/* Header: avatar + name + timestamp */}
@@ -118,19 +117,17 @@ export default function FeedItemCard({ item, onMessage }: FeedItemCardProps) {
       </div>
 
       {/* Quick message */}
-      {onMessage && (
-        <div className="mt-3 flex justify-end">
-          <button
-            onClick={() => onMessage(item.userId)}
-            className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-500 hover:border-golf-400 hover:text-golf-700 transition"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            Message
-          </button>
-        </div>
-      )}
+      <div className="mt-3 flex justify-end">
+        <Link
+          href={`/v2/messages/${item.userId}`}
+          className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-500 hover:border-golf-400 hover:text-golf-700 transition"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          Message
+        </Link>
+      </div>
     </div>
   )
 }
