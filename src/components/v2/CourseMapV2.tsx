@@ -9,12 +9,10 @@ import type { CoursePinV2 } from '@/lib/v2/types'
 
 const GEO_URL = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json'
 
-function Stars({ rating }: { rating: number | null }) {
+function Rating({ rating }: { rating: number | null }) {
   if (rating == null) return <span className="text-xs text-gray-400">Unrated</span>
   return (
-    <span className="text-sm">
-      {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
-    </span>
+    <span className="text-xs font-semibold text-amber-500">★ {rating}/10</span>
   )
 }
 
@@ -97,7 +95,7 @@ export default function CourseMapV2({ pins }: CourseMapV2Props) {
                 })}
               </p>
               <div className="mt-1">
-                <Stars rating={selected.rating} />
+                <Rating rating={selected.rating} />
               </div>
             </div>
             <button

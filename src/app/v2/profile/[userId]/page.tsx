@@ -118,19 +118,15 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <span className="text-sm font-semibold text-gray-900">Net total</span>
-                <span className={`text-sm font-black ${friendEarnings.net >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                  {friendEarnings.net >= 0 ? '+' : '−'}${Math.abs(friendEarnings.net).toFixed(2)}
+                <span className={`text-sm font-black ${friendEarnings.netEarnings >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                  {friendEarnings.netEarnings >= 0 ? '+' : '−'}${Math.abs(friendEarnings.netEarnings).toFixed(2)}
                 </span>
               </div>
-              {[
-                { label: 'Match play', value: friendEarnings.matchPlay },
-                { label: 'Skins',      value: friendEarnings.skins     },
-                { label: 'Side bets',  value: friendEarnings.sideBets  },
-              ].map(({ label, value }) => (
+              {friendEarnings.breakdown.map(({ label, amount }) => (
                 <div key={label} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0">
                   <span className="text-sm text-gray-500">{label}</span>
-                  <span className={`text-sm font-semibold ${value >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                    {value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(2)}
+                  <span className={`text-sm font-semibold ${amount >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                    {amount >= 0 ? '+' : '−'}${Math.abs(amount).toFixed(2)}
                   </span>
                 </div>
               ))}

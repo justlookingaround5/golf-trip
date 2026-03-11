@@ -143,7 +143,7 @@ export interface CoursePinV2 {
   netScore: number | null
   par: number
   tripName: string | null
-  rating: number | null   // 1–5 stars; null = unrated
+  rating: number | null   // 1–10; null = unrated
   latitude: number
   longitude: number
 }

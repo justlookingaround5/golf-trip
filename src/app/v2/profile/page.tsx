@@ -56,8 +56,8 @@ function CourseRatings() {
               {new Date(p.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </p>
           </div>
-          <span className="shrink-0 ml-3 text-sm text-amber-400">
-            {'★'.repeat(p.rating ?? 0)}{'☆'.repeat(5 - (p.rating ?? 0))}
+          <span className="shrink-0 ml-3 text-xs font-semibold text-amber-500">
+            ★ {p.rating ?? 0}/10
           </span>
         </div>
       ))}
