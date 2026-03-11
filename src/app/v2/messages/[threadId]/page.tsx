@@ -3,17 +3,18 @@
 import { use } from 'react'
 import Link from 'next/link'
 import TripChatV2 from '@/components/v2/TripChatV2'
-import { STUB_THREADS, STUB_CHAT_MESSAGES, ME } from '@/lib/v2/stub-data'
+import { STUB_THREADS, STUB_CHAT_MESSAGES, STUB_FRIENDS, ME } from '@/lib/v2/stub-data'
 
 export default function ThreadPage({ params }: { params: Promise<{ threadId: string }> }) {
   const { threadId } = use(params)
 
-  // STUB: look up thread by id
+  // STUB: look up thread by id, or fall back to friend name if navigating via userId
+  const friend = STUB_FRIENDS.find(f => f.id === threadId)
   const thread = STUB_THREADS.find(t => t.id === threadId) ?? {
     id: threadId,
     type: 'dm' as const,
-    name: 'Unknown',
-    avatarUrl: null,
+    name: friend?.name ?? 'Unknown',
+    avatarUrl: friend?.avatarUrl ?? null,
     lastMessage: null,
     lastMessageAt: null,
     unreadCount: 0,
