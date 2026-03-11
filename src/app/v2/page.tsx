@@ -10,64 +10,14 @@
 import Link from 'next/link'
 import UserProfileCard from '@/components/v2/UserProfileCard'
 import FeedItemCard from '@/components/v2/FeedItemCard'
+import TeamScoresCard from '@/components/v2/TeamScoresCard'
 import {
   ACTIVE_TRIP,
   ACTIVE_ROUND,
-  STUB_PLAYER_STATS,
+  STUB_MATCHES,
   STUB_FEED,
   STUB_FRIEND_ACTIVE_ROUNDS,
 } from '@/lib/v2/stub-data'
-
-// ─── Team Scores Widget ───────────────────────────────────────────────────────
-
-function TeamScoresWidget() {
-  const sorted = [...STUB_PLAYER_STATS].sort((a, b) => b.points - a.points)
-  const isTwoTeam = sorted.length === 2
-
-  return (
-    <Link href={`/v2/trip/${ACTIVE_TRIP.id}/leaderboard`}>
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between bg-golf-800 px-4 py-3">
-          <div>
-            <p className="text-xs font-semibold text-golf-300 uppercase tracking-wider">Live Leaderboard</p>
-            <p className="text-sm font-bold text-white">{ACTIVE_TRIP.name}</p>
-          </div>
-          <span className="text-xs font-semibold text-golf-300">Full view →</span>
-        </div>
-
-        {isTwoTeam ? (
-          // Side-by-side for exactly 2 entries
-          <div className="grid grid-cols-2 divide-x divide-gray-100">
-            {sorted.map((s, i) => (
-              <div key={s.player.id} className={`py-4 text-center ${i === 0 ? 'bg-white' : 'bg-white'}`}>
-                <p className="text-3xl font-black text-golf-700 tabular-nums">
-                  {s.points % 1 === 0 ? s.points : s.points.toFixed(1)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">{s.player.name}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          // Ranked list for 3+ entries
-          <div className="divide-y divide-gray-100">
-            {sorted.map((s, i) => (
-              <div key={s.player.id} className="flex items-center justify-between px-4 py-2.5">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-gray-400 w-4 tabular-nums">{i + 1}</span>
-                  <span className="text-sm font-semibold text-gray-900">{s.player.name}</span>
-                </div>
-                <span className="text-sm font-black text-golf-700 tabular-nums">
-                  {s.points % 1 === 0 ? s.points : s.points.toFixed(1)} pts
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </Link>
-  )
-}
 
 // ─── Active Round Card ────────────────────────────────────────────────────────
 
@@ -113,7 +63,14 @@ export default function HomeV2() {
 
       <div className="mx-auto max-w-lg px-4 py-4 space-y-5">
         {/* 1 · Team Scores (links to full leaderboard) */}
-        {hasActiveTrip && <TeamScoresWidget />}
+        {hasActiveTrip && (
+          <TeamScoresCard
+            matches={STUB_MATCHES}
+            tripId={ACTIVE_TRIP.id}
+            tripName={ACTIVE_TRIP.name}
+            linkToFull
+          />
+        )}
 
         {/* 2 · Active Round */}
         {hasActiveRound && <ActiveRoundCard />}

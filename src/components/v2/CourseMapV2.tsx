@@ -12,7 +12,7 @@ const GEO_URL = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json'
 function Rating({ rating }: { rating: number | null }) {
   if (rating == null) return <span className="text-xs text-gray-400">Unrated</span>
   return (
-    <span className="text-xs font-semibold text-amber-500">★ {rating}/10</span>
+    <span className="text-sm font-bold text-gray-900 tabular-nums">{rating.toFixed(1)}</span>
   )
 }
 

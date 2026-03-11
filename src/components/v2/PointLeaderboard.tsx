@@ -42,14 +42,14 @@ function money(n: number): string {
 
 // ─── Sub-tables ───────────────────────────────────────────────────────────────
 
-function MatchesTab({ matches, readOnly }: { matches: MatchV2[]; readOnly: boolean }) {
+function MatchesTab({ matches }: { matches: MatchV2[] }) {
   if (matches.length === 0) {
     return <EmptyState text="No matches yet." />
   }
   return (
     <div className="space-y-2 p-3">
       {matches.map(m => (
-        <MatchCard key={m.id} match={m} readOnly={readOnly} />
+        <MatchCard key={m.id} match={m} />
       ))}
     </div>
   )
@@ -224,7 +224,7 @@ export default function PointLeaderboard({
       </div>
 
       {/* Tab content */}
-      {tab === 'matches'  && <MatchesTab matches={matches} readOnly={readOnly} />}
+      {tab === 'matches'  && <MatchesTab matches={matches} />}
       {tab === 'players'  && <PlayerStatsTab stats={playerStats} />}
       {tab === 'holes'    && <HoleStatsTab stats={holeStats} />}
       {tab === 'earnings' && <EarningsTab earnings={earnings} />}

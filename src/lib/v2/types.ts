@@ -43,8 +43,8 @@ export interface MatchV2 {
   format: string
   formatLabel: string
   status: 'pending' | 'in_progress' | 'completed'
-  teamA: { players: PlayerV2[]; points: number }
-  teamB: { players: PlayerV2[]; points: number }
+  teamA: { name: string; players: PlayerV2[]; points: number }
+  teamB: { name: string; players: PlayerV2[]; points: number }
   result: string | null
   statusLabel: string | null
   courseId: string
@@ -141,7 +141,7 @@ export interface CoursePinV2 {
   netScore: number | null
   par: number
   tripName: string | null
-  rating: number | null   // 1–10; null = unrated
+  rating: number | null   // 0.0–10.0; null = unrated
   latitude: number
   longitude: number
 }

@@ -36,7 +36,7 @@ export default function MatchScorecardPage({ params }: { params: Promise<{ match
 
       <div className="mx-auto max-w-2xl px-4 py-5 space-y-5">
         {/* Match summary card (read-only) */}
-        <MatchCard match={match} readOnly />
+        <MatchCard match={match} />
 
         {/* Scorecard */}
         <ScorecardViewer scorecard={STUB_SCORECARD} />
