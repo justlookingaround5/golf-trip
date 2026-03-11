@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-const HIDE_ON = ['/admin', '/auth', '/score/', '/join']
+const HIDE_ON = ['/admin', '/auth', '/score/', '/join', '/v2']
 
 const ICON = {
   home: (

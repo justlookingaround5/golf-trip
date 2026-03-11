@@ -1,0 +1,52 @@
+'use client'
+
+import { use } from 'react'
+import Link from 'next/link'
+import TripChatV2 from '@/components/v2/TripChatV2'
+import { STUB_THREADS, STUB_CHAT_MESSAGES, ME } from '@/lib/v2/stub-data'
+
+export default function ThreadPage({ params }: { params: Promise<{ threadId: string }> }) {
+  const { threadId } = use(params)
+
+  // STUB: look up thread by id
+  const thread = STUB_THREADS.find(t => t.id === threadId) ?? {
+    id: threadId,
+    type: 'dm' as const,
+    name: 'Unknown',
+    avatarUrl: null,
+    lastMessage: null,
+    lastMessageAt: null,
+    unreadCount: 0,
+  }
+
+  // STUB: all threads use the same sample messages
+  const messages = STUB_CHAT_MESSAGES
+
+  return (
+    <div className="flex flex-col min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-golf-800 px-4 pt-14 pb-4 text-white flex items-center gap-3">
+        <Link href="/v2/messages" className="text-golf-300 hover:text-white transition">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </Link>
+        <div>
+          <h1 className="text-lg font-bold leading-tight">{thread.name}</h1>
+          <p className="text-xs text-golf-300">
+            {thread.type === 'trip' ? 'Group chat' : 'Direct message'}
+          </p>
+        </div>
+      </header>
+
+      {/* Chat — flex-1 so it fills the screen between header and nav */}
+      <div className="flex-1 overflow-hidden pb-20">
+        <TripChatV2
+          threadName={thread.name}
+          messages={messages}
+          currentUserId={ME.id}
+        />
+      </div>
+    </div>
+  )
+}
