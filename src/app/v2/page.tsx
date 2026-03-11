@@ -73,7 +73,11 @@ export default function HomeV2() {
         )}
 
         {/* 2 · Active Round */}
-        {hasActiveRound && <ActiveRoundCard />}
+        {hasActiveRound && (
+          <div className="pt-1">
+            <ActiveRoundCard />
+          </div>
+        )}
 
         {/* 3 · Friend Active Rounds */}
         {STUB_FRIEND_ACTIVE_ROUNDS.length > 0 && (

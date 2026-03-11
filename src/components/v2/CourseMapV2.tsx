@@ -68,7 +68,7 @@ export default function CourseMapV2({ pins }: CourseMapV2Props) {
                 onClick={() => setSelected(isSelected ? null : pin)}
               >
                 <circle
-                  r={isSelected ? 9 : 7}
+                  r={isSelected ? 14 : 11}
                   fill={isSelected ? '#b91c1c' : '#ef4444'}
                   stroke="white"
                   strokeWidth={2}

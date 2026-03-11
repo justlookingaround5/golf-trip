@@ -6,7 +6,6 @@
 import { use } from 'react'
 import Link from 'next/link'
 import ScorecardViewer from '@/components/v2/ScorecardViewer'
-import MatchCard from '@/components/v2/MatchCard'
 import { STUB_MATCHES, STUB_SCORECARD } from '@/lib/v2/stub-data'
 
 export default function MatchScorecardPage({ params }: { params: Promise<{ matchId: string }> }) {
@@ -34,11 +33,7 @@ export default function MatchScorecardPage({ params }: { params: Promise<{ match
         </div>
       </header>
 
-      <div className="mx-auto max-w-2xl px-4 py-5 space-y-5">
-        {/* Match summary card (read-only) */}
-        <MatchCard match={match} />
-
-        {/* Scorecard */}
+      <div className="mx-auto max-w-2xl px-4 py-5">
         <ScorecardViewer scorecard={STUB_SCORECARD} />
       </div>
     </div>

@@ -48,10 +48,10 @@ export default function MatchCard({ match }: MatchCardProps) {
             <p className={`text-sm font-semibold truncate ${
               isDone && match.teamA.points > match.teamB.points ? 'text-golf-700' : 'text-gray-900'
             }`}>
-              {match.teamA.name}
+              {match.teamA.players.map(p => p.name).join(' & ')}
             </p>
             <p className="text-xs text-gray-400 truncate">
-              {match.teamA.players.map(p => p.name).join(' & ')}
+              {match.teamA.name}
             </p>
           </div>
 
@@ -75,10 +75,10 @@ export default function MatchCard({ match }: MatchCardProps) {
             <p className={`text-sm font-semibold truncate ${
               isDone && match.teamB.points > match.teamA.points ? 'text-golf-700' : 'text-gray-900'
             }`}>
-              {match.teamB.name}
+              {match.teamB.players.map(p => p.name).join(' & ')}
             </p>
             <p className="text-xs text-gray-400 truncate">
-              {match.teamB.players.map(p => p.name).join(' & ')}
+              {match.teamB.name}
             </p>
           </div>
         </div>

@@ -1,7 +1,7 @@
 'use client'
 
 // FRIEND PROFILE PAGE
-// Shows: their Map (top 10 ratings) · Their Stats
+// Sections: Map · Course Ratings · Match Record · Earnings · Recent Rounds
 
 import { use } from 'react'
 import Link from 'next/link'
@@ -13,7 +13,6 @@ const CourseMapV2 = dynamic(() => import('@/components/v2/CourseMapV2'), { ssr: 
 export default function FriendProfilePage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
 
-  // STUB: look up friend by id
   const friend = STUB_FRIENDS.find(f => f.id === userId) ?? {
     id: userId,
     name: 'Player',
@@ -29,6 +28,11 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
   const friendStats = STUB_PLAYER_STATS.find(s => s.player.id === userId)
   const friendEarnings = STUB_EARNINGS.find(e => e.player.id === userId)
   const friendRounds = STUB_ALL_ROUNDS.slice(0, 3)
+
+  // Course ratings sorted by rating desc
+  const ratedPins = [...friendPins]
+    .filter(p => p.rating != null)
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -60,74 +64,80 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
       </header>
 
       <div className="mx-auto max-w-lg px-4 py-6 space-y-8">
-        {/* Map */}
+        {/* 1 · Map */}
         <div>
           <h2 className="text-base font-bold text-gray-900 mb-3">Map</h2>
           <CourseMapV2 pins={friendPins} />
         </div>
 
-        {/* Stats */}
+        {/* 2 · Course Ratings */}
         <div>
-          <h2 className="text-base font-bold text-gray-900 mb-3">Stats</h2>
-
-          {friendStats ? (
-            <div className="space-y-3">
-              {/* Match record */}
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: 'Wins',   val: friendStats.matchRecord.wins,   cls: 'text-green-700' },
-                  { label: 'Losses', val: friendStats.matchRecord.losses, cls: 'text-red-600'   },
-                  { label: 'Ties',   val: friendStats.matchRecord.ties,   cls: 'text-gray-600'  },
-                ].map(({ label, val, cls }) => (
-                  <div key={label} className="rounded-xl border border-gray-200 bg-white px-3 py-3 text-center shadow-sm">
-                    <p className={`text-2xl font-black ${cls}`}>{val}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{label}</p>
+          <h2 className="text-base font-bold text-gray-900 mb-3">Course Ratings</h2>
+          {ratedPins.length > 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100 shadow-sm overflow-hidden">
+              {ratedPins.map(p => (
+                <div key={p.courseId} className="flex items-center justify-between px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{p.courseName}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {new Date(p.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
                   </div>
-                ))}
-              </div>
-
-              {/* Key stats */}
-              <div className="rounded-xl border border-gray-200 bg-white shadow-sm divide-y divide-gray-100">
-                {[
-                  { label: 'Gross avg',    value: friendStats.grossAvg?.toFixed(1) ?? '—' },
-                  { label: 'Net avg',      value: friendStats.netAvg?.toFixed(1) ?? '—'   },
-                  { label: 'Fairway hit%', value: friendStats.fairwayPct != null ? `${Math.round(friendStats.fairwayPct)}%` : '—' },
-                  { label: 'GIR%',         value: friendStats.girPct != null ? `${Math.round(friendStats.girPct)}%` : '—'        },
-                  { label: 'Putts/round',  value: friendStats.puttsAvg?.toFixed(1) ?? '—' },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm text-gray-600">{label}</span>
-                    <span className="text-sm font-bold text-gray-900">{value}</span>
-                  </div>
-                ))}
-              </div>
+                  <span className="shrink-0 ml-3 text-sm font-bold text-gray-900 tabular-nums">
+                    {(p.rating ?? 0).toFixed(1)}
+                  </span>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
-              <p className="text-sm text-gray-400">No stats available for {friend.name} yet.</p>
+            <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-6 text-center">
+              <p className="text-sm text-gray-400">No course ratings yet.</p>
             </div>
           )}
         </div>
 
-        {/* Earnings */}
+        {/* 3 · Match Record */}
+        <div>
+          <h2 className="text-base font-bold text-gray-900 mb-3">Match Record</h2>
+          {friendStats ? (
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Wins',   val: friendStats.matchRecord.wins,   cls: 'text-green-700' },
+                { label: 'Losses', val: friendStats.matchRecord.losses, cls: 'text-red-600'   },
+                { label: 'Ties',   val: friendStats.matchRecord.ties,   cls: 'text-gray-600'  },
+              ].map(({ label, val, cls }) => (
+                <div key={label} className="rounded-xl border border-gray-200 bg-white px-3 py-3 text-center shadow-sm">
+                  <p className={`text-2xl font-black ${cls}`}>{val}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{label}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
+              <p className="text-sm text-gray-400">No match data for {friend.name} yet.</p>
+            </div>
+          )}
+        </div>
+
+        {/* 4 · Earnings */}
         <div>
           <h2 className="text-base font-bold text-gray-900 mb-3">Earnings</h2>
           {friendEarnings ? (
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <span className="text-sm font-semibold text-gray-900">Net total</span>
-                <span className={`text-sm font-black ${friendEarnings.netEarnings >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                  {friendEarnings.netEarnings >= 0 ? '+' : '−'}${Math.abs(friendEarnings.netEarnings).toFixed(2)}
-                </span>
-              </div>
               {friendEarnings.breakdown.map(({ label, amount }) => (
-                <div key={label} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0">
+                <div key={label} className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                   <span className="text-sm text-gray-500">{label}</span>
                   <span className={`text-sm font-semibold ${amount >= 0 ? 'text-green-700' : 'text-red-600'}`}>
                     {amount >= 0 ? '+' : '−'}${Math.abs(amount).toFixed(2)}
                   </span>
                 </div>
               ))}
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm font-semibold text-gray-900">Net total</span>
+                <span className={`text-sm font-black ${friendEarnings.netEarnings >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                  {friendEarnings.netEarnings >= 0 ? '+' : '−'}${Math.abs(friendEarnings.netEarnings).toFixed(2)}
+                </span>
+              </div>
             </div>
           ) : (
             <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
@@ -136,7 +146,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
           )}
         </div>
 
-        {/* Recent Rounds */}
+        {/* 5 · Recent Rounds */}
         {friendRounds.length > 0 && (
           <div>
             <h2 className="text-base font-bold text-gray-900 mb-3">Recent Rounds</h2>
@@ -145,7 +155,11 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
                 const vsPar = r.grossTotal != null ? r.grossTotal - r.par : null
                 const vsParStr = vsPar == null ? null : vsPar === 0 ? 'E' : vsPar > 0 ? `+${vsPar}` : `${vsPar}`
                 return (
-                  <div key={r.id} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0">
+                  <Link
+                    key={r.id}
+                    href={`/v2/profile/${userId}/round/${r.id}`}
+                    className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 transition"
+                  >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-gray-900 truncate">{r.courseName}</p>
                       <p className="text-xs text-gray-400 mt-0.5">
@@ -153,17 +167,22 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
                         {r.tripName && ` · ${r.tripName}`}
                       </p>
                     </div>
-                    {r.grossTotal != null && (
-                      <div className="shrink-0 ml-3 text-right">
-                        <p className="text-sm font-bold text-gray-900">{r.grossTotal}</p>
-                        {vsParStr && (
-                          <p className={`text-xs font-semibold ${vsPar! < 0 ? 'text-red-600' : vsPar! > 0 ? 'text-blue-600' : 'text-gray-500'}`}>
-                            {vsParStr}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-3">
+                      {r.grossTotal != null && (
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-gray-900">{r.grossTotal}</p>
+                          {vsParStr && (
+                            <p className={`text-xs font-semibold ${vsPar! < 0 ? 'text-red-600' : vsPar! > 0 ? 'text-blue-600' : 'text-gray-500'}`}>
+                              {vsParStr}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </div>
+                  </Link>
                 )
               })}
             </div>
