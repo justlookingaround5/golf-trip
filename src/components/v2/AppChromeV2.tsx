@@ -40,8 +40,8 @@ const NAV = [
   { href: '/v2',          label: 'Home',     Icon: HomeIcon     },
   { href: '/v2/messages', label: 'Messages', Icon: MessagesIcon },
   null, // + button
-  { href: '/v2/settings', label: 'Settings', Icon: SettingsIcon },
   { href: '/v2/profile',  label: 'Profile',  Icon: ProfileIcon  },
+  { href: '/v2/settings', label: 'Settings', Icon: SettingsIcon },
 ] as const
 
 // ─── Component ────────────────────────────────────────────────────────────────

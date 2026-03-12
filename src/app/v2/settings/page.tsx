@@ -17,15 +17,6 @@ export default function SettingsPage() {
       {/* Header */}
       <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
         <div className="mx-auto max-w-lg">
-          <Link
-            href="/v2/profile"
-            className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            Profile
-          </Link>
           <h1 className="text-xl font-bold">Settings</h1>
         </div>
       </header>
