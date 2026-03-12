@@ -2,8 +2,9 @@
 
 // MESSAGES TAB — Friends (1:1 DMs) and Trips (group chats)
 
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { STUB_THREADS } from '@/lib/v2/stub-data'
 import type { MessageThread } from '@/lib/v2/types'
 
@@ -59,8 +60,10 @@ function ThreadRow({ thread }: { thread: MessageThread }) {
   )
 }
 
-export default function MessagesPage() {
-  const [tab, setTab] = useState<Tab>('friends')
+function MessagesContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const tab: Tab = searchParams.get('tab') === 'trips' ? 'trips' : 'friends'
 
   const friendThreads = STUB_THREADS.filter(t => t.type === 'dm')
   const tripThreads   = STUB_THREADS.filter(t => t.type === 'trip')
@@ -84,7 +87,7 @@ export default function MessagesPage() {
         ] as { key: Tab; label: string; badge: number }[]).map(({ key, label, badge }) => (
           <button
             key={key}
-            onClick={() => setTab(key)}
+            onClick={() => router.push(`/v2/messages?tab=${key}`)}
             className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-semibold transition-colors ${
               tab === key
                 ? 'text-golf-700 border-b-2 border-golf-700'
@@ -119,5 +122,13 @@ export default function MessagesPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense>
+      <MessagesContent />
+    </Suspense>
   )
 }

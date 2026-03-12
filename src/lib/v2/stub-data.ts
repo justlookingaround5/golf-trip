@@ -377,6 +377,7 @@ export const STUB_FEED: FeedEventV2[] = [
     id: 'fe2',
     userId: 'p3', userName: 'Mike', userAvatarUrl: null,
     timestamp: '2025-06-10T20:00:00Z',
+    round:    { roundId: 'r1', courseName: 'Pebble Beach Golf Links', grossScore: 74, netScore: 69, par: 72, tripName: 'Pebble Beach 2025' },
     match:    { result: 'Wins 3 & 2', format: '1v1 Match Play' },
     earnings: { net: 22 },
   },
