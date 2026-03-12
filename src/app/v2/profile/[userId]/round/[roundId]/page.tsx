@@ -38,7 +38,7 @@ export default function FriendRoundScorecardPage({
       <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
         <div className="mx-auto max-w-lg">
           <Link
-            href={`/v2/profile/${userId}`}
+            href={`/v2/profile/${userId}/stats`}
             className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

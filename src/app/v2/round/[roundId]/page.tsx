@@ -4,7 +4,7 @@
 // Linked from Stats > Rounds tab.
 
 import { use } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import ScorecardViewer from '@/components/v2/ScorecardViewer'
 import { STUB_ALL_ROUNDS, STUB_SCORECARD, ME } from '@/lib/v2/stub-data'
 import type { ScorecardV2 } from '@/lib/v2/types'
@@ -12,6 +12,7 @@ import type { ScorecardV2 } from '@/lib/v2/types'
 export default function RoundScorecardPage({ params }: { params: Promise<{ roundId: string }> }) {
   const { roundId } = use(params)
 
+  const router = useRouter()
   const round = STUB_ALL_ROUNDS.find(r => r.id === roundId) ?? STUB_ALL_ROUNDS[0]
 
   // STUB: show only the current user's holes from the shared scorecard
@@ -32,15 +33,15 @@ export default function RoundScorecardPage({ params }: { params: Promise<{ round
       {/* Header */}
       <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
         <div className="mx-auto max-w-lg">
-          <Link
-            href="/v2/stats"
+          <button
+            onClick={() => router.back()}
             className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
             My Stats
-          </Link>
+          </button>
           <h1 className="text-xl font-bold">{round.courseName}</h1>
           <div className="flex items-center gap-3 text-sm text-golf-200 mt-0.5">
             <span>

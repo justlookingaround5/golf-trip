@@ -66,7 +66,7 @@ function TeamDetailModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-t-2xl bg-white pb-10 shadow-xl"
+        className="w-full max-w-lg rounded-t-2xl bg-white pb-28 shadow-xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}

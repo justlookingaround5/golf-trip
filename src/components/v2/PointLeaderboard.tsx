@@ -96,6 +96,26 @@ function SortArrow({ col, sortCol, sortDir }: { col: string; sortCol: string | n
   return <span className="ml-0.5">{sortDir === 'desc' ? '↓' : '↑'}</span>
 }
 
+// ─── Scorecard score cell (mirrors ScorecardViewer conventions) ───────────────
+
+function SkinScore({ score, par }: { score: number | null; par: number }) {
+  if (score == null) return null
+  const diff = score - par
+  if (diff <= -2) return (
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-yellow-400 text-yellow-600 font-bold text-xs">{score}</span>
+  )
+  if (diff === -1) return (
+    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-red-400 text-red-600 font-bold text-xs">{score}</span>
+  )
+  if (diff === 0) return <span className="text-xs font-medium text-gray-700">{score}</span>
+  if (diff === 1) return (
+    <span className="inline-flex h-7 w-7 items-center justify-center ring-1 ring-blue-400 text-blue-600 text-xs">{score}</span>
+  )
+  return (
+    <span className="inline-flex h-7 w-7 items-center justify-center ring-2 ring-blue-500 text-blue-800 font-bold text-xs">{score}</span>
+  )
+}
+
 // ─── Match Leaderboard ────────────────────────────────────────────────────────
 
 function parseTeeTime(t: string | null): number {
@@ -430,8 +450,8 @@ function SkinsView({ skins, sortCol, sortDir, onSort }: { skins: SkinResultV2[] 
                 <td className={`${TD} ${s.winnerName ? 'font-semibold text-golf-700' : 'text-gray-300'}`}>
                   {s.winnerName ?? ''}
                 </td>
-                <td className={TD}>{s.grossScore ?? ''}</td>
-                <td className={TD}>{s.netScore ?? ''}</td>
+                <td className={TD}><SkinScore score={s.grossScore} par={s.par} /></td>
+                <td className={TD}><SkinScore score={s.netScore} par={s.par} /></td>
               </tr>
             )
           })}

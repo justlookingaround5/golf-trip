@@ -5,7 +5,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_EARNINGS, ME } from '@/lib/v2/stub-data'
 import type { RoundV2 } from '@/lib/v2/types'
 
@@ -140,7 +139,6 @@ function TotalEarnings() {
 
 export default function StatsPage() {
   const [tab, setTab] = useState<Tab>('rounds')
-  const router = useRouter()
 
   const totalRounds = STUB_ALL_ROUNDS.length
   const avgGross = STUB_ALL_ROUNDS
@@ -151,15 +149,15 @@ export default function StatsPage() {
     <div className="min-h-screen bg-background pb-28">
       <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
         <div className="mx-auto max-w-lg">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/v2/profile"
             className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
             Profile
-          </button>
+          </Link>
           <h1 className="text-2xl font-bold">My Stats</h1>
           <div className="mt-1 flex items-center gap-4 text-sm text-golf-200">
             <span>{totalRounds} rounds</span>
