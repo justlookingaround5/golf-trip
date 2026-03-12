@@ -1,13 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import type { MatchV2 } from '@/lib/v2/types'
+import type { MatchV2, PlayerV2 } from '@/lib/v2/types'
 
 interface TeamScoresCardProps {
   matches: MatchV2[]
   tripId: string
   /** If true, wraps the card in a Link to the full leaderboard page */
   linkToFull?: boolean
+  /** If true, tapping a team score shows a player breakdown pop-up */
+  showTeamDetail?: boolean
 }
 
 function aggregateTeams(matches: MatchV2[]): { name: string; points: number }[] {
@@ -21,13 +24,102 @@ function aggregateTeams(matches: MatchV2[]): { name: string; points: number }[] 
     .sort((a, b) => b.points - a.points)
 }
 
+function playerContributions(
+  matches: MatchV2[],
+  teamName: string,
+): { player: PlayerV2; points: number }[] {
+  const map = new Map<string, { player: PlayerV2; points: number }>()
+  for (const m of matches) {
+    const side =
+      m.teamA.name === teamName ? m.teamA :
+      m.teamB.name === teamName ? m.teamB : null
+    if (!side) continue
+    for (const p of side.players) {
+      const cur = map.get(p.id)
+      if (cur) cur.points += side.points
+      else map.set(p.id, { player: p, points: side.points })
+    }
+  }
+  return [...map.values()].sort((a, b) => b.points - a.points)
+}
+
 function pts(n: number) {
   return n % 1 === 0 ? String(n) : n.toFixed(1)
 }
 
-export default function TeamScoresCard({ matches, tripId, linkToFull }: TeamScoresCardProps) {
+// ─── Team Detail Modal ────────────────────────────────────────────────────────
+
+function TeamDetailModal({
+  teamName,
+  contributions,
+  totalPoints,
+  onClose,
+}: {
+  teamName: string
+  contributions: { player: PlayerV2; points: number }[]
+  totalPoints: number
+  onClose: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-t-2xl bg-white pb-10 shadow-xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="h-1 w-10 rounded-full bg-gray-300" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <div>
+            <p className="text-base font-bold text-gray-900">{teamName}</p>
+            <p className="text-xs text-gray-400">{pts(totalPoints)} pts total</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition p-1"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Player list */}
+        <div className="divide-y divide-gray-100 px-5 pt-1">
+          {contributions.map(({ player, points: p }, i) => (
+            <div key={player.id} className="flex items-center gap-3 py-3">
+              <span className="text-xs font-bold text-gray-400 w-4 tabular-nums">{i + 1}</span>
+              <div className="h-8 w-8 rounded-full bg-golf-100 flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-golf-700">
+                  {player.name.charAt(0)}
+                </span>
+              </div>
+              <span className="flex-1 text-sm font-semibold text-gray-900">{player.name}</span>
+              <span className="text-sm font-black text-golf-700 tabular-nums">{pts(p)} pts</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function TeamScoresCard({ matches, tripId, linkToFull, showTeamDetail }: TeamScoresCardProps) {
   const teams = aggregateTeams(matches)
   const isTwoTeam = teams.length === 2
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
+
+  function handleTeamClick(teamName: string) {
+    if (showTeamDetail) setSelectedTeam(teamName)
+  }
 
   const card = (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -37,7 +129,7 @@ export default function TeamScoresCard({ matches, tripId, linkToFull }: TeamScor
           {linkToFull ? 'Live Leaderboard' : 'Team Standings'}
         </p>
         {linkToFull && (
-          <span className="text-xs font-semibold text-golf-300">Full view →</span>
+          <span className="text-xs font-semibold text-white">Full view →</span>
         )}
       </div>
 
@@ -45,7 +137,11 @@ export default function TeamScoresCard({ matches, tripId, linkToFull }: TeamScor
       {isTwoTeam ? (
         <div className="grid grid-cols-2 divide-x divide-gray-100">
           {teams.map(t => (
-            <div key={t.name} className="py-4 text-center bg-white">
+            <div
+              key={t.name}
+              className={`py-4 text-center bg-white ${showTeamDetail ? 'cursor-pointer active:bg-gray-50 transition' : ''}`}
+              onClick={() => handleTeamClick(t.name)}
+            >
               <p className="text-3xl font-black text-golf-700 tabular-nums">{pts(t.points)}</p>
               <p className="text-xs text-gray-500 mt-1">{t.name}</p>
             </div>
@@ -54,7 +150,11 @@ export default function TeamScoresCard({ matches, tripId, linkToFull }: TeamScor
       ) : (
         <div className="divide-y divide-gray-100">
           {teams.map((t, i) => (
-            <div key={t.name} className="flex items-center justify-between px-4 py-2.5">
+            <div
+              key={t.name}
+              className={`flex items-center justify-between px-4 py-2.5 ${showTeamDetail ? 'cursor-pointer active:bg-gray-50 transition' : ''}`}
+              onClick={() => handleTeamClick(t.name)}
+            >
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-gray-400 w-4 tabular-nums">{i + 1}</span>
                 <span className="text-sm font-semibold text-gray-900">{t.name}</span>
@@ -63,6 +163,16 @@ export default function TeamScoresCard({ matches, tripId, linkToFull }: TeamScor
             </div>
           ))}
         </div>
+      )}
+
+      {/* Team detail modal */}
+      {showTeamDetail && selectedTeam && (
+        <TeamDetailModal
+          teamName={selectedTeam}
+          contributions={playerContributions(matches, selectedTeam)}
+          totalPoints={teams.find(t => t.name === selectedTeam)?.points ?? 0}
+          onClose={() => setSelectedTeam(null)}
+        />
       )}
     </div>
   )

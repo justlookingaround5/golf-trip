@@ -77,6 +77,7 @@ export default function TripLeaderboardPage({ params }: { params: Promise<{ trip
         <TeamScoresCard
           matches={STUB_MATCHES}
           tripId={trip.id}
+          showTeamDetail
         />
 
         {/* Full leaderboard widget */}

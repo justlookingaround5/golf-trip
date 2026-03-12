@@ -36,9 +36,11 @@ export default function MatchCard({ match }: MatchCardProps) {
         }`}>
           <div className="flex items-center gap-2">
             <StatusDot status={match.status} />
-            <span className="text-xs font-semibold text-gray-500">{label}</span>
+            <span className="text-xs font-semibold text-gray-700">{match.courseName}</span>
           </div>
-          <span className="text-xs text-gray-400">{match.courseName}</span>
+          <span className="text-xs text-gray-400">
+            {match.teeTime && <>{match.teeTime} · </>}{label}
+          </span>
         </div>
 
         {/* Teams + score */}

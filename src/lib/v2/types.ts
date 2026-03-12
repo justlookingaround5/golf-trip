@@ -51,6 +51,7 @@ export interface MatchV2 {
   courseId: string
   courseName: string
   tripId: string
+  teeTime: string | null
 }
 
 export interface TripV2 {

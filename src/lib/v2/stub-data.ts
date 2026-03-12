@@ -78,6 +78,7 @@ export const STUB_MATCHES: MatchV2[] = [
     courseId: 'course2',
     courseName: 'Spyglass Hill',
     tripId: 'trip1',
+    teeTime: '10:00 AM',
   },
   {
     id: 'm2',
@@ -92,6 +93,7 @@ export const STUB_MATCHES: MatchV2[] = [
     courseId: 'course1',
     courseName: 'Pebble Beach Golf Links',
     tripId: 'trip1',
+    teeTime: '7:30 AM',
   },
   {
     id: 'm3',
@@ -106,6 +108,7 @@ export const STUB_MATCHES: MatchV2[] = [
     courseId: 'course1',
     courseName: 'Pebble Beach Golf Links',
     tripId: 'trip1',
+    teeTime: '7:48 AM',
   },
 ]
 
@@ -238,7 +241,7 @@ export const STUB_ROUND_SCORES: TripRoundScoreV2[] = [
 
 const _PARS18 = [4, 5, 3, 4, 3, 4, 4, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5]
 const _GROSS_OFFSETS = [1.2, 0.8, 1.5, 1.0, 0.9, 1.3, 1.1, 0.7, 1.4, 1.0, 0.8, 1.2, 0.9, 1.1, 1.3, 0.6, 1.4, 1.2]
-const _NET_OFFSETS   = [0.5, 0.2, 0.8, 0.4, 0.3, 0.6, 0.5, 0.2, 0.7, 0.4, 0.3, 0.6, 0.3, 0.5, 0.7, 0.1, 0.6, 0.5]
+const _NET_OFFSETS   = [0.5, -0.3, 0.8, -0.4, 0.3, 0.6, -0.5, 0.2, 0.7, -0.2, 0.3, 0.6, -0.3, 0.5, 0.7, -0.4, 0.6, 0.5]
 const _BIRDIES  = [0, 2, 0, 1, 1, 0, 1, 2, 1, 1, 0, 0, 2, 1, 0, 2, 0, 1]
 const _PARS_CNT = [3, 2, 1, 3, 2, 2, 3, 3, 2, 3, 2, 2, 2, 3, 2, 2, 2, 2]
 const _BOGEYS   = [4, 0, 3, 0, 1, 2, 0, 0, 1, 0, 2, 2, 0, 0, 2, 0, 2, 1]
