@@ -99,7 +99,7 @@ function SortArrow({ col, sortCol, sortDir }: { col: string; sortCol: string | n
 // ─── Scorecard score cell (mirrors ScorecardViewer conventions) ───────────────
 
 function SkinScore({ score, par }: { score: number | null; par: number }) {
-  if (score == null) return null
+  if (score == null) return <span className="inline-flex h-7 w-7" />
   const diff = score - par
   if (diff <= -2) return (
     <span className="inline-flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-yellow-400 text-yellow-600 font-bold text-xs">{score}</span>
@@ -400,55 +400,32 @@ function HoleStatsView({ holeStats, sortCol, sortDir, onSort }: { holeStats: Hol
 
 // ─── Skins ────────────────────────────────────────────────────────────────────
 
-function SkinsView({ skins, sortCol, sortDir, onSort }: { skins: SkinResultV2[] } & SortProps) {
+function SkinsView({ skins }: { skins: SkinResultV2[] }) {
   if (skins.length === 0) {
     return <p className="py-8 text-center text-sm text-gray-400">No skins data for this round.</p>
   }
-
-  const rows = sortCol
-    ? sortRows(skins, sortCol, sortDir, (row, col) => {
-        switch (col) {
-          case 'hole':   return row.holeNumber
-          case 'par':    return row.par
-          case 'player': return row.winnerName
-          case 'gross':  return row.grossScore
-          case 'net':    return row.netScore
-          default:       return null
-        }
-      })
-    : skins
 
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-xs">
         <thead>
           <tr className="bg-golf-800">
-            <th className={thSort('hole', sortCol)} onClick={() => onSort('hole')}>
-              Hole<SortArrow col="hole" sortCol={sortCol} sortDir={sortDir} />
-            </th>
-            <th className={thSort('par', sortCol)} onClick={() => onSort('par')}>
-              Par<SortArrow col="par" sortCol={sortCol} sortDir={sortDir} />
-            </th>
-            <th className={thSort('player', sortCol)} onClick={() => onSort('player')}>
-              Player<SortArrow col="player" sortCol={sortCol} sortDir={sortDir} />
-            </th>
-            <th className={thSort('gross', sortCol)} onClick={() => onSort('gross')}>
-              Gross<SortArrow col="gross" sortCol={sortCol} sortDir={sortDir} />
-            </th>
-            <th className={thSort('net', sortCol)} onClick={() => onSort('net')}>
-              Net<SortArrow col="net" sortCol={sortCol} sortDir={sortDir} />
-            </th>
+            <th className={TH}>Hole</th>
+            <th className={TH}>Par</th>
+            <th className={TH}>Player</th>
+            <th className={TH}>Gross</th>
+            <th className={TH}>Net</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {rows.map((s, i) => {
+          {skins.map((s, i) => {
             const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
             return (
               <tr key={s.holeNumber} className={bg}>
                 <td className={`${TD} font-bold text-gray-900`}>{s.holeNumber}</td>
                 <td className={TD}>{s.par}</td>
                 <td className={`${TD} ${s.winnerName ? 'font-semibold text-golf-700' : 'text-gray-300'}`}>
-                  {s.winnerName ?? ''}
+                  {s.winnerName ?? <span className="inline-block h-5" />}
                 </td>
                 <td className={TD}><SkinScore score={s.grossScore} par={s.par} /></td>
                 <td className={TD}><SkinScore score={s.netScore} par={s.par} /></td>
@@ -564,7 +541,13 @@ export default function PointLeaderboard({
 
   function handleSort(col: string) {
     if (sortCol === col) {
-      setSortDir(d => d === 'desc' ? 'asc' : 'desc')
+      if (sortDir === 'desc') {
+        setSortDir('asc')
+      } else {
+        // asc → reset to original order
+        setSortCol(null)
+        setSortDir('desc')
+      }
     } else {
       setSortCol(col)
       setSortDir('desc')
@@ -639,7 +622,7 @@ export default function PointLeaderboard({
       )}
       {view === 'player_stats' && <PlayerStatsView stats={playerStats} {...sortProps} />}
       {view === 'hole_stats'   && <HoleStatsView   holeStats={holeStatsByRound[roundFilter] ?? []} {...sortProps} />}
-      {view === 'skins'        && <SkinsView        skins={skinsByRound[roundFilter] ?? []} {...sortProps} />}
+      {view === 'skins'        && <SkinsView        skins={skinsByRound[roundFilter] ?? []} />}
       {view === 'earnings'     && <EarningsView     earnings={earnings} {...sortProps} />}
     </div>
   )
