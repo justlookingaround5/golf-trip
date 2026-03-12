@@ -1,31 +1,27 @@
 'use client'
 
 // PROFILE TAB — My profile
-// Sections: Map · Course Ratings · My Trips · Friends · Settings
+// Sections: Map · Course Ratings · My Trips
 
-import { useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import {
   ME,
   STUB_PINS,
-  STUB_FRIENDS,
   STUB_UPCOMING_TRIPS,
   STUB_PAST_TRIPS,
 } from '@/lib/v2/stub-data'
+import type { TripV2 } from '@/lib/v2/types'
 
 // CourseMapV2 uses react-simple-maps, disable SSR
 const CourseMapV2 = dynamic(() => import('@/components/v2/CourseMapV2'), { ssr: false })
 
-// ─── Section wrappers ─────────────────────────────────────────────────────────
+// ─── Section wrapper ───────────────────────────────────────────────────────────
 
-function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold text-gray-900">{title}</h2>
-        {action}
-      </div>
+      <h2 className="text-base font-bold text-gray-900 mb-3">{title}</h2>
       {children}
     </div>
   )
@@ -37,6 +33,7 @@ function CourseRatings() {
   const rated = STUB_PINS
     .filter(p => p.rating != null)
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    .slice(0, 10)
 
   if (rated.length === 0) {
     return (
@@ -68,7 +65,7 @@ function CourseRatings() {
 
 // ─── My Trips ─────────────────────────────────────────────────────────────────
 
-function TripRow({ trip, past }: { trip: (typeof STUB_PAST_TRIPS)[0]; past: boolean }) {
+function TripRow({ trip, past }: { trip: TripV2; past: boolean }) {
   const start = trip.startDate
     ? new Date(trip.startDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : null
@@ -94,13 +91,8 @@ function TripRow({ trip, past }: { trip: (typeof STUB_PAST_TRIPS)[0]; past: bool
     </div>
   )
 
-  if (!past) return <div key={trip.id}>{inner}</div>
-
-  return (
-    <Link key={trip.id} href={`/v2/trip/${trip.id}/leaderboard`}>
-      {inner}
-    </Link>
-  )
+  if (!past) return <div>{inner}</div>
+  return <Link href={`/v2/trip/${trip.id}/leaderboard`}>{inner}</Link>
 }
 
 function MyTrips() {
@@ -126,63 +118,40 @@ function MyTrips() {
   )
 }
 
-// ─── Friends ──────────────────────────────────────────────────────────────────
-
-function FriendsList() {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      {STUB_FRIENDS.map(f => (
-        <Link
-          key={f.id}
-          href={`/v2/profile/${f.id}`}
-          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition border-b border-gray-100 last:border-b-0"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-golf-600 text-sm font-bold text-white shrink-0">
-            {f.name[0]?.toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900">{f.name}</p>
-            {f.handicap != null && (
-              <p className="text-xs text-gray-400">HCP {f.handicap}</p>
-            )}
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </Link>
-      ))}
-    </div>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background pb-28">
       {/* Header */}
-      <header className="bg-golf-800 px-4 pt-14 pb-8 text-white">
-        <div className="mx-auto max-w-lg flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-golf-600 text-2xl font-bold text-white ring-2 ring-white/30 shrink-0">
-            {ME.name[0]?.toUpperCase()}
+      <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
+        <div className="mx-auto max-w-lg">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-golf-600 text-2xl font-bold text-white ring-2 ring-white/30 shrink-0">
+              {ME.name[0]?.toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-bold">{ME.name}</h1>
+              <p className="text-sm text-golf-200 mt-0.5">
+                {ME.handicap != null ? `HCP ${ME.handicap}` : 'No handicap set'}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold">{ME.name}</h1>
-            <p className="text-sm text-golf-200 mt-0.5">
-              {ME.handicap != null ? `HCP ${ME.handicap}` : 'No handicap set'}
-            </p>
+          {/* Friends | Stats nav */}
+          <div className="flex gap-6 mt-4 border-t border-white/10 pt-4">
+            <Link
+              href="/v2/profile/friends"
+              className="text-sm font-semibold text-golf-200 hover:text-white transition"
+            >
+              Friends
+            </Link>
+            <Link
+              href="/v2/stats"
+              className="text-sm font-semibold text-golf-200 hover:text-white transition"
+            >
+              Stats
+            </Link>
           </div>
-          {/* Settings gear */}
-          <Link
-            href="/v2/settings"
-            aria-label="Settings"
-            className="shrink-0 text-golf-300 hover:text-white transition"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </Link>
         </div>
       </header>
 
@@ -197,10 +166,6 @@ export default function ProfilePage() {
 
         <Section title="My Trips">
           <MyTrips />
-        </Section>
-
-        <Section title="Friends">
-          <FriendsList />
         </Section>
       </div>
     </div>

@@ -1,15 +1,50 @@
 'use client'
 
 // FRIEND PROFILE PAGE
-// Sections: Map · Course Ratings · Match Record · Earnings · Recent Rounds
+// Sections: Map · Course Ratings · Trips
 
 import { use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { STUB_FRIENDS, STUB_PINS, STUB_PLAYER_STATS, STUB_ALL_ROUNDS, STUB_EARNINGS } from '@/lib/v2/stub-data'
+import { STUB_FRIENDS, STUB_PINS, STUB_PAST_TRIPS, STUB_UPCOMING_TRIPS } from '@/lib/v2/stub-data'
+import type { TripV2 } from '@/lib/v2/types'
 
 const CourseMapV2 = dynamic(() => import('@/components/v2/CourseMapV2'), { ssr: false })
+
+// ─── Trip row ──────────────────────────────────────────────────────────────────
+
+function TripRow({ trip, past }: { trip: TripV2; past: boolean }) {
+  const start = trip.startDate
+    ? new Date(trip.startDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : null
+  const end = trip.endDate
+    ? new Date(trip.endDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null
+  const dateLabel = start && end ? `${start} – ${end}` : start ?? '—'
+
+  const inner = (
+    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-gray-900 truncate">{trip.name}</p>
+        <p className="text-xs text-gray-400 mt-0.5">
+          {trip.location && <>{trip.location} · </>}
+          {dateLabel} · {trip.playerCount} players
+        </p>
+      </div>
+      {past && (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0 ml-3">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      )}
+    </div>
+  )
+
+  if (!past) return <div>{inner}</div>
+  return <Link href={`/v2/trip/${trip.id}/leaderboard`}>{inner}</Link>
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function FriendProfilePage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
@@ -22,24 +57,23 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
     handicap: null,
   }
 
-  // STUB: use same pins for all friends (top 10 by rating)
+  // Top 10 rated pins
   const friendPins = [...STUB_PINS]
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
     .slice(0, 10)
 
-  const friendStats = STUB_PLAYER_STATS.find(s => s.player.id === userId)
-  const friendEarnings = STUB_EARNINGS.find(e => e.player.id === userId)
-  const friendRounds = STUB_ALL_ROUNDS.slice(0, 3)
-
-  // Course ratings sorted by rating desc
   const ratedPins = [...friendPins]
     .filter(p => p.rating != null)
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
 
+  // Only trips this friend is a member of
+  const friendUpcoming = STUB_UPCOMING_TRIPS.filter(t => t.players.some(p => p.id === userId))
+  const friendPast = STUB_PAST_TRIPS.filter(t => t.players.some(p => p.id === userId))
+
   return (
     <div className="min-h-screen bg-background pb-28">
       {/* Header */}
-      <header className="bg-golf-800 px-4 pt-14 pb-8 text-white">
+      <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
         <div className="mx-auto max-w-lg">
           <button
             onClick={() => router.back()}
@@ -54,12 +88,27 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-golf-600 text-2xl font-bold text-white ring-2 ring-white/30 shrink-0">
               {friend.name[0]?.toUpperCase()}
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold">{friend.name}</h1>
               <p className="text-sm text-golf-200 mt-0.5">
                 {friend.handicap != null ? `HCP ${friend.handicap}` : 'No handicap'}
               </p>
             </div>
+          </div>
+          {/* Friends | Stats nav */}
+          <div className="flex gap-6 mt-4 border-t border-white/10 pt-4">
+            <Link
+              href={`/v2/profile/${userId}/friends`}
+              className="text-sm font-semibold text-golf-200 hover:text-white transition"
+            >
+              Friends
+            </Link>
+            <Link
+              href={`/v2/profile/${userId}/stats`}
+              className="text-sm font-semibold text-golf-200 hover:text-white transition"
+            >
+              Stats
+            </Link>
           </div>
         </div>
       </header>
@@ -98,95 +147,27 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
           )}
         </div>
 
-        {/* 3 · Match Record */}
-        <div>
-          <h2 className="text-base font-bold text-gray-900 mb-3">Match Record</h2>
-          {friendStats ? (
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: 'Wins',   val: friendStats.matchRecord.wins,   cls: 'text-green-700' },
-                { label: 'Losses', val: friendStats.matchRecord.losses, cls: 'text-red-600'   },
-                { label: 'Ties',   val: friendStats.matchRecord.ties,   cls: 'text-gray-600'  },
-              ].map(({ label, val, cls }) => (
-                <div key={label} className="rounded-xl border border-gray-200 bg-white px-3 py-3 text-center shadow-sm">
-                  <p className={`text-2xl font-black ${cls}`}>{val}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{label}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
-              <p className="text-sm text-gray-400">No match data for {friend.name} yet.</p>
-            </div>
-          )}
-        </div>
-
-        {/* 4 · Earnings */}
-        <div>
-          <h2 className="text-base font-bold text-gray-900 mb-3">Earnings</h2>
-          {friendEarnings ? (
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              {friendEarnings.breakdown.map(({ label, amount }) => (
-                <div key={label} className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">{label}</span>
-                  <span className={`text-sm font-semibold ${amount >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                    {amount >= 0 ? '+' : '−'}${Math.abs(amount).toFixed(2)}
-                  </span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm font-semibold text-gray-900">Net total</span>
-                <span className={`text-sm font-black ${friendEarnings.netEarnings >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                  {friendEarnings.netEarnings >= 0 ? '+' : '−'}${Math.abs(friendEarnings.netEarnings).toFixed(2)}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
-              <p className="text-sm text-gray-400">No earnings data for {friend.name} yet.</p>
-            </div>
-          )}
-        </div>
-
-        {/* 5 · Recent Rounds */}
-        {friendRounds.length > 0 && (
+        {/* 3 · Trips */}
+        {(friendUpcoming.length > 0 || friendPast.length > 0) && (
           <div>
-            <h2 className="text-base font-bold text-gray-900 mb-3">Recent Rounds</h2>
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              {friendRounds.map(r => {
-                const vsPar = r.grossTotal != null ? r.grossTotal - r.par : null
-                const vsParStr = vsPar == null ? null : vsPar === 0 ? 'E' : vsPar > 0 ? `+${vsPar}` : `${vsPar}`
-                return (
-                  <Link
-                    key={r.id}
-                    href={`/v2/profile/${userId}/round/${r.id}`}
-                    className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 transition"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{r.courseName}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {new Date(r.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        {r.tripName && ` · ${r.tripName}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-3">
-                      {r.grossTotal != null && (
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-gray-900">{r.grossTotal}</p>
-                          {vsParStr && (
-                            <p className={`text-xs font-semibold ${vsPar! < 0 ? 'text-red-600' : vsPar! > 0 ? 'text-blue-600' : 'text-gray-500'}`}>
-                              {vsParStr}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    </div>
-                  </Link>
-                )
-              })}
+            <h2 className="text-base font-bold text-gray-900 mb-3">Trips</h2>
+            <div className="space-y-3">
+              {friendUpcoming.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 px-1">Upcoming</p>
+                  <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    {friendUpcoming.map(t => <TripRow key={t.id} trip={t} past={false} />)}
+                  </div>
+                </div>
+              )}
+              {friendPast.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 px-1">Past</p>
+                  <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    {friendPast.map(t => <TripRow key={t.id} trip={t} past={true} />)}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
