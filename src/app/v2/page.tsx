@@ -62,7 +62,6 @@ export default function HomeV2() {
           <TeamScoresCard
             matches={STUB_MATCHES}
             tripId={ACTIVE_TRIP.id}
-            tripName={ACTIVE_TRIP.name}
             linkToFull
           />
         )}

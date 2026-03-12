@@ -14,6 +14,10 @@ import type {
   MessageThread,
   ChatMessageV2,
   ScorecardV2,
+  TripRoundV2,
+  SkinResultV2,
+  TripRoundScoreV2,
+  TripEarningsRow,
 } from './types'
 
 // ─── Players ──────────────────────────────────────────────────────────────────
@@ -63,6 +67,7 @@ export const ACTIVE_ROUND: RoundV2 = {
 export const STUB_MATCHES: MatchV2[] = [
   {
     id: 'm1',
+    roundNumber: 2,
     format: '2v2_best_ball',
     formatLabel: '2v2 Best Ball',
     status: 'in_progress',
@@ -76,6 +81,7 @@ export const STUB_MATCHES: MatchV2[] = [
   },
   {
     id: 'm2',
+    roundNumber: 1,
     format: '1v1_match',
     formatLabel: '1v1 Match Play',
     status: 'completed',
@@ -89,6 +95,7 @@ export const STUB_MATCHES: MatchV2[] = [
   },
   {
     id: 'm3',
+    roundNumber: 1,
     format: '1v1_stroke',
     formatLabel: '1v1 Stroke Play',
     status: 'completed',
@@ -205,6 +212,116 @@ export const STUB_EARNINGS: PlayerEarnings[] = [
       { label: 'Skins', amount: -16 },
     ],
   },
+]
+
+// ─── Trip Rounds ──────────────────────────────────────────────────────────────
+
+export const STUB_TRIP_ROUNDS: TripRoundV2[] = [
+  { roundNumber: 1, courseId: 'course1', courseName: 'Pebble Beach Golf Links', par: 72 },
+  { roundNumber: 2, courseId: 'course2', courseName: 'Spyglass Hill', par: 72 },
+]
+
+// ─── Per-Round Scores (for Individual Leaderboard) ────────────────────────────
+
+export const STUB_ROUND_SCORES: TripRoundScoreV2[] = [
+  { playerId: 'p1', roundNumber: 1, grossScore: 78, netScore: 70, par: 72 },
+  { playerId: 'p2', roundNumber: 1, grossScore: 85, netScore: 73, par: 72 },
+  { playerId: 'p3', roundNumber: 1, grossScore: 74, netScore: 69, par: 72 },
+  { playerId: 'p4', roundNumber: 1, grossScore: 93, netScore: 75, par: 72 },
+  { playerId: 'p1', roundNumber: 2, grossScore: 82, netScore: 74, par: 72 },
+  { playerId: 'p2', roundNumber: 2, grossScore: 89, netScore: 77, par: 72 },
+  { playerId: 'p3', roundNumber: 2, grossScore: 77, netScore: 72, par: 72 },
+  { playerId: 'p4', roundNumber: 2, grossScore: null, netScore: null, par: 72 },
+]
+
+// ─── Hole Stats by Round (deterministic) ─────────────────────────────────────
+
+const _PARS18 = [4, 5, 3, 4, 3, 4, 4, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5]
+const _GROSS_OFFSETS = [1.2, 0.8, 1.5, 1.0, 0.9, 1.3, 1.1, 0.7, 1.4, 1.0, 0.8, 1.2, 0.9, 1.1, 1.3, 0.6, 1.4, 1.2]
+const _NET_OFFSETS   = [0.5, 0.2, 0.8, 0.4, 0.3, 0.6, 0.5, 0.2, 0.7, 0.4, 0.3, 0.6, 0.3, 0.5, 0.7, 0.1, 0.6, 0.5]
+const _BIRDIES  = [0, 2, 0, 1, 1, 0, 1, 2, 1, 1, 0, 0, 2, 1, 0, 2, 0, 1]
+const _PARS_CNT = [3, 2, 1, 3, 2, 2, 3, 3, 2, 3, 2, 2, 2, 3, 2, 2, 2, 2]
+const _BOGEYS   = [4, 0, 3, 0, 1, 2, 0, 0, 1, 0, 2, 2, 0, 0, 2, 0, 2, 1]
+const _FW_PCTS  = [61, 72, null, 55, null, 67, 50, 72, 58, 63, null, 55, 67, 61, 72, null, 58, 64]
+const _GIR_PCTS = [44, 56, 33, 50, 42, 47, 39, 58, 44, 50, 36, 42, 53, 47, 44, 61, 42, 50]
+const _PUTTS    = [1.9, 1.8, 2.1, 1.8, 2.0, 1.9, 1.8, 1.7, 2.0, 1.8, 2.1, 1.9, 1.8, 1.9, 2.0, 1.7, 1.9, 2.0]
+
+function _makeHoleStats(rdOffset: number): import('./types').HoleLeaderboardStats[] {
+  return _PARS18.map((par, i) => ({
+    holeNumber: i + 1,
+    par,
+    avgGross: parseFloat((par + _GROSS_OFFSETS[i] + rdOffset * 0.1).toFixed(1)),
+    avgNet:   parseFloat((par + _NET_OFFSETS[i]).toFixed(1)),
+    birdiesOrBetter: _BIRDIES[i],
+    pars:            _PARS_CNT[i],
+    bogeysOrWorse:   _BOGEYS[i],
+    fairwayPct: _FW_PCTS[i] as number | null,
+    girPct:     _GIR_PCTS[i],
+    avgPutts:   _PUTTS[i],
+  }))
+}
+
+export const STUB_HOLE_STATS_BY_ROUND: Record<number, import('./types').HoleLeaderboardStats[]> = {
+  1: _makeHoleStats(0),
+  2: _makeHoleStats(1),
+}
+
+// ─── Skins by Round ───────────────────────────────────────────────────────────
+
+export const STUB_SKINS_BY_ROUND: Record<number, import('./types').SkinResultV2[]> = {
+  1: [
+    { holeNumber:  1, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  2, par: 5, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 4,    netScore: 3    },
+    { holeNumber:  3, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  4, par: 4, winnerId: 'p1',  winnerName: 'Andrew', grossScore: 4,    netScore: 3    },
+    { holeNumber:  5, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  6, par: 4, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 4,    netScore: 4    },
+    { holeNumber:  7, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  8, par: 4, winnerId: 'p1',  winnerName: 'Andrew', grossScore: 3,    netScore: 2    },
+    { holeNumber:  9, par: 5, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 10, par: 4, winnerId: 'p2',  winnerName: 'Jake',   grossScore: 3,    netScore: 2    },
+    { holeNumber: 11, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 12, par: 4, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 4,    netScore: 3    },
+    { holeNumber: 13, par: 5, winnerId: 'p1',  winnerName: 'Andrew', grossScore: 3,    netScore: 3    },
+    { holeNumber: 14, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 15, par: 4, winnerId: 'p4',  winnerName: 'Tom',    grossScore: 4,    netScore: 3    },
+    { holeNumber: 16, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 17, par: 4, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 4,    netScore: 3    },
+    { holeNumber: 18, par: 5, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+  ],
+  2: [
+    { holeNumber:  1, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  2, par: 5, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  3, par: 3, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 3,    netScore: 2    },
+    { holeNumber:  4, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  5, par: 3, winnerId: 'p1',  winnerName: 'Andrew', grossScore: 2,    netScore: 2    },
+    { holeNumber:  6, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  7, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  8, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber:  9, par: 5, winnerId: 'p4',  winnerName: 'Tom',    grossScore: 5,    netScore: 3    },
+    { holeNumber: 10, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 11, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 12, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 13, par: 5, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 14, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 15, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 16, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 17, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+    { holeNumber: 18, par: 5, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
+  ],
+}
+
+// ─── Trip Earnings (structured columns) ──────────────────────────────────────
+// Team: team game result (+/- from overall team win/loss)
+// Matches: individual head-to-head match earnings
+// Skins: skin game earnings (10 skins × $8 each, $20 buy-in per player)
+// NetTotal: sum of all three
+
+export const STUB_TRIP_EARNINGS: TripEarningsRow[] = [
+  { player: STUB_PLAYERS[0], team:  15, matches:  20, skins:   4, netTotal:  39 },
+  { player: STUB_PLAYERS[1], team:  15, matches: -10, skins: -12, netTotal:  -7 },
+  { player: STUB_PLAYERS[2], team: -15, matches: -20, skins:  12, netTotal: -23 },
+  { player: STUB_PLAYERS[3], team: -15, matches:  10, skins:  -4, netTotal:  -9 },
 ]
 
 // ─── Scorecard ────────────────────────────────────────────────────────────────

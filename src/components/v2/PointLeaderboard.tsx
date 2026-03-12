@@ -1,32 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import MatchCard from './MatchCard'
 import type {
   MatchV2,
   PlayerLeaderboardStats,
   HoleLeaderboardStats,
-  PlayerEarnings,
+  PlayerV2,
+  TripRoundV2,
+  SkinResultV2,
+  TripRoundScoreV2,
+  TripEarningsRow,
 } from '@/lib/v2/types'
 
-type Tab = 'matches' | 'players' | 'holes' | 'earnings'
+type View = 'matches' | 'individual' | 'player_stats' | 'hole_stats' | 'skins' | 'earnings'
 
-interface PointLeaderboardProps {
-  tripId: string
-  tripName: string
-  readOnly?: boolean
-  matches: MatchV2[]
-  playerStats: PlayerLeaderboardStats[]
-  holeStats: HoleLeaderboardStats[]
-  earnings: PlayerEarnings[]
-}
+const VIEWS: { key: View; label: string }[] = [
+  { key: 'matches',      label: 'Match Leaderboard'      },
+  { key: 'individual',   label: 'Individual Leaderboard' },
+  { key: 'player_stats', label: 'Player Stats'           },
+  { key: 'hole_stats',   label: 'Hole Stats'             },
+  { key: 'skins',        label: 'Skins'                  },
+  { key: 'earnings',     label: 'Earnings'               },
+]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number | null, decimals = 1): string {
+function fmt1(n: number | null): string {
   if (n == null) return '—'
-  return n.toFixed(decimals)
+  return n.toFixed(1)
 }
 
 function pct(n: number | null): string {
@@ -40,194 +42,370 @@ function money(n: number): string {
   return n >= 0 ? `+${s}` : `-${s}`
 }
 
-// ─── Sub-tables ───────────────────────────────────────────────────────────────
+function diffStr(diff: number | null): string {
+  if (diff == null) return '—'
+  if (diff === 0) return 'E'
+  return diff > 0 ? `+${diff}` : `${diff}`
+}
 
-function MatchesTab({ matches }: { matches: MatchV2[] }) {
-  if (matches.length === 0) {
-    return <EmptyState text="No matches yet." />
+// Table cell classes
+const TH      = 'px-2 py-2 text-center text-[10px] font-bold text-white uppercase tracking-wide whitespace-nowrap'
+const TH_LEFT = 'sticky left-0 px-3 py-2 text-left text-[10px] font-bold text-white uppercase tracking-wide bg-golf-800'
+const TD      = 'px-2 py-1.5 text-center text-xs text-gray-700 whitespace-nowrap'
+
+function tdLeft(bg: string) {
+  return `sticky left-0 px-3 py-1.5 text-xs font-semibold text-gray-900 whitespace-nowrap ${bg}`
+}
+
+// ─── Match Leaderboard ────────────────────────────────────────────────────────
+
+function MatchLeaderboard({ matches, roundFilter }: { matches: MatchV2[]; roundFilter: number }) {
+  const filtered = matches.filter(m => m.roundNumber === roundFilter)
+  if (filtered.length === 0) {
+    return <p className="py-8 text-center text-sm text-gray-400">No matches for this round.</p>
   }
   return (
     <div className="space-y-2 p-3">
-      {matches.map(m => (
-        <MatchCard key={m.id} match={m} />
-      ))}
+      {filtered.map(m => <MatchCard key={m.id} match={m} />)}
     </div>
   )
 }
 
-function PlayerStatsTab({ stats }: { stats: PlayerLeaderboardStats[] }) {
+// ─── Individual Leaderboard ───────────────────────────────────────────────────
+
+function IndividualLeaderboard({
+  rounds, roundScores, players, scoreType,
+}: {
+  rounds: TripRoundV2[]
+  roundScores: TripRoundScoreV2[]
+  players: PlayerV2[]
+  scoreType: 'gross' | 'net'
+}) {
+  const rows = players.map(p => {
+    let totalScore = 0, totalPar = 0
+    const scores = rounds.map(r => {
+      const s = roundScores.find(rs => rs.playerId === p.id && rs.roundNumber === r.roundNumber)
+      const val = scoreType === 'gross' ? s?.grossScore ?? null : s?.netScore ?? null
+      if (val != null) { totalScore += val; totalPar += r.par }
+      return val
+    })
+    const diff = totalPar > 0 ? totalScore - totalPar : null
+    return { player: p, scores, diff }
+  }).sort((a, b) => {
+    if (a.diff == null && b.diff == null) return 0
+    if (a.diff == null) return 1
+    if (b.diff == null) return -1
+    return a.diff - b.diff
+  })
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-xs">
         <thead>
-          <tr className="bg-gray-50 text-gray-500 border-b border-gray-100">
-            <th className="sticky left-0 bg-gray-50 px-3 py-2 text-left font-semibold min-w-[70px]">Player</th>
-            <th className="px-2 py-2 text-center font-semibold">Rec</th>
-            <th className="px-2 py-2 text-center font-semibold">Pts</th>
-            <th className="px-2 py-2 text-center font-semibold">Gross</th>
-            <th className="px-2 py-2 text-center font-semibold">Net</th>
-            <th className="px-2 py-2 text-center font-semibold">Skins</th>
-            <th className="px-2 py-2 text-center font-semibold">FW%</th>
-            <th className="px-2 py-2 text-center font-semibold">GIR%</th>
-            <th className="px-2 py-2 text-center font-semibold">Putts</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {stats.map(({ player, matchRecord: r, points, grossAvg, netAvg, skinsWon, fairwayPct, girPct, puttsAvg }, i) => (
-            <tr key={player.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-              <td className={`sticky left-0 px-3 py-2 font-semibold text-gray-900 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                {player.name}
-              </td>
-              <td className="px-2 py-2 text-center text-gray-600 whitespace-nowrap">
-                {r.wins}-{r.losses}-{r.ties}
-              </td>
-              <td className="px-2 py-2 text-center font-bold text-golf-700">
-                {points % 1 === 0 ? points : points.toFixed(1)}
-              </td>
-              <td className="px-2 py-2 text-center text-gray-700">{fmt(grossAvg)}</td>
-              <td className="px-2 py-2 text-center text-gray-700">{fmt(netAvg)}</td>
-              <td className="px-2 py-2 text-center text-gray-700">{skinsWon}</td>
-              <td className="px-2 py-2 text-center text-gray-700">{pct(fairwayPct)}</td>
-              <td className="px-2 py-2 text-center text-gray-700">{pct(girPct)}</td>
-              <td className="px-2 py-2 text-center text-gray-700">{fmt(puttsAvg)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function HoleStatsTab({ stats }: { stats: HoleLeaderboardStats[] }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-xs">
-        <thead>
-          <tr className="bg-gray-50 text-gray-500 border-b border-gray-100">
-            <th className="px-2 py-2 text-center font-semibold w-8">#</th>
-            <th className="px-2 py-2 text-center font-semibold w-8">Par</th>
-            <th className="px-2 py-2 text-center font-semibold">Gross</th>
-            <th className="px-2 py-2 text-center font-semibold">Net</th>
-            <th className="px-2 py-2 text-center font-semibold">Bir+</th>
-            <th className="px-2 py-2 text-center font-semibold">Par</th>
-            <th className="px-2 py-2 text-center font-semibold">Bog-</th>
-            <th className="px-2 py-2 text-center font-semibold">FW%</th>
-            <th className="px-2 py-2 text-center font-semibold">GIR%</th>
-            <th className="px-2 py-2 text-center font-semibold">Putts</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {stats.map((h, i) => (
-            <tr key={h.holeNumber} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-              <td className="px-2 py-1.5 text-center font-bold text-gray-900">{h.holeNumber}</td>
-              <td className="px-2 py-1.5 text-center text-gray-500">{h.par}</td>
-              <td className="px-2 py-1.5 text-center text-gray-700">{fmt(h.avgGross)}</td>
-              <td className="px-2 py-1.5 text-center text-gray-700">{fmt(h.avgNet)}</td>
-              <td className="px-2 py-1.5 text-center text-red-600 font-semibold">{h.birdiesOrBetter}</td>
-              <td className="px-2 py-1.5 text-center text-gray-600">{h.pars}</td>
-              <td className="px-2 py-1.5 text-center text-blue-600 font-semibold">{h.bogeysOrWorse}</td>
-              <td className="px-2 py-1.5 text-center text-gray-700">{pct(h.fairwayPct)}</td>
-              <td className="px-2 py-1.5 text-center text-gray-700">{pct(h.girPct)}</td>
-              <td className="px-2 py-1.5 text-center text-gray-700">{fmt(h.avgPutts)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function EarningsTab({ earnings }: { earnings: PlayerEarnings[] }) {
-  const sorted = [...earnings].sort((a, b) => b.netEarnings - a.netEarnings)
-  return (
-    <div className="divide-y divide-gray-100">
-      {sorted.map(({ player, netEarnings, breakdown }) => (
-        <div key={player.id} className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-gray-900 text-sm">{player.name}</span>
-            <span className={`font-black text-base ${netEarnings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {money(netEarnings)}
-            </span>
-          </div>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-            {breakdown.map(line => (
-              <span key={line.label} className="text-xs text-gray-400">
-                {line.label}: {money(line.amount)}
-              </span>
+          <tr className="bg-golf-800">
+            <th className={TH_LEFT}>Player</th>
+            {rounds.map(r => (
+              <th key={r.roundNumber} className={TH}>
+                {r.courseName.length > 12 ? r.courseName.substring(0, 12) + '…' : r.courseName}
+              </th>
             ))}
-          </div>
-        </div>
-      ))}
+            <th className={TH}>+/-</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map(({ player, scores, diff }, i) => {
+            const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+            return (
+              <tr key={player.id} className={bg}>
+                <td className={tdLeft(bg)}>{player.name}</td>
+                {scores.map((s, j) => (
+                  <td key={j} className={TD}>{s ?? '—'}</td>
+                ))}
+                <td className={`${TD} font-bold ${
+                  diff == null ? 'text-gray-400' :
+                  diff < 0    ? 'text-red-600'  :
+                  diff > 0    ? 'text-blue-600' : 'text-gray-700'
+                }`}>{diffStr(diff)}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
 
-function EmptyState({ text }: { text: string }) {
-  return <p className="py-8 text-center text-sm text-gray-400">{text}</p>
+// ─── Player Stats ─────────────────────────────────────────────────────────────
+
+function PlayerStatsView({ stats }: { stats: PlayerLeaderboardStats[] }) {
+  const sorted = [...stats].sort((a, b) => b.points - a.points)
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-xs">
+        <thead>
+          <tr className="bg-golf-800">
+            <th className={TH_LEFT}>Player</th>
+            <th className={TH}>W-L-T</th>
+            <th className={TH}>Pts</th>
+            <th className={TH}>Skins</th>
+            <th className={TH}>FW%</th>
+            <th className={TH}>GIR%</th>
+            <th className={TH}>Putts</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {sorted.map(({ player, matchRecord: r, points, skinsWon, fairwayPct, girPct, puttsAvg }, i) => {
+            const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+            return (
+              <tr key={player.id} className={bg}>
+                <td className={tdLeft(bg)}>{player.name}</td>
+                <td className={TD}>{r.wins}-{r.losses}-{r.ties}</td>
+                <td className={`${TD} font-bold text-golf-700`}>
+                  {points % 1 === 0 ? points : points.toFixed(1)}
+                </td>
+                <td className={TD}>{skinsWon}</td>
+                <td className={TD}>{pct(fairwayPct)}</td>
+                <td className={TD}>{pct(girPct)}</td>
+                <td className={TD}>{fmt1(puttsAvg)}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ─── Hole Stats ───────────────────────────────────────────────────────────────
+
+function HoleStatsView({ holeStats }: { holeStats: HoleLeaderboardStats[] }) {
+  if (holeStats.length === 0) {
+    return <p className="py-8 text-center text-sm text-gray-400">No hole stats for this round.</p>
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-xs">
+        <thead>
+          <tr className="bg-golf-800">
+            <th className={TH}>Hole</th>
+            <th className={TH}>Par</th>
+            <th className={TH}>Avg Gross</th>
+            <th className={TH}>Avg Net</th>
+            <th className={TH}>Diff</th>
+            <th className={TH}>FW%</th>
+            <th className={TH}>GIR%</th>
+            <th className={TH}>Putts</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {holeStats.map((h, i) => {
+            const diff = parseFloat((h.avgGross - h.par).toFixed(1))
+            const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+            return (
+              <tr key={h.holeNumber} className={bg}>
+                <td className={`${TD} font-bold text-gray-900`}>{h.holeNumber}</td>
+                <td className={TD}>{h.par}</td>
+                <td className={TD}>{fmt1(h.avgGross)}</td>
+                <td className={TD}>{fmt1(h.avgNet)}</td>
+                <td className={`${TD} font-semibold ${
+                  diff > 0 ? 'text-blue-600' : diff < 0 ? 'text-red-600' : 'text-gray-700'
+                }`}>
+                  {diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1)}
+                </td>
+                <td className={TD}>{pct(h.fairwayPct)}</td>
+                <td className={TD}>{pct(h.girPct)}</td>
+                <td className={TD}>{fmt1(h.avgPutts)}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ─── Skins ────────────────────────────────────────────────────────────────────
+
+function SkinsView({ skins }: { skins: SkinResultV2[] }) {
+  if (skins.length === 0) {
+    return <p className="py-8 text-center text-sm text-gray-400">No skins data for this round.</p>
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-xs">
+        <thead>
+          <tr className="bg-golf-800">
+            <th className={TH}>Hole</th>
+            <th className={TH}>Par</th>
+            <th className={TH}>Player</th>
+            <th className={TH}>Gross</th>
+            <th className={TH}>Net</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {skins.map((s, i) => {
+            const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+            return (
+              <tr key={s.holeNumber} className={bg}>
+                <td className={`${TD} font-bold text-gray-900`}>{s.holeNumber}</td>
+                <td className={TD}>{s.par}</td>
+                <td className={`${TD} ${s.winnerName ? 'font-semibold text-golf-700' : 'text-gray-300'}`}>
+                  {s.winnerName ?? ''}
+                </td>
+                <td className={TD}>{s.grossScore ?? ''}</td>
+                <td className={TD}>{s.netScore ?? ''}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ─── Earnings ─────────────────────────────────────────────────────────────────
+
+function EarningsView({ earnings }: { earnings: TripEarningsRow[] }) {
+  const sorted = [...earnings].sort((a, b) => b.netTotal - a.netTotal)
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-xs">
+        <thead>
+          <tr className="bg-golf-800">
+            <th className={TH_LEFT}>Player</th>
+            <th className={TH}>Team</th>
+            <th className={TH}>Matches</th>
+            <th className={TH}>Skins</th>
+            <th className={TH}>Net Total</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {sorted.map(({ player, team, matches, skins, netTotal }, i) => {
+            const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+            return (
+              <tr key={player.id} className={bg}>
+                <td className={tdLeft(bg)}>{player.name}</td>
+                <td className={`${TD} font-semibold ${team    >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(team)}</td>
+                <td className={`${TD} font-semibold ${matches >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(matches)}</td>
+                <td className={`${TD} font-semibold ${skins   >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(skins)}</td>
+                <td className={`${TD} font-black   ${netTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(netTotal)}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ─── Chevron icon ─────────────────────────────────────────────────────────────
+
+function Chevron({ className = '' }: { className?: string }) {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" className={`pointer-events-none shrink-0 ${className}`}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function PointLeaderboard({
-  tripId,
-  tripName,
-  readOnly = false,
-  matches,
-  playerStats,
-  holeStats,
-  earnings,
-}: PointLeaderboardProps) {
-  const [tab, setTab] = useState<Tab>('matches')
+interface PointLeaderboardProps {
+  matches: MatchV2[]
+  rounds: TripRoundV2[]
+  players: PlayerV2[]
+  playerStats: PlayerLeaderboardStats[]
+  roundScores: TripRoundScoreV2[]
+  holeStatsByRound: Record<number, HoleLeaderboardStats[]>
+  skinsByRound: Record<number, SkinResultV2[]>
+  earnings: TripEarningsRow[]
+}
 
-  const TABS: { key: Tab; label: string }[] = [
-    { key: 'matches',  label: 'Matches'  },
-    { key: 'players',  label: 'Players'  },
-    { key: 'holes',    label: 'Holes'    },
-    { key: 'earnings', label: 'Earnings' },
-  ]
+export default function PointLeaderboard({
+  matches, rounds, players, playerStats, roundScores,
+  holeStatsByRound, skinsByRound, earnings,
+}: PointLeaderboardProps) {
+  const defaultRound = rounds[0]?.roundNumber ?? 1
+  const [view,        setView]        = useState<View>('matches')
+  const [roundFilter, setRoundFilter] = useState<number>(defaultRound)
+  const [scoreType,   setScoreType]   = useState<'gross' | 'net'>('gross')
+
+  const needsRoundFilter = view === 'matches' || view === 'hole_stats' || view === 'skins'
+  const needsScoreFilter = view === 'individual'
+
+  function handleViewChange(v: View) {
+    setView(v)
+    setRoundFilter(defaultRound)
+  }
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between bg-golf-800 px-4 py-3">
-        <div>
-          <p className="text-xs font-semibold text-golf-300 uppercase tracking-wider">
-            {readOnly ? 'Trip Leaderboard' : 'Live Leaderboard'}
-          </p>
-          <p className="text-sm font-bold text-white">{tripName}</p>
-        </div>
-        {!readOnly && (
-          <Link
-            href={`/v2/trip/${tripId}/leaderboard`}
-            className="text-xs font-semibold text-golf-300 hover:text-white transition"
+        {/* View selector acts as the widget title */}
+        <div className="flex items-center gap-1">
+          <select
+            value={view}
+            onChange={e => handleViewChange(e.target.value as View)}
+            className="bg-transparent text-sm font-bold text-white appearance-none cursor-pointer focus:outline-none"
           >
-            Full view →
-          </Link>
+            {VIEWS.map(v => (
+              <option key={v.key} value={v.key} className="text-gray-900 bg-white font-normal">
+                {v.label}
+              </option>
+            ))}
+          </select>
+          <Chevron className="text-golf-300" />
+        </div>
+
+        {/* Right-side filter */}
+        {needsRoundFilter && rounds.length > 0 && (
+          <div className="flex items-center gap-1">
+            <select
+              value={roundFilter}
+              onChange={e => setRoundFilter(Number(e.target.value))}
+              className="bg-transparent text-xs font-semibold text-golf-300 appearance-none cursor-pointer focus:outline-none"
+            >
+              {rounds.map(r => (
+                <option key={r.roundNumber} value={r.roundNumber} className="text-gray-900 bg-white font-normal">
+                  Rd {r.roundNumber}
+                </option>
+              ))}
+            </select>
+            <Chevron className="text-golf-300" />
+          </div>
+        )}
+
+        {needsScoreFilter && (
+          <div className="flex items-center gap-1">
+            <select
+              value={scoreType}
+              onChange={e => setScoreType(e.target.value as 'gross' | 'net')}
+              className="bg-transparent text-xs font-semibold text-golf-300 appearance-none cursor-pointer focus:outline-none"
+            >
+              <option value="gross" className="text-gray-900 bg-white font-normal">Gross</option>
+              <option value="net"   className="text-gray-900 bg-white font-normal">Net</option>
+            </select>
+            <Chevron className="text-golf-300" />
+          </div>
         )}
       </div>
 
-      {/* Tab bar */}
-      <div className="flex border-b border-gray-100 bg-gray-50">
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${
-              tab === t.key
-                ? 'text-golf-700 border-b-2 border-golf-700 bg-white'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      {tab === 'matches'  && <MatchesTab matches={matches} />}
-      {tab === 'players'  && <PlayerStatsTab stats={playerStats} />}
-      {tab === 'holes'    && <HoleStatsTab stats={holeStats} />}
-      {tab === 'earnings' && <EarningsTab earnings={earnings} />}
+      {/* Content */}
+      {view === 'matches' && (
+        <MatchLeaderboard matches={matches} roundFilter={roundFilter} />
+      )}
+      {view === 'individual' && (
+        <IndividualLeaderboard
+          rounds={rounds} roundScores={roundScores}
+          players={players} scoreType={scoreType}
+        />
+      )}
+      {view === 'player_stats' && <PlayerStatsView stats={playerStats} />}
+      {view === 'hole_stats'   && <HoleStatsView   holeStats={holeStatsByRound[roundFilter] ?? []} />}
+      {view === 'skins'        && <SkinsView        skins={skinsByRound[roundFilter] ?? []} />}
+      {view === 'earnings'     && <EarningsView     earnings={earnings} />}
     </div>
   )
 }

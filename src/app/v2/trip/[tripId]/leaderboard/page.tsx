@@ -13,8 +13,11 @@ import {
   ACTIVE_TRIP,
   STUB_MATCHES,
   STUB_PLAYER_STATS,
-  STUB_HOLE_STATS,
-  STUB_EARNINGS,
+  STUB_TRIP_ROUNDS,
+  STUB_ROUND_SCORES,
+  STUB_HOLE_STATS_BY_ROUND,
+  STUB_SKINS_BY_ROUND,
+  STUB_TRIP_EARNINGS,
 } from '@/lib/v2/stub-data'
 
 export default function TripLeaderboardPage({ params }: { params: Promise<{ tripId: string }> }) {
@@ -74,18 +77,18 @@ export default function TripLeaderboardPage({ params }: { params: Promise<{ trip
         <TeamScoresCard
           matches={STUB_MATCHES}
           tripId={trip.id}
-          tripName={trip.name}
         />
 
-        {/* Full 4-tab leaderboard */}
+        {/* Full leaderboard widget */}
         <PointLeaderboard
-          tripId={trip.id}
-          tripName={trip.name}
-          readOnly={true}
           matches={STUB_MATCHES}
+          rounds={STUB_TRIP_ROUNDS}
+          players={trip.players}
           playerStats={STUB_PLAYER_STATS}
-          holeStats={STUB_HOLE_STATS}
-          earnings={STUB_EARNINGS}
+          roundScores={STUB_ROUND_SCORES}
+          holeStatsByRound={STUB_HOLE_STATS_BY_ROUND}
+          skinsByRound={STUB_SKINS_BY_ROUND}
+          earnings={STUB_TRIP_EARNINGS}
         />
       </div>
     </div>

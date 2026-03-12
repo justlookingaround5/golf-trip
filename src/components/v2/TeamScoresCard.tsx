@@ -6,7 +6,6 @@ import type { MatchV2 } from '@/lib/v2/types'
 interface TeamScoresCardProps {
   matches: MatchV2[]
   tripId: string
-  tripName: string
   /** If true, wraps the card in a Link to the full leaderboard page */
   linkToFull?: boolean
 }
@@ -26,7 +25,7 @@ function pts(n: number) {
   return n % 1 === 0 ? String(n) : n.toFixed(1)
 }
 
-export default function TeamScoresCard({ matches, tripId, tripName, linkToFull }: TeamScoresCardProps) {
+export default function TeamScoresCard({ matches, tripId, linkToFull }: TeamScoresCardProps) {
   const teams = aggregateTeams(matches)
   const isTwoTeam = teams.length === 2
 
@@ -34,12 +33,9 @@ export default function TeamScoresCard({ matches, tripId, tripName, linkToFull }
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between bg-golf-800 px-4 py-3">
-        <div>
-          <p className="text-xs font-semibold text-golf-300 uppercase tracking-wider">
-            {linkToFull ? 'Live Leaderboard' : 'Team Standings'}
-          </p>
-          <p className="text-sm font-bold text-white">{tripName}</p>
-        </div>
+        <p className="text-sm font-bold text-white">
+          {linkToFull ? 'Live Leaderboard' : 'Team Standings'}
+        </p>
         {linkToFull && (
           <span className="text-xs font-semibold text-golf-300">Full view →</span>
         )}

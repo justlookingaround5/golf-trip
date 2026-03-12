@@ -40,6 +40,7 @@ export interface ScorecardV2 {
 
 export interface MatchV2 {
   id: string
+  roundNumber: number
   format: string
   formatLabel: string
   status: 'pending' | 'in_progress' | 'completed'
@@ -169,4 +170,36 @@ export interface ChatMessageV2 {
   content: string
   timestamp: string
   isSystem: boolean
+}
+
+export interface TripRoundV2 {
+  roundNumber: number
+  courseId: string
+  courseName: string
+  par: number
+}
+
+export interface SkinResultV2 {
+  holeNumber: number
+  par: number
+  winnerId: string | null
+  winnerName: string | null
+  grossScore: number | null
+  netScore: number | null
+}
+
+export interface TripRoundScoreV2 {
+  playerId: string
+  roundNumber: number
+  grossScore: number | null
+  netScore: number | null
+  par: number
+}
+
+export interface TripEarningsRow {
+  player: PlayerV2
+  team: number
+  matches: number
+  skins: number
+  netTotal: number
 }
