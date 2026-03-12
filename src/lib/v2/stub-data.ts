@@ -369,7 +369,7 @@ export const STUB_FEED: FeedEventV2[] = [
     id: 'fe1',
     userId: 'p2', userName: 'Jake', userAvatarUrl: null,
     timestamp: '2025-06-10T20:05:00Z',
-    round:    { courseName: 'Pebble Beach Golf Links', grossScore: 83, netScore: 71, par: 72, tripName: 'Pebble Beach 2025' },
+    round:    { roundId: 'r1', courseName: 'Pebble Beach Golf Links', grossScore: 83, netScore: 71, par: 72, tripName: 'Pebble Beach 2025' },
     match:    { result: 'Lost 2 & 1', format: '2v2 Best Ball' },
     earnings: { net: -18 },
   },
@@ -384,7 +384,7 @@ export const STUB_FEED: FeedEventV2[] = [
     id: 'fe3',
     userId: 'p4', userName: 'Tom', userAvatarUrl: null,
     timestamp: '2025-06-09T21:00:00Z',
-    round:    { courseName: 'Spyglass Hill', grossScore: 91, netScore: 73, par: 72, tripName: 'Pebble Beach 2025' },
+    round:    { roundId: 'r1', courseName: 'Spyglass Hill', grossScore: 91, netScore: 73, par: 72, tripName: 'Pebble Beach 2025' },
     match:    { result: 'Lost by 2', format: '1v1 Stroke Play' },
     earnings: { net: -26 },
   },
@@ -392,7 +392,7 @@ export const STUB_FEED: FeedEventV2[] = [
     id: 'fe4',
     userId: 'p2', userName: 'Jake', userAvatarUrl: null,
     timestamp: '2025-05-28T19:00:00Z',
-    round: { courseName: 'TPC Sawgrass', grossScore: 79, netScore: 67, par: 72 },
+    round: { roundId: 'r1', courseName: 'TPC Sawgrass', grossScore: 79, netScore: 67, par: 72 },
   },
 ]
 

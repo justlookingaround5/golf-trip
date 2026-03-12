@@ -68,11 +68,11 @@ export default function FeedItemCard({ item }: FeedItemCardProps) {
       {/* Event rows — only render rows that exist */}
       <div className="space-y-2.5">
         {item.round && (() => {
-          const { courseName, grossScore, netScore, par, tripName } = item.round
+          const { roundId, courseName, grossScore, netScore, par, tripName } = item.round
           const diff = grossScore - par
           const vsParStr = diff === 0 ? 'E' : diff > 0 ? `+${diff}` : `${diff}`
-          return (
-            <div className="flex items-start gap-2">
+          const inner = (
+            <>
               <span className="text-base leading-snug shrink-0">⛳</span>
               <div>
                 <p className="text-sm text-gray-900">
@@ -89,7 +89,14 @@ export default function FeedItemCard({ item }: FeedItemCardProps) {
                   />
                 </div>
               </div>
-            </div>
+            </>
+          )
+          return roundId ? (
+            <Link href={`/v2/scorecard/${roundId}`} className="flex items-start gap-2 hover:opacity-80 transition">
+              {inner}
+            </Link>
+          ) : (
+            <div className="flex items-start gap-2">{inner}</div>
           )
         })()}
 

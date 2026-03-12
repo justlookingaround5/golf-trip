@@ -1,12 +1,13 @@
 'use client'
 
 import { use } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import TripChatV2 from '@/components/v2/TripChatV2'
 import { STUB_THREADS, STUB_CHAT_MESSAGES, STUB_FRIENDS, ME } from '@/lib/v2/stub-data'
 
 export default function ThreadPage({ params }: { params: Promise<{ threadId: string }> }) {
   const { threadId } = use(params)
+  const router = useRouter()
 
   // STUB: look up thread by id, or fall back to friend name if navigating via userId
   const friend = STUB_FRIENDS.find(f => f.id === threadId)
@@ -27,11 +28,11 @@ export default function ThreadPage({ params }: { params: Promise<{ threadId: str
     <div className="flex flex-col min-h-screen bg-white">
       {/* Header */}
       <header className="bg-golf-800 px-4 pt-14 pb-4 text-white flex items-center gap-3">
-        <Link href="/v2/messages" className="text-golf-300 hover:text-white transition">
+        <button onClick={() => router.back()} className="text-golf-300 hover:text-white transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-        </Link>
+        </button>
         <div>
           <h1 className="text-lg font-bold leading-tight">{thread.name}</h1>
           <p className="text-xs text-golf-300">

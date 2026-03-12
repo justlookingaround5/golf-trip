@@ -87,6 +87,7 @@ export interface FeedEventV2 {
   userAvatarUrl: string | null
   timestamp: string
   round?: {
+    roundId?: string
     courseName: string
     grossScore: number
     netScore?: number

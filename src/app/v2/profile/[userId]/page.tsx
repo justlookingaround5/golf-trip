@@ -5,6 +5,7 @@
 
 import { use } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { STUB_FRIENDS, STUB_PINS, STUB_PLAYER_STATS, STUB_ALL_ROUNDS, STUB_EARNINGS } from '@/lib/v2/stub-data'
 
@@ -12,6 +13,7 @@ const CourseMapV2 = dynamic(() => import('@/components/v2/CourseMapV2'), { ssr: 
 
 export default function FriendProfilePage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
+  const router = useRouter()
 
   const friend = STUB_FRIENDS.find(f => f.id === userId) ?? {
     id: userId,
@@ -39,15 +41,15 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
       {/* Header */}
       <header className="bg-golf-800 px-4 pt-14 pb-8 text-white">
         <div className="mx-auto max-w-lg">
-          <Link
-            href="/v2/profile"
+          <button
+            onClick={() => router.back()}
             className="mb-4 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            Friends
-          </Link>
+            Back
+          </button>
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-golf-600 text-2xl font-bold text-white ring-2 ring-white/30 shrink-0">
               {friend.name[0]?.toUpperCase()}
@@ -56,7 +58,6 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
               <h1 className="text-xl font-bold">{friend.name}</h1>
               <p className="text-sm text-golf-200 mt-0.5">
                 {friend.handicap != null ? `HCP ${friend.handicap}` : 'No handicap'}
-                {friendRounds.length > 0 && ` · ${friendRounds.length} rounds`}
               </p>
             </div>
           </div>
