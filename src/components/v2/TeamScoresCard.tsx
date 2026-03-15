@@ -7,6 +7,7 @@ import type { MatchV2, PlayerV2 } from '@/lib/v2/types'
 interface TeamScoresCardProps {
   matches: MatchV2[]
   tripId: string
+  tripName?: string
   /** If true, wraps the card in a Link to the full leaderboard page */
   linkToFull?: boolean
   /** If true, tapping a team score shows a player breakdown pop-up */
@@ -112,7 +113,7 @@ function TeamDetailModal({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function TeamScoresCard({ matches, tripId, linkToFull, showTeamDetail }: TeamScoresCardProps) {
+export default function TeamScoresCard({ matches, tripId, tripName, linkToFull, showTeamDetail }: TeamScoresCardProps) {
   const teams = aggregateTeams(matches)
   const isTwoTeam = teams.length === 2
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
@@ -126,7 +127,7 @@ export default function TeamScoresCard({ matches, tripId, linkToFull, showTeamDe
       {/* Header */}
       <div className="flex items-center justify-between bg-golf-800 px-4 py-3">
         <p className="text-sm font-bold text-white">
-          {linkToFull ? 'Live Leaderboard' : 'Team Standings'}
+          {linkToFull ? (tripName ?? 'Live Leaderboard') : 'Team Standings'}
         </p>
         {linkToFull && (
           <span className="text-xs font-semibold text-white">Full view →</span>

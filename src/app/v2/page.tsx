@@ -62,6 +62,7 @@ export default function HomeV2() {
           <TeamScoresCard
             matches={STUB_MATCHES}
             tripId={ACTIVE_TRIP.id}
+            tripName={ACTIVE_TRIP.name}
             linkToFull
           />
         )}
@@ -85,6 +86,7 @@ export default function HomeV2() {
                   <UserProfileCard
                     key={fr.userId}
                     player={{ id: fr.userId, name: fr.userName, avatarUrl: fr.userAvatarUrl, handicap: null }}
+                    href={`/v2/scorecard/${fr.roundId}`}
                     subLabel={`${fr.courseName} · ${fr.holesPlayed} holes`}
                     badge={
                       <div className="text-right">

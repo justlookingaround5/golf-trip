@@ -2,6 +2,7 @@
 
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import TripChatV2 from '@/components/v2/TripChatV2'
 import { STUB_THREADS, STUB_CHAT_MESSAGES, STUB_FRIENDS, ME } from '@/lib/v2/stub-data'
 
@@ -28,17 +29,26 @@ export default function ThreadPage({ params }: { params: Promise<{ threadId: str
     <div className="flex flex-col min-h-screen bg-white">
       {/* Header */}
       <header className="bg-golf-800 px-4 pt-14 pb-4 text-white flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-golf-300 hover:text-white transition">
+        <button onClick={() => router.back()} className="text-golf-300 hover:text-white transition shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <div>
+        <Link
+          href={
+            thread.type === 'dm' && thread.friendUserId
+              ? `/v2/profile/${thread.friendUserId}`
+              : thread.type === 'trip' && thread.tripId
+              ? `/v2/trip/${thread.tripId}/leaderboard`
+              : '#'
+          }
+          className="flex-1 min-w-0"
+        >
           <h1 className="text-lg font-bold leading-tight">{thread.name}</h1>
           <p className="text-xs text-golf-300">
             {thread.type === 'trip' ? 'Group chat' : 'Direct message'}
           </p>
-        </div>
+        </Link>
       </header>
 
       {/* Chat — flex-1 so it fills the screen between header and nav */}

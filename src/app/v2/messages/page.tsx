@@ -22,41 +22,66 @@ function relativeTime(ts: string | null): string {
 
 function ThreadRow({ thread }: { thread: MessageThread }) {
   const initial = thread.name[0]?.toUpperCase() ?? '?'
+  const profileHref = thread.type === 'dm' && thread.friendUserId
+    ? `/v2/profile/${thread.friendUserId}`
+    : thread.type === 'trip' && thread.tripId
+    ? `/v2/trip/${thread.tripId}/leaderboard`
+    : null
+
   return (
-    <Link
-      href={`/v2/messages/${thread.id}`}
-      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition border-b border-gray-100 last:border-b-0"
-    >
-      {/* Avatar */}
-      {thread.avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={thread.avatarUrl} alt={thread.name} className="h-12 w-12 rounded-full object-cover shrink-0" />
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0">
+      {/* Avatar → friend profile or trip page */}
+      {profileHref ? (
+        <Link href={profileHref} className="shrink-0">
+          {thread.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thread.avatarUrl} alt={thread.name} className="h-12 w-12 rounded-full object-cover" />
+          ) : (
+            <div className={`flex h-12 w-12 items-center justify-center rounded-full text-white font-bold text-base ${
+              thread.type === 'trip' ? 'bg-golf-900' : 'bg-golf-600'
+            }`}>
+              {thread.type === 'trip' ? '✈️' : initial}
+            </div>
+          )}
+        </Link>
       ) : (
-        <div className={`flex h-12 w-12 items-center justify-center rounded-full text-white font-bold text-base shrink-0 ${
-          thread.type === 'trip' ? 'bg-golf-900' : 'bg-golf-600'
-        }`}>
-          {thread.type === 'trip' ? '✈️' : initial}
+        <div className="shrink-0">
+          {thread.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thread.avatarUrl} alt={thread.name} className="h-12 w-12 rounded-full object-cover" />
+          ) : (
+            <div className={`flex h-12 w-12 items-center justify-center rounded-full text-white font-bold text-base ${
+              thread.type === 'trip' ? 'bg-golf-900' : 'bg-golf-600'
+            }`}>
+              {thread.type === 'trip' ? '✈️' : initial}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <p className="font-semibold text-gray-900 text-sm truncate">{thread.name}</p>
-          <span className="text-xs text-gray-400 shrink-0">{relativeTime(thread.lastMessageAt)}</span>
+      {/* Content → opens thread */}
+      <Link
+        href={`/v2/messages/${thread.id}`}
+        className="flex flex-1 min-w-0 items-center gap-2 hover:opacity-80 active:opacity-60 transition"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-semibold text-gray-900 text-sm truncate">{thread.name}</p>
+            <span className="text-xs text-gray-400 shrink-0">{relativeTime(thread.lastMessageAt)}</span>
+          </div>
+          <p className={`text-xs truncate mt-0.5 ${thread.unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
+            {thread.lastMessage ?? 'No messages yet'}
+          </p>
         </div>
-        <p className={`text-xs truncate mt-0.5 ${thread.unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
-          {thread.lastMessage ?? 'No messages yet'}
-        </p>
-      </div>
 
-      {/* Unread badge */}
-      {thread.unreadCount > 0 && (
-        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-golf-700 text-[10px] font-bold text-white px-1 shrink-0">
-          {thread.unreadCount}
-        </span>
-      )}
-    </Link>
+        {/* Unread badge */}
+        {thread.unreadCount > 0 && (
+          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-golf-700 text-[10px] font-bold text-white px-1 shrink-0">
+            {thread.unreadCount}
+          </span>
+        )}
+      </Link>
+    </div>
   )
 }
 

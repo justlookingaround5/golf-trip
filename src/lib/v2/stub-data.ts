@@ -524,6 +524,7 @@ export const STUB_FRIEND_ACTIVE_ROUNDS = [
     userId: 'p3',
     userName: 'Mike',
     userAvatarUrl: null,
+    roundId: 'round1',
     courseName: 'Cypress Point',
     holesPlayed: 14,
     currentGross: 68,

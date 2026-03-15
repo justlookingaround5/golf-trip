@@ -82,7 +82,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            Back
+            Friends
           </button>
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-golf-600 text-2xl font-bold text-white ring-2 ring-white/30 shrink-0">
