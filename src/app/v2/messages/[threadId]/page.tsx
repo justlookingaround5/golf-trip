@@ -34,7 +34,7 @@ export default function ThreadPage({ params }: { params: Promise<{ threadId: str
           </svg>
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-bold leading-tight">{thread.name}</h1>
+          <h1 className="text-lg font-bold leading-tight">{thread.type === 'dm' ? thread.name.split(' ')[0] : thread.name}</h1>
           <p className="text-xs text-golf-300">
             {thread.type === 'trip' ? 'Group chat' : 'Direct message'}
           </p>

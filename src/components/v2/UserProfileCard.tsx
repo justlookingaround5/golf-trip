@@ -54,7 +54,7 @@ export default function UserProfileCard({
       </Link>
 
       <Link href={dest} className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 text-sm truncate">{player.name}</p>
+        <p className="font-semibold text-gray-900 text-sm truncate">{player.name.split(' ')[0]}</p>
         {subLabel && <p className="text-xs text-gray-500 truncate mt-0.5">{subLabel}</p>}
       </Link>
 

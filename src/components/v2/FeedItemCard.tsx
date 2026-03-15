@@ -59,7 +59,7 @@ export default function FeedItemCard({ item }: FeedItemCardProps) {
             href={`/v2/profile/${item.userId}`}
             className="text-sm font-semibold text-gray-900 hover:text-golf-700 transition"
           >
-            {item.userName}
+            {item.userName.split(' ')[0]}
           </Link>
           <span className="text-xs text-gray-400 shrink-0">{relativeTime(item.timestamp)}</span>
         </div>

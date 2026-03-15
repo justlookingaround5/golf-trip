@@ -111,7 +111,7 @@ function TeamDetailModal({
                   {player.name.charAt(0)}
                 </span>
               </div>
-              <span className="flex-1 text-sm font-semibold text-gray-900">{player.name}</span>
+              <span className="flex-1 text-sm font-semibold text-gray-900">{player.name.split(' ')[0]}</span>
               <span className="text-sm font-black text-golf-700 tabular-nums">{pts(p)} pts</span>
             </div>
           ))}

@@ -137,7 +137,7 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
   const [tab, setTab] = useState<Tab>('rounds')
 
   const friend = STUB_FRIENDS.find(f => f.id === userId)
-  const friendName = friend?.name ?? 'Player'
+  const friendName = (friend?.name ?? 'Player').split(' ')[0]
 
   const totalRounds = STUB_ALL_ROUNDS.length
   const avgGross = STUB_ALL_ROUNDS

@@ -223,7 +223,7 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                     >
                       {m.teamA.players.map((p, i) => (
                         <span key={p.id} className={`text-xs leading-5 ${aWins ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
-                          {p.name}
+                          {p.name.split(' ')[0]}
                           {m.teamA.scoreDiffs[i] != null && (
                             <span className="text-[10px] text-gray-400 ml-1">{playerDiffStr(m.teamA.scoreDiffs[i])}</span>
                           )}
@@ -255,7 +255,7 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                           {m.teamB.scoreDiffs[i] != null && (
                             <span className="text-[10px] text-gray-400 mr-1">{playerDiffStr(m.teamB.scoreDiffs[i])}</span>
                           )}
-                          {p.name}
+                          {p.name.split(' ')[0]}
                         </span>
                       ))}
                       {/* Result badge in winner's panel */}
@@ -349,7 +349,7 @@ function IndividualLeaderboard({
             const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
             return (
               <tr key={player.id} className={bg}>
-                <td className={tdLeft(bg)}>{player.name}</td>
+                <td className={tdLeft(bg)}>{player.name.split(' ')[0]}</td>
                 {scores.map((s, j) => {
                   const roundPar = rounds[j]?.par ?? 0
                   const underPar = s != null && s < roundPar
@@ -428,7 +428,7 @@ function PlayerStatsView({ stats, sortCol, sortDir, onSort }: { stats: PlayerLea
             const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
             return (
               <tr key={player.id} className={bg}>
-                <td className={tdLeft(bg)}>{player.name}</td>
+                <td className={tdLeft(bg)}>{player.name.split(' ')[0]}</td>
                 <td className={TD}>{r.wins}-{r.losses}-{r.ties}</td>
                 <td className={TD}>{skinsWon}</td>
                 <td className={TD}>{pct(fairwayPct)}</td>
@@ -573,7 +573,7 @@ function SkinsView({ skins }: { skins: SkinResultV2[] }) {
                 <td className={`${TD} font-bold text-gray-900`}>{s.holeNumber}</td>
                 <td className={TD}>{s.par}</td>
                 <td className={`${TD} ${s.winnerName ? 'font-semibold text-golf-700' : 'text-gray-300'}`}>
-                  {s.winnerName ?? <span className="inline-block h-5" />}
+                  {s.winnerName ? s.winnerName.split(' ')[0] : <span className="inline-block h-5" />}
                 </td>
                 <td className={TD}><SkinScore score={s.grossScore} par={s.par} /></td>
                 <td className={TD}><SkinScore score={s.netScore} par={s.par} /></td>
@@ -636,7 +636,7 @@ function EarningsView({ earnings, sortCol, sortDir, onSort }: { earnings: TripEa
             const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
             return (
               <tr key={player.id} className={bg}>
-                <td className={tdLeft(bg)}>{player.name}</td>
+                <td className={tdLeft(bg)}>{player.name.split(' ')[0]}</td>
                 <td className={`${TD} font-semibold ${team    >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(team)}</td>
                 <td className={`${TD} font-semibold ${matches >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(matches)}</td>
                 <td className={`${TD} font-semibold ${skins   >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(skins)}</td>

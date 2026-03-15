@@ -45,7 +45,7 @@ export default function FriendRoundScorecardPage({
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            {friend.name}&apos;s Stats
+            {friend.name.split(' ')[0]}&apos;s Stats
           </button>
           <h1 className="text-xl font-bold">{round.courseName}</h1>
           <div className="flex items-center gap-3 text-sm text-golf-200 mt-0.5">

@@ -66,7 +66,7 @@ function ThreadRow({ thread }: { thread: MessageThread }) {
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-gray-900 text-sm truncate">{thread.name}</p>
+            <p className="font-semibold text-gray-900 text-sm truncate">{thread.type === 'dm' ? thread.name.split(' ')[0] : thread.name}</p>
             <span className="text-xs text-gray-400 shrink-0">{relativeTime(thread.lastMessageAt)}</span>
           </div>
           <p className={`text-xs truncate mt-0.5 ${thread.unreadCount > 0 ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>

@@ -84,7 +84,7 @@ export default function ScorecardViewer({ scorecard }: ScorecardViewerProps) {
           <div className="flex-1 flex items-center">
             {players.map(({ player }) => (
               <div key={player.id} className="flex-1 text-center text-[11px] font-semibold text-golf-200 truncate">
-                {player.name}
+                {player.name.split(' ')[0]}
               </div>
             ))}
           </div>
