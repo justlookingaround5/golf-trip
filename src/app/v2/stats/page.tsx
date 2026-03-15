@@ -82,36 +82,30 @@ export default function StatsPage() {
             <h1 className="text-2xl font-bold">My Stats</h1>
             <p className="mt-1 text-sm text-golf-200">{totalRounds} rounds</p>
           </div>
-          <div className="text-right text-sm text-golf-200 pt-8">
-            {careerLow != null && (
-              <div>Low <span className="text-base font-bold text-white">{careerLow}</span></div>
-            )}
-            {record != null && (
-              <div>Record <span className="text-base font-bold text-white">{record}</span></div>
-            )}
-            {earnings != null && (
-              <div>Earnings <span className="text-base font-bold text-white">{earnings}</span></div>
-            )}
-          </div>
+          {me && (
+            <div className="text-right text-sm text-golf-200 pt-8">
+              <div>GIR% <span className="text-base font-bold text-white">{me.girPct}%</span></div>
+              <div>FW% <span className="text-base font-bold text-white">{me.fairwayPct}%</span></div>
+              <div>Putts <span className="text-base font-bold text-white">{me.puttsAvg}</span></div>
+            </div>
+          )}
         </div>
       </header>
 
       <div className="mx-auto max-w-lg">
         {/* Stat boxes */}
-        {me && (
-          <div className="grid grid-cols-3 gap-3 mx-3 mt-3">
-            {[
-              { label: 'GIR%', value: `${me.girPct}%` },
-              { label: 'FW%', value: `${me.fairwayPct}%` },
-              { label: 'Putts', value: `${me.puttsAvg}` },
-            ].map(({ label, value }) => (
-              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
-                <p className="text-2xl font-black text-gray-900">{value}</p>
-                <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-3 gap-3 mx-3 mt-3">
+          {[
+            { label: 'Low', value: careerLow != null ? `${careerLow}` : '—' },
+            { label: 'Record', value: record ?? '—' },
+            { label: 'Earnings', value: earnings ?? '—' },
+          ].map(({ label, value }) => (
+            <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
+              <p className="text-2xl font-black text-gray-900">{value}</p>
+              <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
+            </div>
+          ))}
+        </div>
 
         {/* Round list */}
         <div className="bg-white mt-3 mx-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden">

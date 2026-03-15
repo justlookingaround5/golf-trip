@@ -12,6 +12,7 @@ import {
   STUB_USER_HOLE_STATS,
   STUB_ALL_ROUNDS,
   STUB_PINS,
+  ME,
 } from '@/lib/v2/stub-data'
 import type { RoundV2, UserHoleStatsV2 } from '@/lib/v2/types'
 
@@ -272,7 +273,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
   const course = STUB_COURSE_DETAILS[courseId]
   const pin = STUB_PINS.find(p => p.courseId === courseId)
-  const holeStats = STUB_USER_HOLE_STATS[courseId] ?? []
+  const holeStats = STUB_USER_HOLE_STATS[courseId]?.[ME.id] ?? []
   const courseRounds = STUB_ALL_ROUNDS
     .filter(r => r.courseId === courseId)
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -322,7 +323,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
             Profile
           </button>
           <h1 className="text-2xl font-bold">{name}</h1>
-          {location && <p className="text-sm text-golf-200 mt-0.5">{location}</p>}
           <div className="mt-3 space-y-2">
             <div className="flex items-center gap-4">
               {avgUserRating != null && (

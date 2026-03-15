@@ -891,11 +891,14 @@ function _makeUserHoleStats(courseId: string): UserHoleStatsV2[] {
   }))
 }
 
-export const STUB_USER_HOLE_STATS: Record<string, UserHoleStatsV2[]> = {
-  course1: _makeUserHoleStats('course1'),
-  course3: _makeUserHoleStats('course3'),
-  course4: _makeUserHoleStats('course4'),
-  course5: _makeUserHoleStats('course5'),
+export const STUB_USER_HOLE_STATS: Record<string, Record<string, UserHoleStatsV2[]>> = {
+  course1: {
+    [ME.id]: _makeUserHoleStats('course1'),
+    p2: _makeUserHoleStats('course1').map(h => ({ ...h, avgGross: +(h.avgGross + 0.4).toFixed(1), birdies: Math.max(0, h.birdies - 1), bogeys: h.bogeys + 1 })),
+  },
+  course3: { [ME.id]: _makeUserHoleStats('course3') },
+  course4: { [ME.id]: _makeUserHoleStats('course4') },
+  course5: { [ME.id]: _makeUserHoleStats('course5') },
 }
 
 export const STUB_CHAT_MESSAGES: ChatMessageV2[] = [
