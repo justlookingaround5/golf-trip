@@ -677,6 +677,7 @@ export default function PointLeaderboard({
   holeStatsByRound, skinsByRound, earnings, teams,
 }: PointLeaderboardProps) {
   const defaultRound = rounds[0]?.roundNumber ?? 1
+  const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const rdParam = searchParams.get('rd')
