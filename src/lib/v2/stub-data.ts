@@ -26,25 +26,25 @@ import type {
 
 // ─── Players ──────────────────────────────────────────────────────────────────
 
-export const ME: PlayerV2 = { id: 'p1', name: 'Andrew', avatarUrl: null, handicap: 8 }
+export const ME: PlayerV2 = { id: 'p1', name: 'Andrew Cole', avatarUrl: null, handicap: 8 }
 
 export const STUB_PLAYERS: PlayerV2[] = [
   ME,
-  { id: 'p2',  name: 'Jake',    avatarUrl: null, handicap: 12 },
-  { id: 'p3',  name: 'Mike',    avatarUrl: null, handicap: 5  },
-  { id: 'p4',  name: 'Tom',     avatarUrl: null, handicap: 18 },
-  { id: 'p5',  name: 'Griffin', avatarUrl: null, handicap: 10 },
-  { id: 'p6',  name: 'Danny',   avatarUrl: null, handicap: 14 },
-  { id: 'p7',  name: 'Chris',   avatarUrl: null, handicap: 7  },
-  { id: 'p8',  name: 'Ryan',    avatarUrl: null, handicap: 15 },
-  { id: 'p9',  name: 'Matt',    avatarUrl: null, handicap: 6  },
-  { id: 'p10', name: 'Tyler',   avatarUrl: null, handicap: 11 },
-  { id: 'p11', name: 'Zach',    avatarUrl: null, handicap: 9  },
-  { id: 'p12', name: 'Logan',   avatarUrl: null, handicap: 16 },
-  { id: 'p13', name: 'Derek',   avatarUrl: null, handicap: 4  },
-  { id: 'p14', name: 'Sean',    avatarUrl: null, handicap: 13 },
-  { id: 'p15', name: 'Kevin',   avatarUrl: null, handicap: 10 },
-  { id: 'p16', name: 'Brett',   avatarUrl: null, handicap: 17 },
+  { id: 'p2',  name: 'Jake Brennan',    avatarUrl: null, handicap: 12 },
+  { id: 'p3',  name: 'Mike Stanton',    avatarUrl: null, handicap: 5  },
+  { id: 'p4',  name: 'Tom Whitley',     avatarUrl: null, handicap: 18 },
+  { id: 'p5',  name: 'Griffin Haas',    avatarUrl: null, handicap: 10 },
+  { id: 'p6',  name: 'Danny Rizzo',     avatarUrl: null, handicap: 14 },
+  { id: 'p7',  name: 'Chris Navarro',   avatarUrl: null, handicap: 7  },
+  { id: 'p8',  name: 'Ryan Potts',      avatarUrl: null, handicap: 15 },
+  { id: 'p9',  name: 'Matt Kessler',    avatarUrl: null, handicap: 6  },
+  { id: 'p10', name: 'Tyler Dunn',      avatarUrl: null, handicap: 11 },
+  { id: 'p11', name: 'Zach Fielding',   avatarUrl: null, handicap: 9  },
+  { id: 'p12', name: 'Logan Marsh',     avatarUrl: null, handicap: 16 },
+  { id: 'p13', name: 'Derek Solano',    avatarUrl: null, handicap: 4  },
+  { id: 'p14', name: 'Sean Calloway',   avatarUrl: null, handicap: 13 },
+  { id: 'p15', name: 'Kevin Odle',      avatarUrl: null, handicap: 10 },
+  { id: 'p16', name: 'Brett Langford',  avatarUrl: null, handicap: 17 },
 ]
 
 // ─── Teams ───────────────────────────────────────────────────────────────────
@@ -392,34 +392,34 @@ export const STUB_SKINS_BY_ROUND: Record<number, import('./types').SkinResultV2[
   })),
   1: [
     { holeNumber:  1, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber:  2, par: 5, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 4,    netScore: 3    },
+    { holeNumber:  2, par: 5, winnerId: 'p3',  winnerName: 'Mike Stanton',   grossScore: 4,    netScore: 3    },
     { holeNumber:  3, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber:  4, par: 4, winnerId: 'p1',  winnerName: 'Andrew', grossScore: 4,    netScore: 3    },
+    { holeNumber:  4, par: 4, winnerId: 'p1',  winnerName: 'Andrew Cole', grossScore: 4,    netScore: 3    },
     { holeNumber:  5, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber:  6, par: 4, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 4,    netScore: 4    },
+    { holeNumber:  6, par: 4, winnerId: 'p3',  winnerName: 'Mike Stanton',   grossScore: 4,    netScore: 4    },
     { holeNumber:  7, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber:  8, par: 4, winnerId: 'p1',  winnerName: 'Andrew', grossScore: 3,    netScore: 2    },
+    { holeNumber:  8, par: 4, winnerId: 'p1',  winnerName: 'Andrew Cole', grossScore: 3,    netScore: 2    },
     { holeNumber:  9, par: 5, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber: 10, par: 4, winnerId: 'p2',  winnerName: 'Jake',   grossScore: 3,    netScore: 2    },
+    { holeNumber: 10, par: 4, winnerId: 'p2',  winnerName: 'Jake Brennan',   grossScore: 3,    netScore: 2    },
     { holeNumber: 11, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber: 12, par: 4, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 4,    netScore: 3    },
-    { holeNumber: 13, par: 5, winnerId: 'p1',  winnerName: 'Andrew', grossScore: 3,    netScore: 3    },
+    { holeNumber: 12, par: 4, winnerId: 'p3',  winnerName: 'Mike Stanton',   grossScore: 4,    netScore: 3    },
+    { holeNumber: 13, par: 5, winnerId: 'p1',  winnerName: 'Andrew Cole', grossScore: 3,    netScore: 3    },
     { holeNumber: 14, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber: 15, par: 4, winnerId: 'p4',  winnerName: 'Tom',    grossScore: 4,    netScore: 3    },
+    { holeNumber: 15, par: 4, winnerId: 'p4',  winnerName: 'Tom Whitley',    grossScore: 4,    netScore: 3    },
     { holeNumber: 16, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber: 17, par: 4, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 4,    netScore: 3    },
+    { holeNumber: 17, par: 4, winnerId: 'p3',  winnerName: 'Mike Stanton',   grossScore: 4,    netScore: 3    },
     { holeNumber: 18, par: 5, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
   ],
   2: [
     { holeNumber:  1, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
     { holeNumber:  2, par: 5, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber:  3, par: 3, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 3,    netScore: 2    },
+    { holeNumber:  3, par: 3, winnerId: 'p3',  winnerName: 'Mike Stanton',   grossScore: 3,    netScore: 2    },
     { holeNumber:  4, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber:  5, par: 3, winnerId: 'p1',  winnerName: 'Andrew', grossScore: 2,    netScore: 2    },
+    { holeNumber:  5, par: 3, winnerId: 'p1',  winnerName: 'Andrew Cole', grossScore: 2,    netScore: 2    },
     { holeNumber:  6, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
     { holeNumber:  7, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
     { holeNumber:  8, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
-    { holeNumber:  9, par: 5, winnerId: 'p4',  winnerName: 'Tom',    grossScore: 5,    netScore: 3    },
+    { holeNumber:  9, par: 5, winnerId: 'p4',  winnerName: 'Tom Whitley',    grossScore: 5,    netScore: 3    },
     { holeNumber: 10, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
     { holeNumber: 11, par: 3, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
     { holeNumber: 12, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
@@ -634,7 +634,7 @@ export const STUB_FRIENDS: PlayerV2[] = STUB_PLAYERS.slice(1)
 export const STUB_FEED: FeedEventV2[] = [
   {
     id: 'fe1',
-    userId: 'p2', userName: 'Jake', userAvatarUrl: null,
+    userId: 'p2', userName: 'Jake Brennan', userAvatarUrl: null,
     timestamp: '2025-06-10T20:05:00Z',
     round:    { roundId: 'r1', courseName: 'Pebble Beach Golf Links', grossScore: 83, netScore: 71, par: 72, tripName: 'Pebble Beach 2025' },
     match:    { result: 'Lost 2 & 1', format: '2v2 Best Ball' },
@@ -642,7 +642,7 @@ export const STUB_FEED: FeedEventV2[] = [
   },
   {
     id: 'fe2',
-    userId: 'p3', userName: 'Mike', userAvatarUrl: null,
+    userId: 'p3', userName: 'Mike Stanton', userAvatarUrl: null,
     timestamp: '2025-06-10T20:00:00Z',
     round:    { roundId: 'r1', courseName: 'Pebble Beach Golf Links', grossScore: 74, netScore: 69, par: 72, tripName: 'Pebble Beach 2025' },
     match:    { result: 'Wins 3 & 2', format: '1v1 Match Play' },
@@ -650,7 +650,7 @@ export const STUB_FEED: FeedEventV2[] = [
   },
   {
     id: 'fe3',
-    userId: 'p4', userName: 'Tom', userAvatarUrl: null,
+    userId: 'p4', userName: 'Tom Whitley', userAvatarUrl: null,
     timestamp: '2025-06-09T21:00:00Z',
     round:    { roundId: 'r1', courseName: 'Spyglass Hill', grossScore: 91, netScore: 73, par: 72, tripName: 'Pebble Beach 2025' },
     match:    { result: 'Lost by 2', format: '1v1 Stroke Play' },
@@ -658,7 +658,7 @@ export const STUB_FEED: FeedEventV2[] = [
   },
   {
     id: 'fe4',
-    userId: 'p2', userName: 'Jake', userAvatarUrl: null,
+    userId: 'p2', userName: 'Jake Brennan', userAvatarUrl: null,
     timestamp: '2025-05-28T19:00:00Z',
     round: { roundId: 'r1', courseName: 'TPC Sawgrass', grossScore: 79, netScore: 67, par: 72 },
   },
@@ -669,7 +669,7 @@ export const STUB_FEED: FeedEventV2[] = [
 export const STUB_FRIEND_ACTIVE_ROUNDS = [
   {
     userId: 'p3',
-    userName: 'Mike',
+    userName: 'Mike Stanton',
     userAvatarUrl: null,
     roundId: 'round1',
     courseName: 'Cypress Point',
@@ -683,17 +683,17 @@ export const STUB_FRIEND_ACTIVE_ROUNDS = [
 
 export const STUB_THREADS: MessageThread[] = [
   {
-    id: 'dm-p2', type: 'dm', name: 'Jake', avatarUrl: null,
+    id: 'dm-p2', type: 'dm', name: 'Jake Brennan', avatarUrl: null,
     lastMessage: 'That eagle on 16 was insane 🔥', lastMessageAt: '2025-06-12T14:22:00Z',
     unreadCount: 2, friendUserId: 'p2',
   },
   {
-    id: 'dm-p3', type: 'dm', name: 'Mike', avatarUrl: null,
+    id: 'dm-p3', type: 'dm', name: 'Mike Stanton', avatarUrl: null,
     lastMessage: 'Good match man', lastMessageAt: '2025-06-11T21:05:00Z',
     unreadCount: 0, friendUserId: 'p3',
   },
   {
-    id: 'dm-p4', type: 'dm', name: 'Tom', avatarUrl: null,
+    id: 'dm-p4', type: 'dm', name: 'Tom Whitley', avatarUrl: null,
     lastMessage: "I'm paying everyone back Sunday", lastMessageAt: '2025-06-10T09:15:00Z',
     unreadCount: 0, friendUserId: 'p4',
   },

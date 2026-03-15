@@ -1,14 +1,11 @@
 'use client'
 
-// STATS TAB
-// Three sections: Logged Rounds · Match/Game Record · Total Earnings
+// STATS PAGE
+// Header with career stats · GIR/FW/Putts boxes · Round list
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_EARNINGS, ME } from '@/lib/v2/stub-data'
 import type { RoundV2 } from '@/lib/v2/types'
-
-type Tab = 'rounds' | 'matches' | 'earnings'
 
 // ─── Round row ────────────────────────────────────────────────────────────────
 
@@ -52,149 +49,74 @@ function RoundRow({ round }: { round: RoundV2 }) {
   )
 }
 
-// ─── Match/Game Record ────────────────────────────────────────────────────────
-
-function MatchRecord() {
-  const me = STUB_PLAYER_STATS.find(s => s.player.id === ME.id)
-  if (!me) return null
-  const { wins, losses, ties } = me.matchRecord
-  const played = wins + losses + ties
-
-  return (
-    <div className="space-y-4 p-4">
-      {/* W / L / T */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Wins',   count: wins,   cls: 'border-green-200 bg-green-50 text-green-700' },
-          { label: 'Losses', count: losses, cls: 'border-red-200 bg-red-50 text-red-700'       },
-          { label: 'Ties',   count: ties,   cls: 'border-gray-200 bg-gray-50 text-gray-600'    },
-        ].map(({ label, count, cls }) => (
-          <div key={label} className={`rounded-xl border px-3 py-4 text-center ${cls}`}>
-            <p className="text-3xl font-black">{count}</p>
-            <p className="text-xs font-semibold mt-0.5">{label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Summary stats */}
-      <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
-        {[
-          { label: 'Matches played', value: played },
-          { label: 'Win rate',       value: played > 0 ? `${Math.round((wins / played) * 100)}%` : '—' },
-        ].map(({ label, value }) => (
-          <div key={label} className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-gray-600">{label}</span>
-            <span className="text-sm font-bold text-gray-900">{value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── Total Earnings ───────────────────────────────────────────────────────────
-
-function TotalEarnings() {
-  const me = STUB_EARNINGS.find(e => e.player.id === ME.id)
-  if (!me) return <p className="py-8 text-center text-sm text-gray-400">No earnings data yet.</p>
-
-  const allEarnings = STUB_EARNINGS
-  const careerTotal = me.netEarnings
-
-  return (
-    <div className="space-y-4 p-4">
-      {/* Career total */}
-      <div className={`rounded-xl border px-5 py-5 text-center ${
-        careerTotal >= 0
-          ? 'border-green-200 bg-green-50'
-          : 'border-red-200 bg-red-50'
-      }`}>
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Career Total</p>
-        <p className={`text-4xl font-black ${careerTotal >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-          {careerTotal >= 0 ? '+' : ''}${Math.abs(careerTotal)}
-        </p>
-      </div>
-
-      {/* Per-player breakdown for context */}
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Breakdown</p>
-        </div>
-        <div className="divide-y divide-gray-100">
-          {me.breakdown.map(line => (
-            <div key={line.label} className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-gray-700">{line.label}</span>
-              <span className={`text-sm font-bold ${line.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {line.amount >= 0 ? '+' : ''}${Math.abs(line.amount)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function StatsPage() {
-  const [tab, setTab] = useState<Tab>('rounds')
-
   const totalRounds = STUB_ALL_ROUNDS.length
-  const avgGross = STUB_ALL_ROUNDS
-    .filter(r => r.grossTotal != null)
-    .reduce((s, r, _, arr) => s + (r.grossTotal! / arr.length), 0)
+  const completedRounds = STUB_ALL_ROUNDS.filter(r => r.grossTotal != null)
+  const me = STUB_PLAYER_STATS.find(s => s.player.id === ME.id)
+  const meEarnings = STUB_EARNINGS.find(e => e.player.id === ME.id)
+
+  const careerLow = completedRounds.length > 0
+    ? Math.min(...completedRounds.map(r => r.grossTotal!))
+    : null
+  const record = me ? `${me.matchRecord.wins}-${me.matchRecord.losses}-${me.matchRecord.ties}` : null
+  const earnings = meEarnings
+    ? (meEarnings.netEarnings >= 0 ? `+$${meEarnings.netEarnings}` : `-$${Math.abs(meEarnings.netEarnings)}`)
+    : null
 
   return (
     <div className="min-h-screen bg-background pb-28">
       <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
-        <div className="mx-auto max-w-lg">
-          <Link
-            href="/v2/profile"
-            className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            Profile
-          </Link>
-          <h1 className="text-2xl font-bold">My Stats</h1>
-          <div className="mt-1 flex items-center gap-4 text-sm text-golf-200">
-            <span>{totalRounds} rounds</span>
-            {avgGross > 0 && <span>Avg {avgGross.toFixed(1)}</span>}
+        <div className="mx-auto max-w-lg flex items-start justify-between">
+          <div>
+            <Link
+              href="/v2/profile"
+              className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Profile
+            </Link>
+            <h1 className="text-2xl font-bold">My Stats</h1>
+            <p className="mt-1 text-sm text-golf-200">{totalRounds} rounds</p>
+          </div>
+          <div className="text-right text-sm text-golf-200 pt-8">
+            {careerLow != null && (
+              <div>Low <span className="font-bold text-white">{careerLow}</span></div>
+            )}
+            {record != null && (
+              <div><span className="font-bold text-white">{record}</span></div>
+            )}
+            {earnings != null && (
+              <div><span className="font-bold text-white">{earnings}</span></div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Tab bar */}
-      <div className="sticky top-0 z-10 flex border-b border-gray-200 bg-white">
-        {([
-          { key: 'rounds',   label: 'Rounds'   },
-          { key: 'matches',  label: 'Matches'  },
-          { key: 'earnings', label: 'Earnings' },
-        ] as { key: Tab; label: string }[]).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex-1 py-3 text-sm font-semibold transition-colors ${
-              tab === key
-                ? 'text-golf-700 border-b-2 border-golf-700'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       <div className="mx-auto max-w-lg">
-        {tab === 'rounds' && (
-          <div className="bg-white mt-3 mx-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            {STUB_ALL_ROUNDS.map(r => <RoundRow key={r.id} round={r} />)}
+        {/* Stat boxes */}
+        {me && (
+          <div className="grid grid-cols-3 gap-3 mx-3 mt-3">
+            {[
+              { label: 'GIR%', value: `${me.girPct}%` },
+              { label: 'FW%', value: `${me.fairwayPct}%` },
+              { label: 'Putts', value: `${me.puttsAvg}` },
+            ].map(({ label, value }) => (
+              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
+                <p className="text-2xl font-black text-gray-900">{value}</p>
+                <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
+              </div>
+            ))}
           </div>
         )}
-        {tab === 'matches'  && <MatchRecord />}
-        {tab === 'earnings' && <TotalEarnings />}
+
+        {/* Round list */}
+        <div className="bg-white mt-3 mx-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          {STUB_ALL_ROUNDS.map(r => <RoundRow key={r.id} round={r} />)}
+        </div>
       </div>
     </div>
   )

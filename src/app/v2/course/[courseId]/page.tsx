@@ -292,7 +292,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const avgGross = completedRounds.length > 0 ? completedRounds.reduce((s, r) => s + r.grossTotal!, 0) / completedRounds.length : null
   // Aggregate avg putts from hole stats
   const puttsHoles = holeStats.filter(h => h.avgPutts != null)
-  const avgPutts = puttsHoles.length > 0 ? puttsHoles.reduce((s, h) => s + h.avgPutts!, 0) / puttsHoles.length : null
+  const avgPutts = puttsHoles.length > 0 ? puttsHoles.reduce((s, h) => s + h.avgPutts!, 0) : null
 
   // Aggregate FW% and GIR% from hole stats
   const fwHoles = holeStats.filter(h => h.fairwayPct != null)
@@ -374,7 +374,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
             <div className="grid grid-cols-3 gap-3 mt-3">
               <StatTile label="FW%" value={avgFw != null ? `${avgFw}%` : '—'} />
               <StatTile label="GIR%" value={avgGir != null ? `${avgGir}%` : '—'} />
-              <StatTile label="Avg Putts" value={avgPutts != null ? avgPutts.toFixed(1) : '—'} />
+              <StatTile label="Putts" value={avgPutts != null ? avgPutts.toFixed(1) : '—'} />
             </div>
           </Section>
         )}
