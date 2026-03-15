@@ -212,10 +212,6 @@ function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
 // ─── Course Info (tee-selectable slope/rating) ──────────────────────────────
 
 function CourseInfoSection({ course, location, par }: { course: import('@/lib/v2/types').CourseDetailV2; location: string; par: number }) {
-  const [selectedTeeName, setSelectedTeeName] = useState<string | null>(course.tees[0]?.name ?? null)
-  const sortedTees = [...course.tees].sort((a, b) => a.yardage - b.yardage)
-  const selectedTee = course.tees.find(t => t.name === selectedTeeName) ?? null
-
   return (
     <Section title="Course Info">
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden divide-y divide-gray-100">
@@ -229,37 +225,31 @@ function CourseInfoSection({ course, location, par }: { course: import('@/lib/v2
           <span className="text-sm text-gray-600">Par</span>
           <span className="text-sm font-bold text-gray-900">{par}</span>
         </div>
-        {sortedTees.length > 0 && (
+        {course.tees.length > 0 && (
           <div className="px-4 py-3">
-            <p className="text-sm text-gray-600 mb-2">Tees</p>
-            <div className="flex flex-col gap-2">
-              {sortedTees.map(t => (
-                <button
-                  key={t.name}
-                  onClick={() => setSelectedTeeName(t.name)}
-                  className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1 transition-colors ${
-                    t.name === selectedTeeName
-                      ? 'bg-golf-700 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {t.name} · {t.yardage.toLocaleString()} yds
-                </button>
-              ))}
-            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-gray-400 uppercase tracking-wide">
+                  <th className="text-left font-semibold pb-2">Tee</th>
+                  <th className="text-right font-semibold pb-2">Yardage</th>
+                  <th className="text-right font-semibold pb-2">Slope</th>
+                  <th className="text-right font-semibold pb-2">Rating</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {[...course.tees]
+                  .sort((a, b) => b.yardage - a.yardage)
+                  .map(t => (
+                    <tr key={t.name}>
+                      <td className="py-2 font-semibold text-gray-900">{t.name}</td>
+                      <td className="py-2 text-right text-gray-700 tabular-nums">{t.yardage.toLocaleString()}</td>
+                      <td className="py-2 text-right text-gray-700 tabular-nums">{t.slope}</td>
+                      <td className="py-2 text-right text-gray-700 tabular-nums">{t.rating.toFixed(1)}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
-        )}
-        {selectedTee && (
-          <>
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-gray-600">Slope</span>
-              <span className="text-sm font-bold text-gray-900">{selectedTee.slope}</span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-gray-600">Rating</span>
-              <span className="text-sm font-bold text-gray-900">{selectedTee.rating.toFixed(1)}</span>
-            </div>
-          </>
         )}
         {course.website && (
           <div className="flex items-center justify-between px-4 py-3">
