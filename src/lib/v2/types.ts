@@ -52,6 +52,10 @@ export interface MatchV2 {
   courseName: string
   tripId: string
   teeTime: string | null
+  thru: number | null
+  resultMargin: string | null
+  teamAScoreDiff: number | null
+  teamBScoreDiff: number | null
 }
 
 export interface TripV2 {

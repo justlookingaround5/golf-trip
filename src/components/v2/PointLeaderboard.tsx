@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import MatchCard from './MatchCard'
+import { useRouter } from 'next/navigation'
 import type {
   MatchV2,
   PlayerLeaderboardStats,
@@ -133,15 +133,77 @@ function parseTeeTime(t: string | null): number {
   return hours * 60 + m
 }
 
+function scoreDiffStr(diff: number | null): string {
+  if (diff == null) return ''
+  if (diff === 0) return '(E)'
+  return diff > 0 ? `(+${diff})` : `(${diff})`
+}
+
 function MatchLeaderboard({ matches, roundFilter }: { matches: MatchV2[]; roundFilter: number }) {
+  const router = useRouter()
   const filtered = [...matches.filter(m => m.roundNumber === roundFilter)]
     .sort((a, b) => parseTeeTime(a.teeTime) - parseTeeTime(b.teeTime))
   if (filtered.length === 0) {
     return <p className="py-8 text-center text-sm text-gray-400">No matches for this round.</p>
   }
+
+  // Group by course
+  const courseGroups = new Map<string, MatchV2[]>()
+  for (const m of filtered) {
+    const list = courseGroups.get(m.courseName) ?? []
+    list.push(m)
+    courseGroups.set(m.courseName, list)
+  }
+
   return (
-    <div className="space-y-2 p-3">
-      {filtered.map(m => <MatchCard key={m.id} match={m} />)}
+    <div className="p-3 space-y-4">
+      {[...courseGroups.entries()].map(([courseName, courseMatches]) => (
+        <table key={courseName} className="w-full text-xs">
+          <thead>
+            <tr className="bg-emerald-50">
+              <th className="w-[40px] px-1 py-2 text-center text-[10px] font-semibold text-gray-500 uppercase">Thru</th>
+              <th className="w-[50px]" />
+              <th colSpan={3} className="py-2 text-center text-sm font-bold text-gray-900">{courseName}</th>
+              <th className="w-[50px]" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {courseMatches.map((m, i) => {
+              const thruLabel = m.status === 'completed' ? 'F'
+                : m.thru != null ? `${m.thru}` : '—'
+              const aWins = m.teamA.points > m.teamB.points
+              const bWins = m.teamB.points > m.teamA.points
+              const teamANames = m.teamA.players.map(p => p.name).join(' & ')
+              const teamBNames = m.teamB.players.map(p => p.name).join(' & ')
+              const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+              const badge = 'bg-emerald-500 text-white text-[11px] font-bold px-1.5 py-0.5 rounded'
+
+              return (
+                <tr
+                  key={m.id}
+                  className={`${bg} cursor-pointer hover:bg-gray-100 transition-colors`}
+                  onClick={() => router.push(`/v2/match/${m.id}`)}
+                >
+                  <td className="px-1 py-2 text-center text-xs font-semibold text-gray-500">{thruLabel}</td>
+                  <td className="px-1 py-2 text-center">
+                    {aWins && m.resultMargin ? <span className={badge}>{m.resultMargin}</span> : null}
+                  </td>
+                  <td className="py-2 pr-1 text-right text-xs font-medium text-gray-900 whitespace-nowrap">
+                    {teamANames} <span className="text-gray-400">{scoreDiffStr(m.teamAScoreDiff)}</span>
+                  </td>
+                  <td className="w-[30px] py-2 text-center text-xs text-blue-400 font-medium">vs</td>
+                  <td className="py-2 pl-1 text-left text-xs font-medium text-gray-900 whitespace-nowrap">
+                    {teamBNames} <span className="text-gray-400">{scoreDiffStr(m.teamBScoreDiff)}</span>
+                  </td>
+                  <td className="px-1 py-2 text-center">
+                    {bWins && m.resultMargin ? <span className={badge}>{m.resultMargin}</span> : null}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      ))}
     </div>
   )
 }
