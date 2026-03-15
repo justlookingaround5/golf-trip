@@ -42,12 +42,17 @@ export default function ThreadPage({ params }: { params: Promise<{ threadId: str
               ? `/v2/trip/${thread.tripId}/leaderboard`
               : '#'
           }
-          className="flex-1 min-w-0"
+          className="flex-1 min-w-0 flex items-center gap-1"
         >
-          <h1 className="text-lg font-bold leading-tight">{thread.name}</h1>
-          <p className="text-xs text-golf-300">
-            {thread.type === 'trip' ? 'Group chat' : 'Direct message'}
-          </p>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold leading-tight">{thread.name}</h1>
+            <p className="text-xs text-golf-300">
+              {thread.type === 'trip' ? 'Group chat' : 'Direct message'}
+            </p>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-golf-400 shrink-0 ml-1">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
         </Link>
       </header>
 
