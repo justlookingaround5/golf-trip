@@ -1,20 +1,19 @@
 'use client'
 
 // COURSE DETAIL PAGE
-// Sections: Header · Photos · Your Stats · Scoring Distribution · Round History
-//           · Hole-by-Hole · Friends' Ratings · Course Info
+// Sections: Header · Your Stats · Scoring Distribution · Round History
+//           · Hole-by-Hole · Course Info
 
-import { use } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   STUB_COURSE_DETAILS,
-  STUB_FRIEND_COURSE_RATINGS,
   STUB_USER_HOLE_STATS,
   STUB_ALL_ROUNDS,
   STUB_PINS,
 } from '@/lib/v2/stub-data'
-import type { RoundV2, UserHoleStatsV2, FriendCourseRatingV2 } from '@/lib/v2/types'
+import type { RoundV2, UserHoleStatsV2 } from '@/lib/v2/types'
 
 // ─── Section wrapper ─────────────────────────────────────────────────────────
 
@@ -97,7 +96,52 @@ function ScoringBar({ label, count, maxCount, color }: { label: string; count: n
 
 // ─── Hole-by-Hole table ─────────────────────────────────────────────────────
 
+function avgBgColor(diff: number, maxDiff: number, minDiff: number): string {
+  if (diff === 0) return 'transparent'
+  if (diff > 0) {
+    const alpha = Math.min(diff / (maxDiff || 0.01), 1) * 0.5
+    return `rgba(239, 68, 68, ${alpha.toFixed(2)})`
+  }
+  const alpha = Math.min(Math.abs(diff) / (Math.abs(minDiff) || 0.01), 1) * 0.5
+  return `rgba(34, 197, 94, ${alpha.toFixed(2)})`
+}
+
+function BestScoreCell({ score, par }: { score: number; par: number }) {
+  const diff = score - par
+  if (diff <= -2) {
+    // Eagle or better — double circle
+    return (
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-yellow-400 text-yellow-600 font-bold text-xs">{score}</span>
+    )
+  }
+  if (diff === -1) {
+    // Birdie — red circle
+    return (
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-red-400 text-red-600 font-bold text-xs">{score}</span>
+    )
+  }
+  if (diff === 0) {
+    return <span className="text-xs font-medium text-gray-700">{score}</span>
+  }
+  if (diff === 1) {
+    // Bogey — blue square
+    return (
+      <span className="inline-flex h-7 w-7 items-center justify-center ring-1 ring-blue-400 text-blue-600 text-xs">{score}</span>
+    )
+  }
+  // Double bogey+ — bold blue square
+  return (
+    <span className="inline-flex h-7 w-7 items-center justify-center ring-2 ring-blue-500 text-blue-800 font-bold text-xs">{score}</span>
+  )
+}
+
 function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
+  const diffs = holes.map(h => h.avgGross - h.par)
+  const posDiffs = diffs.filter(d => d > 0)
+  const negDiffs = diffs.filter(d => d < 0)
+  const maxDiff = posDiffs.length > 0 ? Math.max(...posDiffs) : 0.01
+  const minDiff = negDiffs.length > 0 ? Math.min(...negDiffs) : -0.01
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -106,6 +150,7 @@ function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
             <tr className="bg-gray-50 border-b border-gray-100">
               <th className="px-3 py-2 text-left font-semibold text-gray-500">Hole</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">Par</th>
+              <th className="px-2 py-2 text-center font-semibold text-gray-500">HCP</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">Avg</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">Best</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">FW%</th>
@@ -115,15 +160,22 @@ function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
           <tbody className="divide-y divide-gray-50">
             {holes.map(h => {
               const diff = h.avgGross - h.par
-              const diffColor = diff >= 0.8 ? 'text-red-600 bg-red-50' : diff <= 0.1 ? 'text-green-700 bg-green-50' : 'text-gray-900'
               return (
                 <tr key={h.holeNumber}>
                   <td className="px-3 py-2 font-bold text-gray-900">{h.holeNumber}</td>
                   <td className="px-2 py-2 text-center text-gray-600">{h.par}</td>
-                  <td className={`px-2 py-2 text-center font-bold tabular-nums ${diffColor}`}>{h.avgGross.toFixed(1)}</td>
-                  <td className="px-2 py-2 text-center tabular-nums text-gray-800">{h.bestGross}</td>
-                  <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.fairwayPct != null ? `${h.fairwayPct}` : '—'}</td>
-                  <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.girPct != null ? `${h.girPct}` : '—'}</td>
+                  <td className="px-2 py-2 text-center text-gray-400 tabular-nums">{h.handicapIndex}</td>
+                  <td
+                    className="px-2 py-2 text-center font-bold tabular-nums"
+                    style={{ backgroundColor: avgBgColor(diff, maxDiff, minDiff) }}
+                  >
+                    {h.avgGross.toFixed(1)}
+                  </td>
+                  <td className="px-2 py-2 text-center tabular-nums">
+                    <BestScoreCell score={h.bestGross} par={h.par} />
+                  </td>
+                  <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.fairwayPct != null ? `${h.fairwayPct}%` : '—'}</td>
+                  <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.girPct != null ? `${h.girPct}%` : '—'}</td>
                 </tr>
               )
             })}
@@ -134,38 +186,68 @@ function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
   )
 }
 
-// ─── Friend row ──────────────────────────────────────────────────────────────
+// ─── Course Info (tee-selectable slope/rating) ──────────────────────────────
 
-function FriendRow({ fr }: { fr: FriendCourseRatingV2 }) {
-  const inner = (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-golf-100 text-sm font-bold text-golf-700 shrink-0">
-        {fr.player.name[0]?.toUpperCase()}
+function CourseInfoSection({ course, location, par }: { course: import('@/lib/v2/types').CourseDetailV2; location: string; par: number }) {
+  const [selectedTeeIdx, setSelectedTeeIdx] = useState(0)
+  const selectedTee = course.tees[selectedTeeIdx] ?? null
+
+  return (
+    <Section title="Course Info">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden divide-y divide-gray-100">
+        {location && (
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-gray-600">Address</span>
+            <span className="text-sm font-bold text-gray-900">{location}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between px-4 py-3">
+          <span className="text-sm text-gray-600">Par</span>
+          <span className="text-sm font-bold text-gray-900">{par}</span>
+        </div>
+        {course.tees.length > 0 && (
+          <div className="px-4 py-3">
+            <p className="text-sm text-gray-600 mb-2">Tees</p>
+            <div className="flex flex-wrap gap-2">
+              {course.tees.map((t, i) => (
+                <button
+                  key={t.name}
+                  onClick={() => setSelectedTeeIdx(i)}
+                  className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1 transition-colors ${
+                    i === selectedTeeIdx
+                      ? 'bg-golf-700 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {t.name} · {t.yardage.toLocaleString()} yds
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {selectedTee && (
+          <>
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm text-gray-600">Slope</span>
+              <span className="text-sm font-bold text-gray-900">{selectedTee.slope}</span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm text-gray-600">Rating</span>
+              <span className="text-sm font-bold text-gray-900">{selectedTee.rating.toFixed(1)}</span>
+            </div>
+          </>
+        )}
+        {course.website && (
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-gray-600">Website</span>
+            <a href={course.website} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-golf-700 hover:underline">
+              Visit
+            </a>
+          </div>
+        )}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-gray-900 truncate">{fr.player.name}</p>
-        <p className="text-xs text-gray-400 mt-0.5">
-          {fr.lastPlayed
-            ? `Last played ${new Date(fr.lastPlayed + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-            : 'No date'}
-          {fr.bestGross != null && <> · Best: {fr.bestGross}</>}
-        </p>
-      </div>
-      {fr.rating != null && (
-        <span className="shrink-0 ml-3 text-sm font-bold text-gray-900 tabular-nums">{fr.rating.toFixed(1)}</span>
-      )}
-      {fr.roundId && (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      )}
-    </div>
+    </Section>
   )
-
-  if (fr.roundId) {
-    return <Link href={`/v2/profile/${fr.player.id}/round/${fr.roundId}`}>{inner}</Link>
-  }
-  return <div>{inner}</div>
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -176,7 +258,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
   const course = STUB_COURSE_DETAILS[courseId]
   const pin = STUB_PINS.find(p => p.courseId === courseId)
-  const friendRatings = STUB_FRIEND_COURSE_RATINGS[courseId] ?? []
   const holeStats = STUB_USER_HOLE_STATS[courseId] ?? []
   const courseRounds = STUB_ALL_ROUNDS
     .filter(r => r.courseId === courseId)
@@ -195,9 +276,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const roundsPlayed = completedRounds.length
   const bestGross = completedRounds.length > 0 ? Math.min(...completedRounds.map(r => r.grossTotal!)) : null
   const avgGross = completedRounds.length > 0 ? completedRounds.reduce((s, r) => s + r.grossTotal!, 0) / completedRounds.length : null
-  const avgNet = completedRounds.filter(r => r.netTotal != null).length > 0
-    ? completedRounds.filter(r => r.netTotal != null).reduce((s, r) => s + r.netTotal!, 0) / completedRounds.filter(r => r.netTotal != null).length
-    : null
+  // Aggregate avg putts from hole stats
+  const puttsHoles = holeStats.filter(h => h.avgPutts != null)
+  const avgPutts = puttsHoles.length > 0 ? puttsHoles.reduce((s, h) => s + h.avgPutts!, 0) / puttsHoles.length : null
 
   // Aggregate FW% and GIR% from hole stats
   const fwHoles = holeStats.filter(h => h.fairwayPct != null)
@@ -205,12 +286,12 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const avgGir = holeStats.length > 0 ? Math.round(holeStats.reduce((s, h) => s + (h.girPct ?? 0), 0) / holeStats.length) : null
 
   // Scoring distribution from hole stats
-  const eagles = holeStats.reduce((s, h) => s + Math.max(0, h.birdies - (h.avgGross < h.par ? 1 : 0)), 0) // approximate
+  const eagles = holeStats.reduce((s, h) => s + h.eagles, 0)
   const birdies = holeStats.reduce((s, h) => s + h.birdies, 0)
   const pars = holeStats.reduce((s, h) => s + h.pars, 0)
   const bogeys = holeStats.reduce((s, h) => s + h.bogeys, 0)
   const doubles = holeStats.reduce((s, h) => s + h.doubles, 0)
-  const maxScoring = Math.max(birdies, pars, bogeys, doubles, 1)
+  const maxScoring = Math.max(eagles, birdies, pars, bogeys, doubles, 1)
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -228,41 +309,47 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
           </button>
           <h1 className="text-2xl font-bold">{name}</h1>
           {location && <p className="text-sm text-golf-200 mt-0.5">{location}</p>}
-          <div className="flex items-center gap-4 mt-3">
-            {avgUserRating != null && (
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center justify-center bg-yellow-400 text-yellow-900 text-sm font-black rounded-lg px-2 py-0.5">
-                  {avgUserRating.toFixed(1)}
-                </span>
-                <span className="text-sm text-golf-200">{totalRatings} ratings</span>
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center gap-4">
+              {avgUserRating != null && (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center bg-yellow-400 text-yellow-900 text-2xl font-black rounded-xl px-3 py-1.5">
+                    {avgUserRating.toFixed(1)}
+                  </span>
+                  <span className="text-sm text-golf-200">{totalRatings} ratings</span>
+                </div>
+              )}
+              {myRating != null ? (
+                <span className="text-sm text-golf-200">Your rating: <span className="font-bold text-white">{myRating.toFixed(1)}</span></span>
+              ) : (
+                <span className="text-sm text-golf-300">Rate this course</span>
+              )}
+            </div>
+            {(course?.conditionRating != null || course?.layoutRating != null || course?.valueRating != null) && (
+              <div className="flex gap-3">
+                {course?.conditionRating != null && (
+                  <span className="text-xs bg-yellow-400/15 text-yellow-300 rounded-full px-2.5 py-0.5 font-semibold">
+                    Condition {course.conditionRating.toFixed(1)}
+                  </span>
+                )}
+                {course?.layoutRating != null && (
+                  <span className="text-xs bg-yellow-400/15 text-yellow-300 rounded-full px-2.5 py-0.5 font-semibold">
+                    Layout {course.layoutRating.toFixed(1)}
+                  </span>
+                )}
+                {course?.valueRating != null && (
+                  <span className="text-xs bg-yellow-400/15 text-yellow-300 rounded-full px-2.5 py-0.5 font-semibold">
+                    Value {course.valueRating.toFixed(1)}
+                  </span>
+                )}
               </div>
-            )}
-            {myRating != null ? (
-              <span className="text-sm text-golf-200">Your rating: <span className="font-bold text-white">{myRating.toFixed(1)}</span></span>
-            ) : (
-              <span className="text-sm text-golf-300">Rate this course</span>
             )}
           </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-lg px-4 py-6 space-y-8">
-        {/* 2 · Course Photos */}
-        {course && course.photoUrls.length > 0 && (
-          <Section title="Photos">
-            <div className="overflow-x-auto flex gap-2 -mx-4 px-4 pb-2">
-              {course.photoUrls.map((url, i) => (
-                <div key={i} className="shrink-0 w-56 h-36 rounded-xl bg-gray-200 overflow-hidden border border-gray-100">
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                    Course Photo {i + 1}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* 3 · Your Stats at This Course */}
+        {/* Your Stats at This Course */}
         {roundsPlayed > 0 && (
           <Section title="Your Stats at This Course">
             <div className="grid grid-cols-3 gap-3">
@@ -271,17 +358,18 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
               <StatTile label="Avg Gross" value={avgGross != null ? avgGross.toFixed(1) : '—'} />
             </div>
             <div className="grid grid-cols-3 gap-3 mt-3">
-              <StatTile label="Avg Net" value={avgNet != null ? avgNet.toFixed(1) : '—'} />
+              <StatTile label="Avg Putts" value={avgPutts != null ? avgPutts.toFixed(1) : '—'} />
               <StatTile label="FW%" value={avgFw != null ? `${avgFw}%` : '—'} />
               <StatTile label="GIR%" value={avgGir != null ? `${avgGir}%` : '—'} />
             </div>
           </Section>
         )}
 
-        {/* 4 · Scoring Distribution */}
+        {/* Scoring Distribution */}
         {holeStats.length > 0 && (
           <Section title="Scoring Distribution">
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 space-y-2">
+              <ScoringBar label="Eagles" count={eagles} maxCount={maxScoring} color="bg-yellow-500" />
               <ScoringBar label="Birdies" count={birdies} maxCount={maxScoring} color="bg-red-500" />
               <ScoringBar label="Pars" count={pars} maxCount={maxScoring} color="bg-gray-400" />
               <ScoringBar label="Bogeys" count={bogeys} maxCount={maxScoring} color="bg-blue-500" />
@@ -306,77 +394,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
           </Section>
         )}
 
-        {/* 7 · Friends' Ratings & Scores */}
-        <Section title="Friends' Ratings & Scores">
-          {friendRatings.length > 0 ? (
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              {friendRatings.map(fr => <FriendRow key={fr.player.id} fr={fr} />)}
-            </div>
-          ) : (
-            <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-6 text-center">
-              <p className="text-sm text-gray-400">None of your friends have played here yet</p>
-            </div>
-          )}
-        </Section>
-
-        {/* 8 · Course Info */}
+        {/* Course Info */}
         {course && (
-          <Section title="Course Info">
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden divide-y divide-gray-100">
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-gray-600">Par</span>
-                <span className="text-sm font-bold text-gray-900">{par}</span>
-              </div>
-              {course.slope != null && (
-                <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-gray-600">Slope</span>
-                  <span className="text-sm font-bold text-gray-900">{course.slope}</span>
-                </div>
-              )}
-              {course.courseRating != null && (
-                <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-gray-600">USGA Rating</span>
-                  <span className="text-sm font-bold text-gray-900">{course.courseRating}</span>
-                </div>
-              )}
-              {course.tees.length > 0 && (
-                <div className="px-4 py-3">
-                  <p className="text-sm text-gray-600 mb-2">Tees</p>
-                  <div className="flex flex-wrap gap-2">
-                    {course.tees.map(t => (
-                      <span key={t.name} className="inline-flex items-center gap-1 text-xs font-semibold bg-gray-100 text-gray-700 rounded-full px-2.5 py-1">
-                        {t.name} · {t.yardage.toLocaleString()} yds
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {course.website && (
-                <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-gray-600">Website</span>
-                  <a href={course.website} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-golf-700 hover:underline">
-                    Visit
-                  </a>
-                </div>
-              )}
-              {course.phone && (
-                <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-gray-600">Phone</span>
-                  <a href={`tel:${course.phone}`} className="text-sm font-semibold text-golf-700">{course.phone}</a>
-                </div>
-              )}
-              <div className="px-4 py-3">
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${course.latitude},${course.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-semibold text-golf-700 hover:underline"
-                >
-                  View on Google Maps
-                </a>
-              </div>
-            </div>
-          </Section>
+          <CourseInfoSection course={course} location={location} par={par} />
         )}
       </div>
     </div>

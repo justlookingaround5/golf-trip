@@ -4,6 +4,7 @@
 // Pins include a rating field; popup shows course, date, score, trip, and stars.
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps'
 import type { CoursePinV2 } from '@/lib/v2/types'
 
@@ -21,7 +22,8 @@ interface CourseMapV2Props {
 }
 
 export default function CourseMapV2({ pins }: CourseMapV2Props) {
-  const [selected, setSelected] = useState<CoursePinV2 | null>(null)
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
+  const router = useRouter()
 
   if (pins.length === 0) {
     return (
@@ -31,6 +33,24 @@ export default function CourseMapV2({ pins }: CourseMapV2Props) {
       </div>
     )
   }
+
+  // Deduplicate pins by courseId (show one marker per course)
+  const uniquePins = new Map<string, CoursePinV2>()
+  for (const pin of pins) {
+    if (!uniquePins.has(pin.courseId)) uniquePins.set(pin.courseId, pin)
+  }
+
+  // Aggregate data for selected course
+  const selectedPin = selectedCourseId ? uniquePins.get(selectedCourseId) ?? null : null
+  const courseAgg = selectedCourseId ? (() => {
+    const coursePins = pins.filter(p => p.courseId === selectedCourseId)
+    const grossScores = coursePins.map(p => p.grossScore).filter((s): s is number => s != null)
+    const bestGross = grossScores.length > 0 ? Math.min(...grossScores) : null
+    const bestPin = bestGross != null ? coursePins.find(p => p.grossScore === bestGross) : null
+    const par = bestPin?.par ?? coursePins[0]?.par ?? 72
+    const bestVsPar = bestGross != null ? bestGross - par : null
+    return { bestGross, bestVsPar, par, roundCount: coursePins.length, rating: coursePins[0]?.rating ?? null }
+  })() : null
 
   return (
     <div className="space-y-3">
@@ -59,13 +79,13 @@ export default function CourseMapV2({ pins }: CourseMapV2Props) {
             }
           </Geographies>
 
-          {pins.map(pin => {
-            const isSelected = selected?.courseId === pin.courseId
+          {[...uniquePins.values()].map(pin => {
+            const isSelected = selectedCourseId === pin.courseId
             return (
               <Marker
                 key={pin.courseId}
                 coordinates={[pin.longitude, pin.latitude]}
-                onClick={() => setSelected(isSelected ? null : pin)}
+                onClick={() => setSelectedCourseId(isSelected ? null : pin.courseId)}
               >
                 <circle
                   r={isSelected ? 14 : 11}
@@ -81,59 +101,58 @@ export default function CourseMapV2({ pins }: CourseMapV2Props) {
       </div>
 
       {/* Selected pin popup */}
-      {selected && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+      {selectedPin && courseAgg && (
+        <div
+          className="rounded-xl border border-red-200 bg-red-50 p-4 cursor-pointer active:bg-red-100 transition-colors"
+          onClick={() => router.push(`/v2/course/${selectedPin.courseId}`)}
+        >
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900 truncate">{selected.courseName}</p>
-              {selected.tripName && (
-                <p className="text-xs text-gray-500">{selected.tripName}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-gray-900 truncate">{selectedPin.courseName}</p>
+              {selectedPin.tripName && (
+                <p className="text-xs text-gray-500">{selectedPin.tripName}</p>
               )}
-              <p className="text-xs text-gray-400">
-                {new Date(selected.date + 'T12:00:00').toLocaleDateString('en-US', {
-                  weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-                })}
-              </p>
-              <div className="mt-1">
-                <Rating rating={selected.rating} />
-              </div>
             </div>
+            {/* Large rating badge */}
+            {courseAgg.rating != null && (
+              <div className="bg-yellow-400 text-yellow-900 text-lg font-black rounded-lg px-3 py-1 shrink-0">
+                {courseAgg.rating.toFixed(1)}
+              </div>
+            )}
             <button
-              onClick={() => setSelected(null)}
-              className="shrink-0 text-gray-400 hover:text-gray-600 text-lg leading-none"
+              onClick={(e) => { e.stopPropagation(); setSelectedCourseId(null) }}
+              className="shrink-0 text-gray-400 hover:text-gray-600 text-lg leading-none ml-1"
               aria-label="Close"
             >
               ✕
             </button>
           </div>
 
-          {(selected.grossScore != null || selected.netScore != null) && (
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <Tile label="Gross"  value={selected.grossScore ?? '—'} />
-              <Tile label="Net"    value={selected.netScore ?? '—'} />
-              {selected.grossScore != null && (
-                <Tile
-                  label="vs Par"
-                  value={(() => {
-                    const d = selected.grossScore - selected.par
-                    return d === 0 ? 'E' : d > 0 ? `+${d}` : `${d}`
-                  })()}
-                  valueClass={
-                    selected.grossScore - selected.par < 0
-                      ? 'text-red-600'
-                      : selected.grossScore - selected.par > 0
-                        ? 'text-blue-600'
-                        : 'text-gray-600'
-                  }
-                />
-              )}
-            </div>
-          )}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <Tile
+              label="Best Gross"
+              value={courseAgg.bestGross ?? '—'}
+            />
+            <Tile
+              label="vs Par"
+              value={courseAgg.bestVsPar == null ? '—' : courseAgg.bestVsPar === 0 ? 'E' : courseAgg.bestVsPar > 0 ? `+${courseAgg.bestVsPar}` : `${courseAgg.bestVsPar}`}
+              valueClass={
+                courseAgg.bestVsPar == null ? 'text-gray-900'
+                  : courseAgg.bestVsPar < 0 ? 'text-red-600'
+                    : courseAgg.bestVsPar > 0 ? 'text-blue-600'
+                      : 'text-gray-600'
+              }
+            />
+            <Tile
+              label="Rounds"
+              value={courseAgg.roundCount}
+            />
+          </div>
         </div>
       )}
 
       <p className="text-center text-xs text-gray-400">
-        {pins.length} course{pins.length !== 1 ? 's' : ''} played · tap a dot for details
+        {uniquePins.size} course{uniquePins.size !== 1 ? 's' : ''} played · tap a dot for details
       </p>
     </div>
   )

@@ -2,26 +2,31 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { MatchV2, PlayerV2 } from '@/lib/v2/types'
+import type { MatchV2, PlayerV2, TripTeamV2 } from '@/lib/v2/types'
 
 interface TeamScoresCardProps {
   matches: MatchV2[]
   tripId: string
   tripName?: string
+  teams?: TripTeamV2[]
   /** If true, wraps the card in a Link to the full leaderboard page */
   linkToFull?: boolean
   /** If true, tapping a team score shows a player breakdown pop-up */
   showTeamDetail?: boolean
 }
 
-function aggregateTeams(matches: MatchV2[]): { name: string; points: number }[] {
+function aggregateTeams(matches: MatchV2[], teams?: TripTeamV2[]): { name: string; points: number; color?: string }[] {
   const map = new Map<string, number>()
   for (const m of matches) {
     map.set(m.teamA.name, (map.get(m.teamA.name) ?? 0) + m.teamA.points)
     map.set(m.teamB.name, (map.get(m.teamB.name) ?? 0) + m.teamB.points)
   }
+  const colorMap = new Map<string, string>()
+  if (teams) {
+    for (const t of teams) colorMap.set(t.name, t.color)
+  }
   return [...map.entries()]
-    .map(([name, points]) => ({ name, points }))
+    .map(([name, points]) => ({ name, points, color: colorMap.get(name) }))
     .sort((a, b) => b.points - a.points)
 }
 
@@ -54,11 +59,13 @@ function TeamDetailModal({
   teamName,
   contributions,
   totalPoints,
+  color,
   onClose,
 }: {
   teamName: string
   contributions: { player: PlayerV2; points: number }[]
   totalPoints: number
+  color?: string
   onClose: () => void
 }) {
   return (
@@ -77,9 +84,12 @@ function TeamDetailModal({
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-          <div>
-            <p className="text-base font-bold text-gray-900">{teamName}</p>
-            <p className="text-xs text-gray-400">{pts(totalPoints)} pts total</p>
+          <div className="flex items-center gap-2">
+            {color && <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />}
+            <div>
+              <p className="text-base font-bold text-gray-900">{teamName}</p>
+              <p className="text-xs text-gray-400">{pts(totalPoints)} pts total</p>
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -113,9 +123,9 @@ function TeamDetailModal({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function TeamScoresCard({ matches, tripId, tripName, linkToFull, showTeamDetail }: TeamScoresCardProps) {
-  const teams = aggregateTeams(matches)
-  const isTwoTeam = teams.length === 2
+export default function TeamScoresCard({ matches, tripId, tripName, teams, linkToFull, showTeamDetail }: TeamScoresCardProps) {
+  const aggregated = aggregateTeams(matches, teams)
+  const isTwoTeam = aggregated.length === 2
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
 
   function handleTeamClick(teamName: string) {
@@ -137,7 +147,7 @@ export default function TeamScoresCard({ matches, tripId, tripName, linkToFull, 
       {/* Scores */}
       {isTwoTeam ? (
         <div className="grid grid-cols-2 divide-x divide-gray-100">
-          {teams.map(t => (
+          {aggregated.map(t => (
             <div
               key={t.name}
               className={`py-4 text-center bg-white ${showTeamDetail ? 'cursor-pointer active:bg-gray-50 transition' : ''}`}
@@ -150,10 +160,11 @@ export default function TeamScoresCard({ matches, tripId, tripName, linkToFull, 
         </div>
       ) : (
         <div className="divide-y divide-gray-100">
-          {teams.map((t, i) => (
+          {aggregated.map((t, i) => (
             <div
               key={t.name}
               className={`flex items-center justify-between px-4 py-2.5 ${showTeamDetail ? 'cursor-pointer active:bg-gray-50 transition' : ''}`}
+              style={t.color ? { borderLeft: `4px solid ${t.color}` } : undefined}
               onClick={() => handleTeamClick(t.name)}
             >
               <div className="flex items-center gap-3">
@@ -171,7 +182,8 @@ export default function TeamScoresCard({ matches, tripId, tripName, linkToFull, 
         <TeamDetailModal
           teamName={selectedTeam}
           contributions={playerContributions(matches, selectedTeam)}
-          totalPoints={teams.find(t => t.name === selectedTeam)?.points ?? 0}
+          totalPoints={aggregated.find(t => t.name === selectedTeam)?.points ?? 0}
+          color={aggregated.find(t => t.name === selectedTeam)?.color}
           onClose={() => setSelectedTeam(null)}
         />
       )}

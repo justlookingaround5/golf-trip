@@ -5,6 +5,7 @@ import type {
   PlayerV2,
   MatchV2,
   TripV2,
+  TripTeamV2,
   RoundV2,
   FeedEventV2,
   PlayerLeaderboardStats,
@@ -29,11 +30,30 @@ export const ME: PlayerV2 = { id: 'p1', name: 'Andrew', avatarUrl: null, handica
 
 export const STUB_PLAYERS: PlayerV2[] = [
   ME,
-  { id: 'p2', name: 'Jake',    avatarUrl: null, handicap: 12 },
-  { id: 'p3', name: 'Mike',    avatarUrl: null, handicap: 5  },
-  { id: 'p4', name: 'Tom',     avatarUrl: null, handicap: 18 },
-  { id: 'p5', name: 'Griffin', avatarUrl: null, handicap: 10 },
-  { id: 'p6', name: 'Danny',   avatarUrl: null, handicap: 14 },
+  { id: 'p2',  name: 'Jake',    avatarUrl: null, handicap: 12 },
+  { id: 'p3',  name: 'Mike',    avatarUrl: null, handicap: 5  },
+  { id: 'p4',  name: 'Tom',     avatarUrl: null, handicap: 18 },
+  { id: 'p5',  name: 'Griffin', avatarUrl: null, handicap: 10 },
+  { id: 'p6',  name: 'Danny',   avatarUrl: null, handicap: 14 },
+  { id: 'p7',  name: 'Chris',   avatarUrl: null, handicap: 7  },
+  { id: 'p8',  name: 'Ryan',    avatarUrl: null, handicap: 15 },
+  { id: 'p9',  name: 'Matt',    avatarUrl: null, handicap: 6  },
+  { id: 'p10', name: 'Tyler',   avatarUrl: null, handicap: 11 },
+  { id: 'p11', name: 'Zach',    avatarUrl: null, handicap: 9  },
+  { id: 'p12', name: 'Logan',   avatarUrl: null, handicap: 16 },
+  { id: 'p13', name: 'Derek',   avatarUrl: null, handicap: 4  },
+  { id: 'p14', name: 'Sean',    avatarUrl: null, handicap: 13 },
+  { id: 'p15', name: 'Kevin',   avatarUrl: null, handicap: 10 },
+  { id: 'p16', name: 'Brett',   avatarUrl: null, handicap: 17 },
+]
+
+// ─── Teams ───────────────────────────────────────────────────────────────────
+
+export const STUB_TEAMS: TripTeamV2[] = [
+  { name: 'Team Nicklaus', color: '#dc2626', players: [STUB_PLAYERS[0], STUB_PLAYERS[1], STUB_PLAYERS[6], STUB_PLAYERS[7]]  },  // red — Andrew, Jake, Chris, Ryan
+  { name: 'Team Palmer',   color: '#2563eb', players: [STUB_PLAYERS[2], STUB_PLAYERS[3], STUB_PLAYERS[8], STUB_PLAYERS[9]]  },  // blue — Mike, Tom, Matt, Tyler
+  { name: 'Team Hogan',    color: '#d97706', players: [STUB_PLAYERS[4], STUB_PLAYERS[5], STUB_PLAYERS[10], STUB_PLAYERS[11]] }, // amber — Griffin, Danny, Zach, Logan
+  { name: 'Team Jones',    color: '#16a34a', players: [STUB_PLAYERS[12], STUB_PLAYERS[13], STUB_PLAYERS[14], STUB_PLAYERS[15]] }, // green — Derek, Sean, Kevin, Brett
 ]
 
 // ─── Active Trip ──────────────────────────────────────────────────────────────
@@ -45,7 +65,7 @@ export const ACTIVE_TRIP: TripV2 = {
   startDate: '2025-06-10',
   endDate: '2025-06-14',
   status: 'active',
-  playerCount: 4,
+  playerCount: 16,
   players: STUB_PLAYERS,
 }
 
@@ -70,160 +90,138 @@ export const ACTIVE_ROUND: RoundV2 = {
 // ─── Matches ──────────────────────────────────────────────────────────────────
 
 export const STUB_MATCHES: MatchV2[] = [
+  // ── Round 1: 4× 2v2 Best Ball (cross-team) ─────────────────────────────────
   {
-    id: 'm1',
-    roundNumber: 2,
-    format: '2v2_best_ball',
-    formatLabel: '2v2 Best Ball',
-    status: 'in_progress',
-    teamA: { name: 'Team Tall', players: [STUB_PLAYERS[0], STUB_PLAYERS[1]], points: 2.5 },
-    teamB: { name: 'Team Short', players: [STUB_PLAYERS[2], STUB_PLAYERS[3]], points: 1.5 },
-    result: null,
-    statusLabel: 'Team Tall lead 2.5–1.5 thru 9',
-    courseId: 'course2',
-    courseName: 'Spyglass Hill',
-    tripId: 'trip1',
-    teeTime: '10:00 AM',
-    thru: 9,
-    resultMargin: null,
-    teamAScoreDiff: 3,
-    teamBScoreDiff: 5,
+    id: 'm1', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[0], STUB_PLAYERS[1]], points: 1 },
+    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2], STUB_PLAYERS[3]], points: 0 },
+    result: 'Team Nicklaus wins 3&2', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '7:30 AM', thru: 18, resultMargin: '3&2', teamAScoreDiff: 4, teamBScoreDiff: 8,
   },
   {
-    id: 'm2',
-    roundNumber: 1,
-    format: '1v1_match',
-    formatLabel: '1v1 Match Play',
-    status: 'completed',
-    teamA: { name: 'Team Tall', players: [STUB_PLAYERS[0]], points: 1 },
-    teamB: { name: 'Team Short', players: [STUB_PLAYERS[2]], points: 0 },
-    result: 'Andrew wins 3&2',
-    statusLabel: null,
-    courseId: 'course1',
-    courseName: 'Pebble Beach Golf Links',
-    tripId: 'trip1',
-    teeTime: '7:30 AM',
-    thru: 18,
-    resultMargin: '3&2',
-    teamAScoreDiff: 7,
-    teamBScoreDiff: 4,
+    id: 'm2', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
+    teamA: { name: 'Team Hogan', players: [STUB_PLAYERS[4], STUB_PLAYERS[5]], points: 0 },
+    teamB: { name: 'Team Jones', players: [STUB_PLAYERS[12], STUB_PLAYERS[13]], points: 1 },
+    result: 'Team Jones wins 1UP', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '7:40 AM', thru: 18, resultMargin: '1UP', teamAScoreDiff: 6, teamBScoreDiff: 5,
   },
   {
-    id: 'm3',
-    roundNumber: 1,
-    format: '1v1_stroke',
-    formatLabel: '1v1 Stroke Play',
-    status: 'completed',
-    teamA: { name: 'Team Short', players: [STUB_PLAYERS[3]], points: 1 },
-    teamB: { name: 'Team Tall', players: [STUB_PLAYERS[1]], points: 0 },
-    result: 'Tom wins by 2',
-    statusLabel: null,
-    courseId: 'course1',
-    courseName: 'Pebble Beach Golf Links',
-    tripId: 'trip1',
-    teeTime: '7:48 AM',
-    thru: 18,
-    resultMargin: '1UP',
-    teamAScoreDiff: 2,
-    teamBScoreDiff: -1,
+    id: 'm3', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[6], STUB_PLAYERS[7]], points: 1 },
+    teamB: { name: 'Team Hogan',    players: [STUB_PLAYERS[10], STUB_PLAYERS[11]], points: 0 },
+    result: 'Team Nicklaus wins 2&1', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '7:50 AM', thru: 18, resultMargin: '2&1', teamAScoreDiff: 3, teamBScoreDiff: 7,
   },
   {
-    id: 'm4',
-    roundNumber: 1,
-    format: '2v2_best_ball',
-    formatLabel: '2v2 Best Ball',
-    status: 'completed',
-    teamA: { name: 'Team Tall', players: [STUB_PLAYERS[0], STUB_PLAYERS[4]], points: 1 },
-    teamB: { name: 'Team Short', players: [STUB_PLAYERS[2], STUB_PLAYERS[5]], points: 0 },
-    result: 'Team Tall wins 2&1',
-    statusLabel: null,
-    courseId: 'course1',
-    courseName: 'Pebble Beach Golf Links',
-    tripId: 'trip1',
-    teeTime: '8:06 AM',
-    thru: 18,
-    resultMargin: '2&1',
-    teamAScoreDiff: 4,
-    teamBScoreDiff: 8,
+    id: 'm4', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
+    teamA: { name: 'Team Palmer', players: [STUB_PLAYERS[8], STUB_PLAYERS[9]], points: 1 },
+    teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[14], STUB_PLAYERS[15]], points: 0 },
+    result: 'Team Palmer wins 4&3', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '8:00 AM', thru: 18, resultMargin: '4&3', teamAScoreDiff: 2, teamBScoreDiff: 9,
+  },
+  // ── Round 1: 4× 1v1 Match Play ─────────────────────────────────────────────
+  {
+    id: 'm5', roundNumber: 1, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[0]], points: 1 },
+    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2]], points: 0 },
+    result: 'Andrew wins 3&2', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '8:10 AM', thru: 18, resultMargin: '3&2', teamAScoreDiff: 7, teamBScoreDiff: 4,
   },
   {
-    id: 'm5',
-    roundNumber: 1,
-    format: '1v1_match',
-    formatLabel: '1v1 Match Play',
-    status: 'completed',
-    teamA: { name: 'Team Short', players: [STUB_PLAYERS[5]], points: 1 },
-    teamB: { name: 'Team Tall', players: [STUB_PLAYERS[4]], points: 0 },
-    result: 'Danny wins 4&3',
-    statusLabel: null,
-    courseId: 'course1',
-    courseName: 'Pebble Beach Golf Links',
-    tripId: 'trip1',
-    teeTime: '8:24 AM',
-    thru: 18,
-    resultMargin: '4&3',
-    teamAScoreDiff: 5,
-    teamBScoreDiff: 9,
+    id: 'm6', roundNumber: 1, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Palmer', players: [STUB_PLAYERS[3]], points: 1 },
+    teamB: { name: 'Team Hogan',  players: [STUB_PLAYERS[5]], points: 0 },
+    result: 'Tom wins 1UP', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '8:20 AM', thru: 18, resultMargin: '1UP', teamAScoreDiff: 2, teamBScoreDiff: 3,
+  },
+  {
+    id: 'm7', roundNumber: 1, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Jones', players: [STUB_PLAYERS[12]], points: 1 },
+    teamB: { name: 'Team Nicklaus', players: [STUB_PLAYERS[6]], points: 0 },
+    result: 'Derek wins 2&1', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '8:30 AM', thru: 18, resultMargin: '2&1', teamAScoreDiff: 1, teamBScoreDiff: 5,
+  },
+  {
+    id: 'm8', roundNumber: 1, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Hogan', players: [STUB_PLAYERS[10]], points: 0.5 },
+    teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[14]], points: 0.5 },
+    result: 'Halved', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '8:40 AM', thru: 18, resultMargin: 'AS', teamAScoreDiff: 4, teamBScoreDiff: 4,
+  },
+  // ── Round 2: 4× 2v2 Foursomes (all in progress) ────────────────────────────
+  {
+    id: 'm9', roundNumber: 2, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[0], STUB_PLAYERS[6]], points: 2 },
+    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2], STUB_PLAYERS[8]], points: 1 },
+    result: null, statusLabel: 'Team Nicklaus leads thru 12',
+    courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
+    teeTime: '8:00 AM', thru: 12, resultMargin: null, teamAScoreDiff: 3, teamBScoreDiff: 5,
+  },
+  {
+    id: 'm10', roundNumber: 2, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
+    teamA: { name: 'Team Hogan', players: [STUB_PLAYERS[4], STUB_PLAYERS[10]], points: 1.5 },
+    teamB: { name: 'Team Jones', players: [STUB_PLAYERS[12], STUB_PLAYERS[14]], points: 1.5 },
+    result: null, statusLabel: 'All square thru 10',
+    courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
+    teeTime: '8:10 AM', thru: 10, resultMargin: null, teamAScoreDiff: 4, teamBScoreDiff: 4,
+  },
+  {
+    id: 'm11', roundNumber: 2, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
+    teamA: { name: 'Team Palmer', players: [STUB_PLAYERS[3], STUB_PLAYERS[9]], points: 0.5 },
+    teamB: { name: 'Team Nicklaus', players: [STUB_PLAYERS[1], STUB_PLAYERS[7]], points: 2.5 },
+    result: null, statusLabel: 'Team Nicklaus leads thru 11',
+    courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
+    teeTime: '8:20 AM', thru: 11, resultMargin: null, teamAScoreDiff: 7, teamBScoreDiff: 3,
+  },
+  {
+    id: 'm12', roundNumber: 2, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
+    teamA: { name: 'Team Jones', players: [STUB_PLAYERS[13], STUB_PLAYERS[15]], points: 2 },
+    teamB: { name: 'Team Hogan', players: [STUB_PLAYERS[5], STUB_PLAYERS[11]], points: 1 },
+    result: null, statusLabel: 'Team Jones leads thru 9',
+    courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
+    teeTime: '8:30 AM', thru: 9, resultMargin: null, teamAScoreDiff: 5, teamBScoreDiff: 8,
   },
 ]
 
 // ─── Player Leaderboard Stats ─────────────────────────────────────────────────
 
 export const STUB_PLAYER_STATS: PlayerLeaderboardStats[] = [
-  {
-    player: STUB_PLAYERS[0],
-    matchRecord: { wins: 2, losses: 0, ties: 1 },
-    points: 3.5,
-    grossAvg: 78.5,
-    netAvg: 70.5,
-    skinsWon: 3,
-    fairwayPct: 61,
-    girPct: 44,
-    puttsAvg: 31.5,
-  },
-  {
-    player: STUB_PLAYERS[2],
-    matchRecord: { wins: 1, losses: 1, ties: 1 },
-    points: 2.5,
-    grossAvg: 74.0,
-    netAvg: 69.0,
-    skinsWon: 4,
-    fairwayPct: 72,
-    girPct: 56,
-    puttsAvg: 29.0,
-  },
-  {
-    player: STUB_PLAYERS[1],
-    matchRecord: { wins: 1, losses: 1, ties: 1 },
-    points: 2.5,
-    grossAvg: 82.0,
-    netAvg: 70.0,
-    skinsWon: 1,
-    fairwayPct: 55,
-    girPct: 38,
-    puttsAvg: 33.0,
-  },
-  {
-    player: STUB_PLAYERS[3],
-    matchRecord: { wins: 1, losses: 2, ties: 0 },
-    points: 1.5,
-    grossAvg: 90.5,
-    netAvg: 72.5,
-    skinsWon: 2,
-    fairwayPct: 44,
-    girPct: 28,
-    puttsAvg: 35.0,
-  },
+  { player: STUB_PLAYERS[0],  matchRecord: { wins: 3, losses: 0, ties: 0 }, points: 4, grossAvg: 78.5, netAvg: 70.5, skinsWon: 3, fairwayPct: 61, girPct: 44, puttsAvg: 31.5 },
+  { player: STUB_PLAYERS[1],  matchRecord: { wins: 1, losses: 1, ties: 0 }, points: 2, grossAvg: 82.0, netAvg: 70.0, skinsWon: 1, fairwayPct: 55, girPct: 38, puttsAvg: 33.0 },
+  { player: STUB_PLAYERS[2],  matchRecord: { wins: 1, losses: 1, ties: 0 }, points: 1.5, grossAvg: 74.0, netAvg: 69.0, skinsWon: 4, fairwayPct: 72, girPct: 56, puttsAvg: 29.0 },
+  { player: STUB_PLAYERS[3],  matchRecord: { wins: 1, losses: 1, ties: 0 }, points: 2, grossAvg: 90.5, netAvg: 72.5, skinsWon: 2, fairwayPct: 44, girPct: 28, puttsAvg: 35.0 },
+  { player: STUB_PLAYERS[4],  matchRecord: { wins: 1, losses: 1, ties: 0 }, points: 1.5, grossAvg: 80.0, netAvg: 70.0, skinsWon: 1, fairwayPct: 58, girPct: 42, puttsAvg: 32.0 },
+  { player: STUB_PLAYERS[5],  matchRecord: { wins: 0, losses: 2, ties: 0 }, points: 0, grossAvg: 86.0, netAvg: 72.0, skinsWon: 0, fairwayPct: 50, girPct: 35, puttsAvg: 34.0 },
+  { player: STUB_PLAYERS[6],  matchRecord: { wins: 1, losses: 1, ties: 0 }, points: 2, grossAvg: 76.5, netAvg: 69.5, skinsWon: 2, fairwayPct: 65, girPct: 50, puttsAvg: 30.5 },
+  { player: STUB_PLAYERS[7],  matchRecord: { wins: 1, losses: 0, ties: 0 }, points: 1.5, grossAvg: 87.0, netAvg: 72.0, skinsWon: 0, fairwayPct: 48, girPct: 30, puttsAvg: 34.5 },
+  { player: STUB_PLAYERS[8],  matchRecord: { wins: 2, losses: 0, ties: 0 }, points: 2.5, grossAvg: 75.0, netAvg: 69.0, skinsWon: 3, fairwayPct: 70, girPct: 55, puttsAvg: 29.5 },
+  { player: STUB_PLAYERS[9],  matchRecord: { wins: 1, losses: 0, ties: 0 }, points: 1, grossAvg: 83.0, netAvg: 72.0, skinsWon: 1, fairwayPct: 56, girPct: 40, puttsAvg: 32.5 },
+  { player: STUB_PLAYERS[10], matchRecord: { wins: 1, losses: 1, ties: 1 }, points: 2, grossAvg: 79.5, netAvg: 70.5, skinsWon: 2, fairwayPct: 60, girPct: 45, puttsAvg: 31.0 },
+  { player: STUB_PLAYERS[11], matchRecord: { wins: 0, losses: 2, ties: 0 }, points: 0, grossAvg: 89.0, netAvg: 73.0, skinsWon: 0, fairwayPct: 42, girPct: 25, puttsAvg: 35.5 },
+  { player: STUB_PLAYERS[12], matchRecord: { wins: 2, losses: 0, ties: 0 }, points: 3, grossAvg: 73.5, netAvg: 69.5, skinsWon: 5, fairwayPct: 74, girPct: 58, puttsAvg: 28.5 },
+  { player: STUB_PLAYERS[13], matchRecord: { wins: 1, losses: 0, ties: 0 }, points: 2, grossAvg: 85.0, netAvg: 72.0, skinsWon: 1, fairwayPct: 52, girPct: 36, puttsAvg: 33.5 },
+  { player: STUB_PLAYERS[14], matchRecord: { wins: 0, losses: 1, ties: 1 }, points: 0.5, grossAvg: 81.0, netAvg: 71.0, skinsWon: 1, fairwayPct: 59, girPct: 43, puttsAvg: 31.5 },
+  { player: STUB_PLAYERS[15], matchRecord: { wins: 0, losses: 1, ties: 0 }, points: 0, grossAvg: 91.0, netAvg: 74.0, skinsWon: 0, fairwayPct: 40, girPct: 22, puttsAvg: 36.0 },
 ]
 
 // ─── Hole Leaderboard Stats ───────────────────────────────────────────────────
 
+const _STUB_HCPS = [7, 15, 11, 3, 17, 1, 13, 5, 9, 8, 16, 12, 4, 2, 10, 18, 6, 14]
 export const STUB_HOLE_STATS: HoleLeaderboardStats[] = Array.from({ length: 18 }, (_, i) => {
   const hole = i + 1
   const par = [4, 5, 3, 4, 3, 4, 4, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5][i]
   return {
     holeNumber: hole,
     par,
+    handicapIndex: _STUB_HCPS[i],
     avgGross: par + (Math.random() * 1.4).toFixed(1) as unknown as number,
     avgNet: par + (Math.random() * 0.8).toFixed(1) as unknown as number,
     birdiesOrBetter: Math.floor(Math.random() * 3),
@@ -282,19 +280,46 @@ export const STUB_TRIP_ROUNDS: TripRoundV2[] = [
 // ─── Per-Round Scores (for Individual Leaderboard) ────────────────────────────
 
 export const STUB_ROUND_SCORES: TripRoundScoreV2[] = [
-  { playerId: 'p1', roundNumber: 1, grossScore: 78, netScore: 70, par: 72 },
-  { playerId: 'p2', roundNumber: 1, grossScore: 85, netScore: 73, par: 72 },
-  { playerId: 'p3', roundNumber: 1, grossScore: 74, netScore: 69, par: 72 },
-  { playerId: 'p4', roundNumber: 1, grossScore: 93, netScore: 75, par: 72 },
-  { playerId: 'p1', roundNumber: 2, grossScore: 82, netScore: 74, par: 72 },
-  { playerId: 'p2', roundNumber: 2, grossScore: 89, netScore: 77, par: 72 },
-  { playerId: 'p3', roundNumber: 2, grossScore: 77, netScore: 72, par: 72 },
-  { playerId: 'p4', roundNumber: 2, grossScore: null, netScore: null, par: 72 },
+  // Round 1
+  { playerId: 'p1',  roundNumber: 1, grossScore: 78, netScore: 70, par: 72 },
+  { playerId: 'p2',  roundNumber: 1, grossScore: 85, netScore: 73, par: 72 },
+  { playerId: 'p3',  roundNumber: 1, grossScore: 74, netScore: 69, par: 72 },
+  { playerId: 'p4',  roundNumber: 1, grossScore: 93, netScore: 75, par: 72 },
+  { playerId: 'p5',  roundNumber: 1, grossScore: 80, netScore: 70, par: 72 },
+  { playerId: 'p6',  roundNumber: 1, grossScore: 88, netScore: 74, par: 72 },
+  { playerId: 'p7',  roundNumber: 1, grossScore: 76, netScore: 69, par: 72 },
+  { playerId: 'p8',  roundNumber: 1, grossScore: 89, netScore: 74, par: 72 },
+  { playerId: 'p9',  roundNumber: 1, grossScore: 75, netScore: 69, par: 72 },
+  { playerId: 'p10', roundNumber: 1, grossScore: 83, netScore: 72, par: 72 },
+  { playerId: 'p11', roundNumber: 1, grossScore: 79, netScore: 70, par: 72 },
+  { playerId: 'p12', roundNumber: 1, grossScore: 91, netScore: 75, par: 72 },
+  { playerId: 'p13', roundNumber: 1, grossScore: 73, netScore: 69, par: 72 },
+  { playerId: 'p14', roundNumber: 1, grossScore: 86, netScore: 73, par: 72 },
+  { playerId: 'p15', roundNumber: 1, grossScore: 81, netScore: 71, par: 72 },
+  { playerId: 'p16', roundNumber: 1, grossScore: 94, netScore: 77, par: 72 },
+  // Round 2 (in progress — some still null)
+  { playerId: 'p1',  roundNumber: 2, grossScore: 82, netScore: 74, par: 72 },
+  { playerId: 'p2',  roundNumber: 2, grossScore: 89, netScore: 77, par: 72 },
+  { playerId: 'p3',  roundNumber: 2, grossScore: 77, netScore: 72, par: 72 },
+  { playerId: 'p4',  roundNumber: 2, grossScore: null, netScore: null, par: 72 },
+  { playerId: 'p5',  roundNumber: 2, grossScore: 81, netScore: 71, par: 72 },
+  { playerId: 'p6',  roundNumber: 2, grossScore: null, netScore: null, par: 72 },
+  { playerId: 'p7',  roundNumber: 2, grossScore: 78, netScore: 71, par: 72 },
+  { playerId: 'p8',  roundNumber: 2, grossScore: null, netScore: null, par: 72 },
+  { playerId: 'p9',  roundNumber: 2, grossScore: 76, netScore: 70, par: 72 },
+  { playerId: 'p10', roundNumber: 2, grossScore: null, netScore: null, par: 72 },
+  { playerId: 'p11', roundNumber: 2, grossScore: 80, netScore: 71, par: 72 },
+  { playerId: 'p12', roundNumber: 2, grossScore: null, netScore: null, par: 72 },
+  { playerId: 'p13', roundNumber: 2, grossScore: 74, netScore: 70, par: 72 },
+  { playerId: 'p14', roundNumber: 2, grossScore: null, netScore: null, par: 72 },
+  { playerId: 'p15', roundNumber: 2, grossScore: 82, netScore: 72, par: 72 },
+  { playerId: 'p16', roundNumber: 2, grossScore: null, netScore: null, par: 72 },
 ]
 
 // ─── Hole Stats by Round (deterministic) ─────────────────────────────────────
 
 const _PARS18 = [4, 5, 3, 4, 3, 4, 4, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5]
+const _HCPS18 = [7, 15, 11, 3, 17, 1, 13, 5, 9, 8, 16, 12, 4, 2, 10, 18, 6, 14]
 const _GROSS_OFFSETS = [1.2, 0.8, 1.5, 1.0, 0.9, 1.3, 1.1, 0.7, 1.4, 1.0, 0.8, 1.2, 0.9, 1.1, 1.3, 0.6, 1.4, 1.2]
 const _NET_OFFSETS   = [0.5, -0.3, 0.8, -0.4, 0.3, 0.6, -0.5, 0.2, 0.7, -0.2, 0.3, 0.6, -0.3, 0.5, 0.7, -0.4, 0.6, 0.5]
 const _BIRDIES  = [0, 2, 0, 1, 1, 0, 1, 2, 1, 1, 0, 0, 2, 1, 0, 2, 0, 1]
@@ -308,6 +333,7 @@ function _makeHoleStats(rdOffset: number): import('./types').HoleLeaderboardStat
   return _PARS18.map((par, i) => ({
     holeNumber: i + 1,
     par,
+    handicapIndex: _HCPS18[i],
     avgGross: parseFloat((par + _GROSS_OFFSETS[i] + rdOffset * 0.1).toFixed(1)),
     avgNet:   parseFloat((par + _NET_OFFSETS[i]).toFixed(1)),
     birdiesOrBetter: _BIRDIES[i],
@@ -376,10 +402,22 @@ export const STUB_SKINS_BY_ROUND: Record<number, import('./types').SkinResultV2[
 // NetTotal: sum of all three
 
 export const STUB_TRIP_EARNINGS: TripEarningsRow[] = [
-  { player: STUB_PLAYERS[0], team:  15, matches:  20, skins:   4, netTotal:  39 },
-  { player: STUB_PLAYERS[1], team:  15, matches: -10, skins: -12, netTotal:  -7 },
-  { player: STUB_PLAYERS[2], team: -15, matches: -20, skins:  12, netTotal: -23 },
-  { player: STUB_PLAYERS[3], team: -15, matches:  10, skins:  -4, netTotal:  -9 },
+  { player: STUB_PLAYERS[0],  team:  20, matches:  25, skins:  12, netTotal:  57 },
+  { player: STUB_PLAYERS[1],  team:  20, matches: -10, skins:  -8, netTotal:   2 },
+  { player: STUB_PLAYERS[2],  team: -10, matches:  -5, skins:  16, netTotal:   1 },
+  { player: STUB_PLAYERS[3],  team: -10, matches:  10, skins:  -4, netTotal:  -4 },
+  { player: STUB_PLAYERS[4],  team:  -5, matches:   5, skins:   4, netTotal:   4 },
+  { player: STUB_PLAYERS[5],  team:  -5, matches: -15, skins:  -8, netTotal: -28 },
+  { player: STUB_PLAYERS[6],  team:  20, matches:  10, skins:   8, netTotal:  38 },
+  { player: STUB_PLAYERS[7],  team:  20, matches:   5, skins:  -4, netTotal:  21 },
+  { player: STUB_PLAYERS[8],  team: -10, matches:  15, skins:  12, netTotal:  17 },
+  { player: STUB_PLAYERS[9],  team: -10, matches:   5, skins:   4, netTotal:  -1 },
+  { player: STUB_PLAYERS[10], team:  -5, matches:   5, skins:   8, netTotal:   8 },
+  { player: STUB_PLAYERS[11], team:  -5, matches: -15, skins: -12, netTotal: -32 },
+  { player: STUB_PLAYERS[12], team:  10, matches:  20, skins:  20, netTotal:  50 },
+  { player: STUB_PLAYERS[13], team:  10, matches:   5, skins:   4, netTotal:  19 },
+  { player: STUB_PLAYERS[14], team:  10, matches: -10, skins:   4, netTotal:   4 },
+  { player: STUB_PLAYERS[15], team:  10, matches: -15, skins: -12, netTotal: -17 },
 ]
 
 // ─── Scorecard ────────────────────────────────────────────────────────────────
@@ -430,6 +468,19 @@ export const STUB_PINS: CoursePinV2[] = [
     latitude: 36.5677,
     longitude: -121.9500,
     roundId: 'r1',
+  },
+  {
+    courseId: 'course1',
+    courseName: 'Pebble Beach Golf Links',
+    date: '2024-06-05',
+    grossScore: 82,
+    netScore: 74,
+    par: 72,
+    tripName: 'Pebble Beach 2024',
+    rating: 9.8,
+    latitude: 36.5677,
+    longitude: -121.9500,
+    roundId: 'r6',
   },
   {
     courseId: 'course3',
@@ -635,10 +686,13 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
     courseRating: 74.3,
     avgUserRating: 9.2,
     totalRatings: 14,
+    conditionRating: 9.4,
+    layoutRating: 9.6,
+    valueRating: 7.8,
     tees: [
-      { name: 'Blue', yardage: 6828 },
-      { name: 'White', yardage: 6414 },
-      { name: 'Red', yardage: 5574 },
+      { name: 'Blue', yardage: 6828, slope: 145, rating: 74.3 },
+      { name: 'White', yardage: 6414, slope: 138, rating: 72.1 },
+      { name: 'Red', yardage: 5574, slope: 126, rating: 68.5 },
     ],
     website: 'https://www.pebblebeach.com',
     phone: '(831) 574-5609',
@@ -659,9 +713,12 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
     courseRating: 76.2,
     avgUserRating: 9.6,
     totalRatings: 8,
+    conditionRating: 9.8,
+    layoutRating: 9.5,
+    valueRating: 8.0,
     tees: [
-      { name: 'Masters', yardage: 7475 },
-      { name: 'Member', yardage: 6365 },
+      { name: 'Masters', yardage: 7475, slope: 148, rating: 76.2 },
+      { name: 'Member', yardage: 6365, slope: 137, rating: 72.8 },
     ],
     website: null,
     phone: null,
@@ -681,10 +738,13 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
     courseRating: 73.8,
     avgUserRating: 8.8,
     totalRatings: 11,
+    conditionRating: 8.5,
+    layoutRating: 9.0,
+    valueRating: 8.8,
     tees: [
-      { name: 'Championship', yardage: 7588 },
-      { name: 'Resort', yardage: 6572 },
-      { name: 'Forward', yardage: 5586 },
+      { name: 'Championship', yardage: 7588, slope: 140, rating: 73.8 },
+      { name: 'Resort', yardage: 6572, slope: 131, rating: 71.2 },
+      { name: 'Forward', yardage: 5586, slope: 122, rating: 67.9 },
     ],
     website: 'https://www.pinehurst.com',
     phone: '(910) 295-6811',
@@ -703,10 +763,13 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
     courseRating: 76.7,
     avgUserRating: 8.4,
     totalRatings: 6,
+    conditionRating: 8.2,
+    layoutRating: 8.8,
+    valueRating: 7.6,
     tees: [
-      { name: 'Straits', yardage: 7790 },
-      { name: 'Middle', yardage: 7011 },
-      { name: 'Forward', yardage: 6221 },
+      { name: 'Straits', yardage: 7790, slope: 151, rating: 76.7 },
+      { name: 'Middle', yardage: 7011, slope: 141, rating: 73.4 },
+      { name: 'Forward', yardage: 6221, slope: 130, rating: 69.8 },
     ],
     website: 'https://www.americanclubresort.com',
     phone: '(920) 565-6050',
@@ -751,11 +814,20 @@ const _COURSE_PARS: Record<string, number[]> = {
   course5: [4, 5, 3, 4, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5],
 }
 
+const _COURSE_HCPS: Record<string, number[]> = {
+  course1: [7, 15, 11, 3, 17, 1, 13, 5, 9, 8, 16, 12, 4, 2, 10, 18, 6, 14],
+  course3: [5, 13, 15, 1, 17, 3, 11, 7, 9, 6, 8, 16, 2, 10, 4, 18, 12, 14],
+  course4: [3, 9, 17, 1, 7, 15, 11, 5, 13, 4, 18, 8, 6, 10, 16, 12, 2, 14],
+  course5: [7, 13, 15, 1, 5, 17, 9, 11, 3, 8, 16, 10, 4, 6, 12, 18, 2, 14],
+}
+
 function _makeUserHoleStats(courseId: string): UserHoleStatsV2[] {
   const pars = _COURSE_PARS[courseId] ?? _COURSE_PARS.course1
+  const hcps = _COURSE_HCPS[courseId] ?? _COURSE_HCPS.course1
   const avgOffsets = [0.4, 0.2, 0.8, 0.3, 0.6, 0.5, 0.3, 0.1, 0.4, 0.3, 0.7, 0.5, 0.2, 0.4, 0.6, 0.3, 0.5, 0.4]
   const bestOffsets = [0, -1, 1, 0, 0, 1, 0, -1, 0, -1, 1, 0, -1, 0, 1, 0, 0, -1]
   const birdies =  [1, 2, 0, 1, 0, 0, 1, 2, 1, 2, 0, 1, 2, 1, 0, 1, 0, 1]
+  const eaglesCnt= [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0]
   const parsCnt =  [3, 2, 1, 3, 2, 2, 3, 3, 2, 2, 1, 2, 2, 3, 2, 3, 2, 2]
   const bogeys =   [1, 0, 2, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 0, 1, 0, 2, 1]
   const doubles =  [0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
@@ -766,9 +838,11 @@ function _makeUserHoleStats(courseId: string): UserHoleStatsV2[] {
   return pars.map((par, i) => ({
     holeNumber: i + 1,
     par,
+    handicapIndex: hcps[i],
     avgGross: parseFloat((par + avgOffsets[i]).toFixed(1)),
     bestGross: par + bestOffsets[i],
     birdies: birdies[i],
+    eagles: eaglesCnt[i],
     pars: parsCnt[i],
     bogeys: bogeys[i],
     doubles: doubles[i],

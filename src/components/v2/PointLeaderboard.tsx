@@ -11,6 +11,7 @@ import type {
   SkinResultV2,
   TripRoundScoreV2,
   TripEarningsRow,
+  TripTeamV2,
 } from '@/lib/v2/types'
 
 type View = 'matches' | 'individual' | 'player_stats' | 'hole_stats' | 'skins' | 'earnings'
@@ -139,12 +140,31 @@ function scoreDiffStr(diff: number | null): string {
   return diff > 0 ? `(+${diff})` : `(${diff})`
 }
 
-function MatchLeaderboard({ matches, roundFilter }: { matches: MatchV2[]; roundFilter: number }) {
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace('#', '')
+  return {
+    r: parseInt(h.substring(0, 2), 16),
+    g: parseInt(h.substring(2, 4), 16),
+    b: parseInt(h.substring(4, 6), 16),
+  }
+}
+
+function teamBg(hex: string, alpha: number): string {
+  const { r, g, b } = hexToRgb(hex)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[]; roundFilter: number; teams?: TripTeamV2[] }) {
   const router = useRouter()
   const filtered = [...matches.filter(m => m.roundNumber === roundFilter)]
     .sort((a, b) => parseTeeTime(a.teeTime) - parseTeeTime(b.teeTime))
   if (filtered.length === 0) {
     return <p className="py-8 text-center text-sm text-gray-400">No matches for this round.</p>
+  }
+
+  const colorMap = new Map<string, string>()
+  if (teams) {
+    for (const t of teams) colorMap.set(t.name, t.color)
   }
 
   // Group by course
@@ -158,51 +178,79 @@ function MatchLeaderboard({ matches, roundFilter }: { matches: MatchV2[]; roundF
   return (
     <div className="p-3 space-y-4">
       {[...courseGroups.entries()].map(([courseName, courseMatches]) => (
-        <table key={courseName} className="w-full text-xs">
-          <thead>
-            <tr className="bg-emerald-50">
-              <th className="w-[40px] px-1 py-2 text-center text-[10px] font-semibold text-gray-500 uppercase">Thru</th>
-              <th className="w-[50px]" />
-              <th colSpan={3} className="py-2 text-center text-sm font-bold text-gray-900">{courseName}</th>
-              <th className="w-[50px]" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {courseMatches.map((m, i) => {
-              const thruLabel = m.status === 'completed' ? 'F'
-                : m.thru != null ? `${m.thru}` : '—'
+        <div key={courseName}>
+          <div className="bg-emerald-50 rounded-t-lg px-3 py-2 text-center">
+            <span className="text-sm font-bold text-gray-900">{courseName}</span>
+          </div>
+          <div className="space-y-2 mt-2">
+            {courseMatches.map(m => {
               const aWins = m.teamA.points > m.teamB.points
               const bWins = m.teamB.points > m.teamA.points
-              const teamANames = m.teamA.players.map(p => p.name).join(' & ')
-              const teamBNames = m.teamB.players.map(p => p.name).join(' & ')
-              const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-              const badge = 'bg-emerald-500 text-white text-[11px] font-bold px-1.5 py-0.5 rounded'
+              const tied = m.teamA.points === m.teamB.points
+              const thruLabel = m.status === 'completed' ? 'FINAL'
+                : m.thru != null ? `THRU ${m.thru}` : '—'
+              const colorA = colorMap.get(m.teamA.name) ?? '#6b7280'
+              const colorB = colorMap.get(m.teamB.name) ?? '#6b7280'
+
+              // Determine background opacity per side
+              const aAlpha = m.status === 'completed'
+                ? (aWins ? 0.18 : 0.05)
+                : tied ? 0.12 : (aWins ? 0.18 : 0.06)
+              const bAlpha = m.status === 'completed'
+                ? (bWins ? 0.18 : 0.05)
+                : tied ? 0.12 : (bWins ? 0.18 : 0.06)
 
               return (
-                <tr
+                <div
                   key={m.id}
-                  className={`${bg} cursor-pointer hover:bg-gray-100 transition-colors`}
+                  className="flex rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() => router.push(`/v2/match/${m.id}`)}
                 >
-                  <td className="px-1 py-2 text-center text-xs font-semibold text-gray-500">{thruLabel}</td>
-                  <td className="px-1 py-2 text-center">
-                    {aWins && m.resultMargin ? <span className={badge}>{m.resultMargin}</span> : null}
-                  </td>
-                  <td className="py-2 pr-1 text-right text-xs font-medium text-gray-900 whitespace-nowrap">
-                    {teamANames} <span className="text-gray-400">{scoreDiffStr(m.teamAScoreDiff)}</span>
-                  </td>
-                  <td className="w-[30px] py-2 text-center text-xs text-blue-400 font-medium">vs</td>
-                  <td className="py-2 pl-1 text-left text-xs font-medium text-gray-900 whitespace-nowrap">
-                    {teamBNames} <span className="text-gray-400">{scoreDiffStr(m.teamBScoreDiff)}</span>
-                  </td>
-                  <td className="px-1 py-2 text-center">
-                    {bWins && m.resultMargin ? <span className={badge}>{m.resultMargin}</span> : null}
-                  </td>
-                </tr>
+                  {/* Team A side */}
+                  <div
+                    className="flex-1 px-3 py-2.5 flex flex-col justify-center"
+                    style={{ backgroundColor: teamBg(colorA, aAlpha) }}
+                  >
+                    {m.teamA.players.map(p => (
+                      <span key={p.id} className={`text-xs leading-5 ${aWins ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+                        {p.name}
+                      </span>
+                    ))}
+                    <span className="text-[10px] text-gray-400 mt-0.5">{scoreDiffStr(m.teamAScoreDiff)}</span>
+                  </div>
+
+                  {/* Center: margin + thru */}
+                  <div className="flex flex-col items-center justify-center px-2 py-2 bg-white min-w-[60px]">
+                    {m.resultMargin ? (
+                      <span className="text-xs font-black text-gray-900">{m.resultMargin}</span>
+                    ) : tied ? (
+                      <span className="text-[10px] font-bold text-gray-400">AS</span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-gray-400">
+                        {aWins ? `${m.teamA.name.split(' ').pop()}` : `${m.teamB.name.split(' ').pop()}`}
+                      </span>
+                    )}
+                    <span className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider">{thruLabel}</span>
+                    <span className="text-[9px] text-gray-300 mt-0.5">{m.formatLabel}</span>
+                  </div>
+
+                  {/* Team B side */}
+                  <div
+                    className="flex-1 px-3 py-2.5 flex flex-col justify-center items-end text-right"
+                    style={{ backgroundColor: teamBg(colorB, bAlpha) }}
+                  >
+                    {m.teamB.players.map(p => (
+                      <span key={p.id} className={`text-xs leading-5 ${bWins ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+                        {p.name}
+                      </span>
+                    ))}
+                    <span className="text-[10px] text-gray-400 mt-0.5">{scoreDiffStr(m.teamBScoreDiff)}</span>
+                  </div>
+                </div>
               )
             })}
-          </tbody>
-        </table>
+          </div>
+        </div>
       ))}
     </div>
   )
@@ -428,6 +476,7 @@ function HoleStatsView({ holeStats, sortCol, sortDir, onSort }: { holeStats: Hol
         switch (col) {
           case 'hole':      return row.holeNumber
           case 'par':       return row.par
+          case 'hcp':       return row.handicapIndex
           case 'avg_gross': return row.avgGross
           case 'avg_net':   return row.avgNet
           case 'diff':      return row.diff
@@ -449,6 +498,9 @@ function HoleStatsView({ holeStats, sortCol, sortDir, onSort }: { holeStats: Hol
             </th>
             <th className={thSort('par', sortCol)} onClick={() => onSort('par')}>
               Par<SortArrow col="par" sortCol={sortCol} sortDir={sortDir} />
+            </th>
+            <th className={thSort('hcp', sortCol)} onClick={() => onSort('hcp')}>
+              HCP<SortArrow col="hcp" sortCol={sortCol} sortDir={sortDir} />
             </th>
             <th className={thSort('avg_gross', sortCol)} onClick={() => onSort('avg_gross')}>
               Avg Gross<SortArrow col="avg_gross" sortCol={sortCol} sortDir={sortDir} />
@@ -477,6 +529,7 @@ function HoleStatsView({ holeStats, sortCol, sortDir, onSort }: { holeStats: Hol
               <tr key={h.holeNumber} className={rowBg}>
                 <td className={`${TD} font-bold text-gray-900`}>{h.holeNumber}</td>
                 <td className={TD}>{h.par}</td>
+                <td className={`${TD} text-gray-400`}>{h.handicapIndex}</td>
                 <td className={TD}>{fmt1(h.avgGross)}</td>
                 <td className={TD}>{fmt1(h.avgNet)}</td>
                 <td
@@ -631,11 +684,12 @@ interface PointLeaderboardProps {
   holeStatsByRound: Record<number, HoleLeaderboardStats[]>
   skinsByRound: Record<number, SkinResultV2[]>
   earnings: TripEarningsRow[]
+  teams?: TripTeamV2[]
 }
 
 export default function PointLeaderboard({
   matches, rounds, players, playerStats, roundScores,
-  holeStatsByRound, skinsByRound, earnings,
+  holeStatsByRound, skinsByRound, earnings, teams,
 }: PointLeaderboardProps) {
   const defaultRound = rounds[0]?.roundNumber ?? 1
   const [view,         setView]         = useState<View>('matches')
@@ -733,7 +787,7 @@ export default function PointLeaderboard({
 
       {/* Content */}
       {view === 'matches' && (
-        <MatchLeaderboard matches={matches} roundFilter={roundFilter} />
+        <MatchLeaderboard matches={matches} roundFilter={roundFilter} teams={teams} />
       )}
       {view === 'individual' && (
         <IndividualLeaderboard

@@ -124,6 +124,7 @@ export interface PlayerLeaderboardStats {
 export interface HoleLeaderboardStats {
   holeNumber: number
   par: number
+  handicapIndex: number
   avgGross: number
   avgNet: number
   birdiesOrBetter: number
@@ -210,6 +211,12 @@ export interface TripEarningsRow {
   netTotal: number
 }
 
+export interface TripTeamV2 {
+  name: string
+  color: string
+  players: PlayerV2[]
+}
+
 // ─── Course Detail Types ──────────────────────────────────────────────────────
 
 export interface CourseDetailV2 {
@@ -221,7 +228,10 @@ export interface CourseDetailV2 {
   courseRating: number | null
   avgUserRating: number | null
   totalRatings: number
-  tees: { name: string; yardage: number }[]
+  conditionRating: number | null
+  layoutRating: number | null
+  valueRating: number | null
+  tees: { name: string; yardage: number; slope: number; rating: number }[]
   website: string | null
   phone: string | null
   photoUrls: string[]
@@ -240,12 +250,14 @@ export interface FriendCourseRatingV2 {
 export interface UserHoleStatsV2 {
   holeNumber: number
   par: number
+  handicapIndex: number
   avgGross: number
   bestGross: number
   birdies: number
   pars: number
   bogeys: number
   doubles: number
+  eagles: number
   avgPutts: number | null
   fairwayPct: number | null
   girPct: number | null

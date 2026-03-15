@@ -17,6 +17,7 @@ import {
   STUB_MATCHES,
   STUB_FEED,
   STUB_FRIEND_ACTIVE_ROUNDS,
+  STUB_TEAMS,
 } from '@/lib/v2/stub-data'
 
 // ─── Active Round Card ────────────────────────────────────────────────────────
@@ -63,6 +64,7 @@ export default function HomeV2() {
             matches={STUB_MATCHES}
             tripId={ACTIVE_TRIP.id}
             tripName={ACTIVE_TRIP.name}
+            teams={STUB_TEAMS}
             linkToFull
           />
         )}

@@ -19,6 +19,7 @@ import {
   STUB_HOLE_STATS_BY_ROUND,
   STUB_SKINS_BY_ROUND,
   STUB_TRIP_EARNINGS,
+  STUB_TEAMS,
 } from '@/lib/v2/stub-data'
 
 const backMap: Record<string, { href: string; label: string }> = {
@@ -84,6 +85,7 @@ function TripLeaderboardContent({ tripId }: { tripId: string }) {
         <TeamScoresCard
           matches={STUB_MATCHES}
           tripId={trip.id}
+          teams={STUB_TEAMS}
           showTeamDetail
         />
 
@@ -97,6 +99,7 @@ function TripLeaderboardContent({ tripId }: { tripId: string }) {
           holeStatsByRound={STUB_HOLE_STATS_BY_ROUND}
           skinsByRound={STUB_SKINS_BY_ROUND}
           earnings={STUB_TRIP_EARNINGS}
+          teams={STUB_TEAMS}
         />
       </div>
     </div>
