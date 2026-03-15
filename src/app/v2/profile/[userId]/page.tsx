@@ -126,7 +126,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
           {ratedPins.length > 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100 shadow-sm overflow-hidden">
               {ratedPins.map((p, i) => (
-                <div key={p.courseId} className="flex items-center gap-3 px-4 py-3">
+                <Link key={p.courseId} href={`/v2/course/${p.courseId}`} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition">
                   <span className="shrink-0 w-5 text-xs font-bold text-gray-400 tabular-nums text-right">{i + 1}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-gray-900 truncate">{p.courseName}</p>
@@ -137,7 +137,10 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
                   <span className="shrink-0 ml-3 text-sm font-bold text-gray-900 tabular-nums">
                     {(p.rating ?? 0).toFixed(1)}
                   </span>
-                </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </Link>
               ))}
             </div>
           ) : (

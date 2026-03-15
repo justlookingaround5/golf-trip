@@ -18,6 +18,9 @@ import type {
   SkinResultV2,
   TripRoundScoreV2,
   TripEarningsRow,
+  CourseDetailV2,
+  FriendCourseRatingV2,
+  UserHoleStatsV2,
 } from './types'
 
 // ─── Players ──────────────────────────────────────────────────────────────────
@@ -426,6 +429,7 @@ export const STUB_PINS: CoursePinV2[] = [
     rating: 9.8,
     latitude: 36.5677,
     longitude: -121.9500,
+    roundId: 'r1',
   },
   {
     courseId: 'course3',
@@ -438,6 +442,7 @@ export const STUB_PINS: CoursePinV2[] = [
     rating: 9.4,
     latitude: 33.5021,
     longitude: -82.0232,
+    roundId: 'r2',
   },
   {
     courseId: 'course4',
@@ -450,6 +455,7 @@ export const STUB_PINS: CoursePinV2[] = [
     rating: 8.6,
     latitude: 35.1954,
     longitude: -79.4699,
+    roundId: 'r3',
   },
   {
     courseId: 'course5',
@@ -462,6 +468,7 @@ export const STUB_PINS: CoursePinV2[] = [
     rating: 8.2,
     latitude: 43.8567,
     longitude: -87.7245,
+    roundId: 'r5',
   },
 ]
 
@@ -615,6 +622,168 @@ export const STUB_THREADS: MessageThread[] = [
 ]
 
 // ─── Chat Messages ────────────────────────────────────────────────────────────
+
+// ─── Course Details ──────────────────────────────────────────────────────────
+
+export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
+  course1: {
+    courseId: 'course1',
+    courseName: 'Pebble Beach Golf Links',
+    location: 'Pebble Beach, CA',
+    par: 72,
+    slope: 145,
+    courseRating: 74.3,
+    avgUserRating: 9.2,
+    totalRatings: 14,
+    tees: [
+      { name: 'Blue', yardage: 6828 },
+      { name: 'White', yardage: 6414 },
+      { name: 'Red', yardage: 5574 },
+    ],
+    website: 'https://www.pebblebeach.com',
+    phone: '(831) 574-5609',
+    photoUrls: [
+      '/images/course-placeholder-1.jpg',
+      '/images/course-placeholder-2.jpg',
+      '/images/course-placeholder-3.jpg',
+    ],
+    latitude: 36.5677,
+    longitude: -121.9500,
+  },
+  course3: {
+    courseId: 'course3',
+    courseName: 'Augusta National',
+    location: 'Augusta, GA',
+    par: 72,
+    slope: 148,
+    courseRating: 76.2,
+    avgUserRating: 9.6,
+    totalRatings: 8,
+    tees: [
+      { name: 'Masters', yardage: 7475 },
+      { name: 'Member', yardage: 6365 },
+    ],
+    website: null,
+    phone: null,
+    photoUrls: [
+      '/images/course-placeholder-1.jpg',
+      '/images/course-placeholder-2.jpg',
+    ],
+    latitude: 33.5021,
+    longitude: -82.0232,
+  },
+  course4: {
+    courseId: 'course4',
+    courseName: 'Pinehurst No. 2',
+    location: 'Pinehurst, NC',
+    par: 70,
+    slope: 140,
+    courseRating: 73.8,
+    avgUserRating: 8.8,
+    totalRatings: 11,
+    tees: [
+      { name: 'Championship', yardage: 7588 },
+      { name: 'Resort', yardage: 6572 },
+      { name: 'Forward', yardage: 5586 },
+    ],
+    website: 'https://www.pinehurst.com',
+    phone: '(910) 295-6811',
+    photoUrls: [
+      '/images/course-placeholder-1.jpg',
+    ],
+    latitude: 35.1954,
+    longitude: -79.4699,
+  },
+  course5: {
+    courseId: 'course5',
+    courseName: 'Whistling Straits',
+    location: 'Kohler, WI',
+    par: 72,
+    slope: 151,
+    courseRating: 76.7,
+    avgUserRating: 8.4,
+    totalRatings: 6,
+    tees: [
+      { name: 'Straits', yardage: 7790 },
+      { name: 'Middle', yardage: 7011 },
+      { name: 'Forward', yardage: 6221 },
+    ],
+    website: 'https://www.americanclubresort.com',
+    phone: '(920) 565-6050',
+    photoUrls: [
+      '/images/course-placeholder-1.jpg',
+      '/images/course-placeholder-2.jpg',
+    ],
+    latitude: 43.8567,
+    longitude: -87.7245,
+  },
+}
+
+// ─── Friend Course Ratings ───────────────────────────────────────────────────
+
+export const STUB_FRIEND_COURSE_RATINGS: Record<string, FriendCourseRatingV2[]> = {
+  course1: [
+    { player: STUB_PLAYERS[1], rating: 9.0, bestGross: 83, lastPlayed: '2025-06-11', roundId: 'r1' },
+    { player: STUB_PLAYERS[2], rating: 9.5, bestGross: 74, lastPlayed: '2025-06-11', roundId: 'r1' },
+    { player: STUB_PLAYERS[3], rating: 8.8, bestGross: 93, lastPlayed: '2025-06-11', roundId: 'r1' },
+  ],
+  course3: [
+    { player: STUB_PLAYERS[2], rating: 9.8, bestGross: 76, lastPlayed: '2024-04-10', roundId: 'r2' },
+    { player: STUB_PLAYERS[4], rating: 9.2, bestGross: 82, lastPlayed: '2024-04-10', roundId: null },
+  ],
+  course4: [
+    { player: STUB_PLAYERS[1], rating: 8.4, bestGross: 86, lastPlayed: '2024-07-15', roundId: 'r3' },
+    { player: STUB_PLAYERS[3], rating: 7.9, bestGross: 95, lastPlayed: '2024-07-15', roundId: null },
+    { player: STUB_PLAYERS[5], rating: 8.7, bestGross: 84, lastPlayed: '2024-07-15', roundId: null },
+  ],
+  course5: [
+    { player: STUB_PLAYERS[1], rating: 8.0, bestGross: 88, lastPlayed: '2023-08-22', roundId: 'r5' },
+    { player: STUB_PLAYERS[4], rating: 8.5, bestGross: 85, lastPlayed: '2023-08-22', roundId: null },
+  ],
+}
+
+// ─── User Hole Stats (per course) ───────────────────────────────────────────
+
+const _COURSE_PARS: Record<string, number[]> = {
+  course1: [4, 5, 3, 4, 3, 4, 4, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5],
+  course3: [4, 5, 3, 4, 3, 5, 4, 4, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4],
+  course4: [4, 4, 3, 4, 4, 3, 4, 5, 4, 5, 3, 4, 4, 4, 3, 4, 5, 4],
+  course5: [4, 5, 3, 4, 4, 3, 4, 4, 5, 4, 3, 4, 5, 4, 4, 3, 4, 5],
+}
+
+function _makeUserHoleStats(courseId: string): UserHoleStatsV2[] {
+  const pars = _COURSE_PARS[courseId] ?? _COURSE_PARS.course1
+  const avgOffsets = [0.4, 0.2, 0.8, 0.3, 0.6, 0.5, 0.3, 0.1, 0.4, 0.3, 0.7, 0.5, 0.2, 0.4, 0.6, 0.3, 0.5, 0.4]
+  const bestOffsets = [0, -1, 1, 0, 0, 1, 0, -1, 0, -1, 1, 0, -1, 0, 1, 0, 0, -1]
+  const birdies =  [1, 2, 0, 1, 0, 0, 1, 2, 1, 2, 0, 1, 2, 1, 0, 1, 0, 1]
+  const parsCnt =  [3, 2, 1, 3, 2, 2, 3, 3, 2, 2, 1, 2, 2, 3, 2, 3, 2, 2]
+  const bogeys =   [1, 0, 2, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 0, 1, 0, 2, 1]
+  const doubles =  [0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
+  const fwPcts =   [65, 70, null, 55, null, 60, 50, 75, 60, 65, null, 55, 70, 60, 65, null, 55, 60]
+  const girPcts =  [50, 60, 35, 45, 40, 45, 55, 65, 50, 55, 30, 40, 60, 50, 45, 55, 40, 50]
+  const putts =    [1.8, 1.7, 2.0, 1.9, 2.1, 1.9, 1.7, 1.6, 1.8, 1.7, 2.2, 1.9, 1.7, 1.8, 2.0, 1.6, 1.9, 1.8]
+
+  return pars.map((par, i) => ({
+    holeNumber: i + 1,
+    par,
+    avgGross: parseFloat((par + avgOffsets[i]).toFixed(1)),
+    bestGross: par + bestOffsets[i],
+    birdies: birdies[i],
+    pars: parsCnt[i],
+    bogeys: bogeys[i],
+    doubles: doubles[i],
+    avgPutts: putts[i],
+    fairwayPct: fwPcts[i] as number | null,
+    girPct: girPcts[i],
+  }))
+}
+
+export const STUB_USER_HOLE_STATS: Record<string, UserHoleStatsV2[]> = {
+  course1: _makeUserHoleStats('course1'),
+  course3: _makeUserHoleStats('course3'),
+  course4: _makeUserHoleStats('course4'),
+  course5: _makeUserHoleStats('course5'),
+}
 
 export const STUB_CHAT_MESSAGES: ChatMessageV2[] = [
   {

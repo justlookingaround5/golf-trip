@@ -151,6 +151,7 @@ export interface CoursePinV2 {
   rating: number | null   // 0.0–10.0; null = unrated
   latitude: number
   longitude: number
+  roundId: string | null  // links pin to a round for scorecard navigation
 }
 
 export interface MessageThread {
@@ -207,4 +208,45 @@ export interface TripEarningsRow {
   matches: number
   skins: number
   netTotal: number
+}
+
+// ─── Course Detail Types ──────────────────────────────────────────────────────
+
+export interface CourseDetailV2 {
+  courseId: string
+  courseName: string
+  location: string
+  par: number
+  slope: number | null
+  courseRating: number | null
+  avgUserRating: number | null
+  totalRatings: number
+  tees: { name: string; yardage: number }[]
+  website: string | null
+  phone: string | null
+  photoUrls: string[]
+  latitude: number
+  longitude: number
+}
+
+export interface FriendCourseRatingV2 {
+  player: PlayerV2
+  rating: number | null
+  bestGross: number | null
+  lastPlayed: string | null
+  roundId: string | null
+}
+
+export interface UserHoleStatsV2 {
+  holeNumber: number
+  par: number
+  avgGross: number
+  bestGross: number
+  birdies: number
+  pars: number
+  bogeys: number
+  doubles: number
+  avgPutts: number | null
+  fairwayPct: number | null
+  girPct: number | null
 }
