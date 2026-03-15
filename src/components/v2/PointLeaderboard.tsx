@@ -134,12 +134,6 @@ function parseTeeTime(t: string | null): number {
   return hours * 60 + m
 }
 
-function scoreDiffStr(diff: number | null): string {
-  if (diff == null) return ''
-  if (diff === 0) return '(E)'
-  return diff > 0 ? `(+${diff})` : `(${diff})`
-}
-
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const h = hex.replace('#', '')
   return {
@@ -152,6 +146,12 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 function teamBg(hex: string, alpha: number): string {
   const { r, g, b } = hexToRgb(hex)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+function playerDiffStr(diff: number | null): string {
+  if (diff == null) return ''
+  if (diff === 0) return '(E)'
+  return diff > 0 ? `(+${diff})` : `(${diff})`
 }
 
 function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[]; roundFilter: number; teams?: TripTeamV2[] }) {
@@ -177,81 +177,108 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
 
   return (
     <div className="p-3 space-y-4">
-      {[...courseGroups.entries()].map(([courseName, courseMatches]) => (
-        <div key={courseName}>
-          <div className="bg-emerald-50 rounded-t-lg px-3 py-2 text-center">
-            <span className="text-sm font-bold text-gray-900">{courseName}</span>
-          </div>
-          <div className="space-y-2 mt-2">
-            {courseMatches.map(m => {
-              const aWins = m.teamA.points > m.teamB.points
-              const bWins = m.teamB.points > m.teamA.points
-              const tied = m.teamA.points === m.teamB.points
-              const thruLabel = m.status === 'completed' ? 'FINAL'
-                : m.thru != null ? `THRU ${m.thru}` : '—'
-              const colorA = colorMap.get(m.teamA.name) ?? '#6b7280'
-              const colorB = colorMap.get(m.teamB.name) ?? '#6b7280'
+      {[...courseGroups.entries()].map(([courseName, courseMatches]) => {
+        const formatLabel = courseMatches[0]?.formatLabel ?? ''
+        return (
+          <div key={courseName}>
+            <div className="bg-emerald-50 rounded-t-lg px-3 py-2 text-center">
+              <span className="text-sm font-bold text-gray-900">{courseName}</span>
+              <span className="text-xs text-gray-500 ml-1.5">&middot; {formatLabel}</span>
+            </div>
+            <div className="space-y-2 mt-2">
+              {courseMatches.map(m => {
+                const aWins = m.teamA.points > m.teamB.points
+                const bWins = m.teamB.points > m.teamA.points
+                const tied = m.teamA.points === m.teamB.points
+                const isPending = m.status === 'pending'
+                const isCompleted = m.status === 'completed'
+                const isInProgress = m.status === 'in_progress'
+                const isTiedResult = m.resultMargin === 'AS' || (isCompleted && tied)
 
-              // Determine background opacity per side
-              const aAlpha = m.status === 'completed'
-                ? (aWins ? 0.18 : 0.05)
-                : tied ? 0.12 : (aWins ? 0.18 : 0.06)
-              const bAlpha = m.status === 'completed'
-                ? (bWins ? 0.18 : 0.05)
-                : tied ? 0.12 : (bWins ? 0.18 : 0.06)
+                const thruLabel = isCompleted ? 'FINAL'
+                  : m.thru != null ? `THRU ${m.thru}` : '—'
+                const colorA = colorMap.get(m.teamA.name) ?? '#6b7280'
+                const colorB = colorMap.get(m.teamB.name) ?? '#6b7280'
 
-              return (
-                <div
-                  key={m.id}
-                  className="flex rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => router.push(`/v2/match/${m.id}`)}
-                >
-                  {/* Team A side */}
+                // Background: losing side = no bg, tied completed = no bg, tied in_progress = both light
+                let aAlpha = 0
+                let bAlpha = 0
+                if (isPending) {
+                  // no background
+                } else if (isCompleted) {
+                  if (aWins) aAlpha = 0.20
+                  else if (bWins) bAlpha = 0.20
+                  // tied: both 0
+                } else if (isInProgress) {
+                  if (tied) { aAlpha = 0.08; bAlpha = 0.08 }
+                  else if (aWins) aAlpha = 0.12
+                  else bAlpha = 0.12
+                }
+
+                return (
                   <div
-                    className="flex-1 px-3 py-2.5 flex flex-col justify-center"
-                    style={{ backgroundColor: teamBg(colorA, aAlpha) }}
+                    key={m.id}
+                    className="flex rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => router.push(`/v2/match/${m.id}`)}
                   >
-                    {m.teamA.players.map(p => (
-                      <span key={p.id} className={`text-xs leading-5 ${aWins ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
-                        {p.name}
-                      </span>
-                    ))}
-                    <span className="text-[10px] text-gray-400 mt-0.5">{scoreDiffStr(m.teamAScoreDiff)}</span>
-                  </div>
+                    {/* Team A panel */}
+                    <div
+                      className="flex-1 px-3 py-2.5 flex flex-col justify-center relative"
+                      style={{ backgroundColor: aAlpha > 0 ? teamBg(colorA, aAlpha) : undefined }}
+                    >
+                      {m.teamA.players.map((p, i) => (
+                        <span key={p.id} className={`text-xs leading-5 ${aWins ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+                          {p.name}
+                          {m.teamA.scoreDiffs[i] != null && (
+                            <span className="text-[10px] text-gray-400 ml-1">{playerDiffStr(m.teamA.scoreDiffs[i])}</span>
+                          )}
+                        </span>
+                      ))}
+                      {/* Result badge in winner's panel */}
+                      {aWins && m.resultMargin && !isTiedResult && (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-black text-gray-900">{m.resultMargin}</span>
+                      )}
+                    </div>
 
-                  {/* Center: margin + thru */}
-                  <div className="flex flex-col items-center justify-center px-2 py-2 bg-white min-w-[60px]">
-                    {m.resultMargin ? (
-                      <span className="text-xs font-black text-gray-900">{m.resultMargin}</span>
-                    ) : tied ? (
-                      <span className="text-[10px] font-bold text-gray-400">AS</span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-gray-400">
-                        {aWins ? `${m.teamA.name.split(' ').pop()}` : `${m.teamB.name.split(' ').pop()}`}
-                      </span>
-                    )}
-                    <span className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider">{thruLabel}</span>
-                    <span className="text-[9px] text-gray-300 mt-0.5">{m.formatLabel}</span>
-                  </div>
+                    {/* Thin center divider with thru + result info */}
+                    <div className="flex flex-col items-center justify-center px-1.5 py-2 bg-white min-w-[48px]">
+                      {isTiedResult ? (
+                        <span className={`text-[10px] font-bold ${isCompleted ? 'text-gray-400' : 'text-gray-300'}`}>AS</span>
+                      ) : isPending ? (
+                        <span className="text-[10px] text-gray-300">—</span>
+                      ) : isInProgress && !tied ? (
+                        <span className="text-[10px] font-bold text-gray-400">
+                          {aWins ? m.teamA.name.split(' ').pop() : m.teamB.name.split(' ').pop()}
+                        </span>
+                      ) : null}
+                      <span className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider">{thruLabel}</span>
+                    </div>
 
-                  {/* Team B side */}
-                  <div
-                    className="flex-1 px-3 py-2.5 flex flex-col justify-center items-end text-right"
-                    style={{ backgroundColor: teamBg(colorB, bAlpha) }}
-                  >
-                    {m.teamB.players.map(p => (
-                      <span key={p.id} className={`text-xs leading-5 ${bWins ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
-                        {p.name}
-                      </span>
-                    ))}
-                    <span className="text-[10px] text-gray-400 mt-0.5">{scoreDiffStr(m.teamBScoreDiff)}</span>
+                    {/* Team B panel */}
+                    <div
+                      className="flex-1 px-3 py-2.5 flex flex-col justify-center items-end text-right relative"
+                      style={{ backgroundColor: bAlpha > 0 ? teamBg(colorB, bAlpha) : undefined }}
+                    >
+                      {m.teamB.players.map((p, i) => (
+                        <span key={p.id} className={`text-xs leading-5 ${bWins ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+                          {m.teamB.scoreDiffs[i] != null && (
+                            <span className="text-[10px] text-gray-400 mr-1">{playerDiffStr(m.teamB.scoreDiffs[i])}</span>
+                          )}
+                          {p.name}
+                        </span>
+                      ))}
+                      {/* Result badge in winner's panel */}
+                      {bWins && m.resultMargin && !isTiedResult && (
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-black text-gray-900">{m.resultMargin}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

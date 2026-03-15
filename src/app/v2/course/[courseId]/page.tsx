@@ -99,10 +99,10 @@ function ScoringBar({ label, count, maxCount, color }: { label: string; count: n
 function avgBgColor(diff: number, maxDiff: number, minDiff: number): string {
   if (diff === 0) return 'transparent'
   if (diff > 0) {
-    const alpha = Math.min(diff / (maxDiff || 0.01), 1) * 0.5
+    const alpha = Math.min(diff / (maxDiff || 0.01), 1) * 0.55
     return `rgba(239, 68, 68, ${alpha.toFixed(2)})`
   }
-  const alpha = Math.min(Math.abs(diff) / (Math.abs(minDiff) || 0.01), 1) * 0.5
+  const alpha = Math.min(Math.abs(diff) / (Math.abs(minDiff) || 0.01), 1) * 0.55
   return `rgba(34, 197, 94, ${alpha.toFixed(2)})`
 }
 
@@ -136,11 +136,11 @@ function BestScoreCell({ score, par }: { score: number; par: number }) {
 }
 
 function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
-  const diffs = holes.map(h => h.avgGross - h.par)
-  const posDiffs = diffs.filter(d => d > 0)
-  const negDiffs = diffs.filter(d => d < 0)
-  const maxDiff = posDiffs.length > 0 ? Math.max(...posDiffs) : 0.01
-  const minDiff = negDiffs.length > 0 ? Math.min(...negDiffs) : -0.01
+  const netDiffs = holes.map(h => h.avgNet - h.par)
+  const posNetDiffs = netDiffs.filter(d => d > 0)
+  const negNetDiffs = netDiffs.filter(d => d < 0)
+  const maxDiff = posNetDiffs.length > 0 ? Math.max(...posNetDiffs) : 0.01
+  const minDiff = negNetDiffs.length > 0 ? Math.min(...negNetDiffs) : -0.01
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -151,31 +151,41 @@ function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
               <th className="px-3 py-2 text-left font-semibold text-gray-500">Hole</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">Par</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">HCP</th>
-              <th className="px-2 py-2 text-center font-semibold text-gray-500">Avg</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">Best</th>
+              <th className="px-2 py-2 text-center font-semibold text-gray-500">Avg Gross</th>
+              <th className="px-2 py-2 text-center font-semibold text-gray-500">Avg Net</th>
+              <th className="px-2 py-2 text-center font-semibold text-gray-500">Diff</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">FW%</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">GIR%</th>
+              <th className="px-2 py-2 text-center font-semibold text-gray-500">Avg Putts</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {holes.map(h => {
-              const diff = h.avgGross - h.par
+              const netDiff = h.avgNet - h.par
               return (
                 <tr key={h.holeNumber}>
                   <td className="px-3 py-2 font-bold text-gray-900">{h.holeNumber}</td>
                   <td className="px-2 py-2 text-center text-gray-600">{h.par}</td>
                   <td className="px-2 py-2 text-center text-gray-400 tabular-nums">{h.handicapIndex}</td>
-                  <td
-                    className="px-2 py-2 text-center font-bold tabular-nums"
-                    style={{ backgroundColor: avgBgColor(diff, maxDiff, minDiff) }}
-                  >
-                    {h.avgGross.toFixed(1)}
-                  </td>
                   <td className="px-2 py-2 text-center tabular-nums">
                     <BestScoreCell score={h.bestGross} par={h.par} />
                   </td>
+                  <td className="px-2 py-2 text-center font-bold tabular-nums text-gray-700">
+                    {h.avgGross.toFixed(1)}
+                  </td>
+                  <td className="px-2 py-2 text-center tabular-nums text-gray-700">
+                    {h.avgNet.toFixed(1)}
+                  </td>
+                  <td
+                    className="px-2 py-2 text-center font-bold tabular-nums"
+                    style={{ backgroundColor: avgBgColor(netDiff, maxDiff, minDiff) }}
+                  >
+                    {netDiff === 0 ? '0.0' : netDiff > 0 ? `+${netDiff.toFixed(1)}` : netDiff.toFixed(1)}
+                  </td>
                   <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.fairwayPct != null ? `${h.fairwayPct}%` : '—'}</td>
                   <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.girPct != null ? `${h.girPct}%` : '—'}</td>
+                  <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.avgPutts != null ? h.avgPutts.toFixed(1) : '—'}</td>
                 </tr>
               )
             })}
@@ -358,9 +368,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
               <StatTile label="Avg Gross" value={avgGross != null ? avgGross.toFixed(1) : '—'} />
             </div>
             <div className="grid grid-cols-3 gap-3 mt-3">
-              <StatTile label="Avg Putts" value={avgPutts != null ? avgPutts.toFixed(1) : '—'} />
               <StatTile label="FW%" value={avgFw != null ? `${avgFw}%` : '—'} />
               <StatTile label="GIR%" value={avgGir != null ? `${avgGir}%` : '—'} />
+              <StatTile label="Avg Putts" value={avgPutts != null ? avgPutts.toFixed(1) : '—'} />
             </div>
           </Section>
         )}

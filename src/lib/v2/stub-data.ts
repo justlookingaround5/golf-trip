@@ -90,104 +90,136 @@ export const ACTIVE_ROUND: RoundV2 = {
 // ─── Matches ──────────────────────────────────────────────────────────────────
 
 export const STUB_MATCHES: MatchV2[] = [
-  // ── Round 1: 4× 2v2 Best Ball (cross-team) ─────────────────────────────────
+  // ── Round 1: 4× 2v2 Best Ball at Pebble Beach (all completed) ────────────
   {
     id: 'm1', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
-    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[0], STUB_PLAYERS[1]], points: 1 },
-    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2], STUB_PLAYERS[3]], points: 0 },
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[0], STUB_PLAYERS[1]], points: 1, scoreDiffs: [4, 8] },
+    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2], STUB_PLAYERS[3]], points: 0, scoreDiffs: [2, 12] },
     result: 'Team Nicklaus wins 3&2', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '7:30 AM', thru: 18, resultMargin: '3&2', teamAScoreDiff: 4, teamBScoreDiff: 8,
+    teeTime: '7:30 AM', thru: 18, resultMargin: '3&2',
   },
   {
     id: 'm2', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
-    teamA: { name: 'Team Hogan', players: [STUB_PLAYERS[4], STUB_PLAYERS[5]], points: 0 },
-    teamB: { name: 'Team Jones', players: [STUB_PLAYERS[12], STUB_PLAYERS[13]], points: 1 },
+    teamA: { name: 'Team Hogan',  players: [STUB_PLAYERS[4], STUB_PLAYERS[5]], points: 0, scoreDiffs: [6, 10] },
+    teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[12], STUB_PLAYERS[13]], points: 1, scoreDiffs: [1, 5] },
     result: 'Team Jones wins 1UP', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '7:40 AM', thru: 18, resultMargin: '1UP', teamAScoreDiff: 6, teamBScoreDiff: 5,
+    teeTime: '7:40 AM', thru: 18, resultMargin: '1UP',
   },
   {
     id: 'm3', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
-    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[6], STUB_PLAYERS[7]], points: 1 },
-    teamB: { name: 'Team Hogan',    players: [STUB_PLAYERS[10], STUB_PLAYERS[11]], points: 0 },
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[6], STUB_PLAYERS[7]], points: 1, scoreDiffs: [3, 7] },
+    teamB: { name: 'Team Hogan',    players: [STUB_PLAYERS[10], STUB_PLAYERS[11]], points: 0, scoreDiffs: [5, 11] },
     result: 'Team Nicklaus wins 2&1', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '7:50 AM', thru: 18, resultMargin: '2&1', teamAScoreDiff: 3, teamBScoreDiff: 7,
+    teeTime: '7:50 AM', thru: 18, resultMargin: '2&1',
   },
   {
     id: 'm4', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
-    teamA: { name: 'Team Palmer', players: [STUB_PLAYERS[8], STUB_PLAYERS[9]], points: 1 },
-    teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[14], STUB_PLAYERS[15]], points: 0 },
-    result: 'Team Palmer wins 4&3', statusLabel: null,
-    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '8:00 AM', thru: 18, resultMargin: '4&3', teamAScoreDiff: 2, teamBScoreDiff: 9,
-  },
-  // ── Round 1: 4× 1v1 Match Play ─────────────────────────────────────────────
-  {
-    id: 'm5', roundNumber: 1, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
-    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[0]], points: 1 },
-    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2]], points: 0 },
-    result: 'Andrew wins 3&2', statusLabel: null,
-    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '8:10 AM', thru: 18, resultMargin: '3&2', teamAScoreDiff: 7, teamBScoreDiff: 4,
-  },
-  {
-    id: 'm6', roundNumber: 1, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
-    teamA: { name: 'Team Palmer', players: [STUB_PLAYERS[3]], points: 1 },
-    teamB: { name: 'Team Hogan',  players: [STUB_PLAYERS[5]], points: 0 },
-    result: 'Tom wins 1UP', statusLabel: null,
-    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '8:20 AM', thru: 18, resultMargin: '1UP', teamAScoreDiff: 2, teamBScoreDiff: 3,
-  },
-  {
-    id: 'm7', roundNumber: 1, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
-    teamA: { name: 'Team Jones', players: [STUB_PLAYERS[12]], points: 1 },
-    teamB: { name: 'Team Nicklaus', players: [STUB_PLAYERS[6]], points: 0 },
-    result: 'Derek wins 2&1', statusLabel: null,
-    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '8:30 AM', thru: 18, resultMargin: '2&1', teamAScoreDiff: 1, teamBScoreDiff: 5,
-  },
-  {
-    id: 'm8', roundNumber: 1, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
-    teamA: { name: 'Team Hogan', players: [STUB_PLAYERS[10]], points: 0.5 },
-    teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[14]], points: 0.5 },
+    teamA: { name: 'Team Palmer', players: [STUB_PLAYERS[8], STUB_PLAYERS[9]], points: 0.5, scoreDiffs: [2, 6] },
+    teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[14], STUB_PLAYERS[15]], points: 0.5, scoreDiffs: [3, 9] },
     result: 'Halved', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '8:40 AM', thru: 18, resultMargin: 'AS', teamAScoreDiff: 4, teamBScoreDiff: 4,
+    teeTime: '8:00 AM', thru: 18, resultMargin: 'AS',
   },
-  // ── Round 2: 4× 2v2 Foursomes (all in progress) ────────────────────────────
+  // ── Round 2: 8× 1v1 Match Play at Pebble Beach (16 players) ──────────────
   {
-    id: 'm9', roundNumber: 2, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
-    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[0], STUB_PLAYERS[6]], points: 2 },
-    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2], STUB_PLAYERS[8]], points: 1 },
+    id: 'm5', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[0]], points: 1, scoreDiffs: [4] },
+    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2]], points: 0, scoreDiffs: [7] },
+    result: 'Andrew wins 3&2', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '7:30 AM', thru: 18, resultMargin: '3&2',
+  },
+  {
+    id: 'm6', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[1]], points: 0, scoreDiffs: [9] },
+    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[3]], points: 1, scoreDiffs: [6] },
+    result: 'Tom wins 1UP', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '7:40 AM', thru: 18, resultMargin: '1UP',
+  },
+  {
+    id: 'm7', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[6]], points: 0, scoreDiffs: [5] },
+    teamB: { name: 'Team Jones',    players: [STUB_PLAYERS[12]], points: 1, scoreDiffs: [1] },
+    result: 'Derek wins 2&1', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '7:50 AM', thru: 18, resultMargin: '2&1',
+  },
+  {
+    id: 'm8', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[7]], points: 1, scoreDiffs: [8] },
+    teamB: { name: 'Team Hogan',    players: [STUB_PLAYERS[4]], points: 0, scoreDiffs: [10] },
+    result: 'Ryan wins 2UP', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '8:00 AM', thru: 18, resultMargin: '2UP',
+  },
+  {
+    id: 'm9', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Hogan',  players: [STUB_PLAYERS[5]], points: 0.5, scoreDiffs: [8] },
+    teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[13]], points: 0.5, scoreDiffs: [8] },
+    result: 'Halved', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '8:10 AM', thru: 18, resultMargin: 'AS',
+  },
+  {
+    id: 'm10', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
+    teamA: { name: 'Team Hogan',  players: [STUB_PLAYERS[10]], points: 1, scoreDiffs: [3] },
+    teamB: { name: 'Team Palmer', players: [STUB_PLAYERS[8]], points: 0, scoreDiffs: [6] },
+    result: 'Zach wins 4&3', statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '8:20 AM', thru: 18, resultMargin: '4&3',
+  },
+  {
+    id: 'm11', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'pending',
+    teamA: { name: 'Team Hogan',  players: [STUB_PLAYERS[11]], points: 0, scoreDiffs: [null] },
+    teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[14]], points: 0, scoreDiffs: [null] },
+    result: null, statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '1:00 PM', thru: null, resultMargin: null,
+  },
+  {
+    id: 'm12', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'pending',
+    teamA: { name: 'Team Palmer', players: [STUB_PLAYERS[9]], points: 0, scoreDiffs: [null] },
+    teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[15]], points: 0, scoreDiffs: [null] },
+    result: null, statusLabel: null,
+    courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
+    teeTime: '1:10 PM', thru: null, resultMargin: null,
+  },
+  // ── Round 3: 4× 2v2 Foursomes at Spyglass Hill (in_progress + pending) ───
+  {
+    id: 'm13', roundNumber: 3, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
+    teamA: { name: 'Team Nicklaus', players: [STUB_PLAYERS[0], STUB_PLAYERS[6]], points: 2, scoreDiffs: [3, 4] },
+    teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2], STUB_PLAYERS[8]], points: 1, scoreDiffs: [5, 6] },
     result: null, statusLabel: 'Team Nicklaus leads thru 12',
     courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
-    teeTime: '8:00 AM', thru: 12, resultMargin: null, teamAScoreDiff: 3, teamBScoreDiff: 5,
+    teeTime: '8:00 AM', thru: 12, resultMargin: null,
   },
   {
-    id: 'm10', roundNumber: 2, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
-    teamA: { name: 'Team Hogan', players: [STUB_PLAYERS[4], STUB_PLAYERS[10]], points: 1.5 },
-    teamB: { name: 'Team Jones', players: [STUB_PLAYERS[12], STUB_PLAYERS[14]], points: 1.5 },
+    id: 'm14', roundNumber: 3, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
+    teamA: { name: 'Team Hogan', players: [STUB_PLAYERS[4], STUB_PLAYERS[10]], points: 1.5, scoreDiffs: [4, 3] },
+    teamB: { name: 'Team Jones', players: [STUB_PLAYERS[12], STUB_PLAYERS[14]], points: 1.5, scoreDiffs: [4, 3] },
     result: null, statusLabel: 'All square thru 10',
     courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
-    teeTime: '8:10 AM', thru: 10, resultMargin: null, teamAScoreDiff: 4, teamBScoreDiff: 4,
+    teeTime: '8:10 AM', thru: 10, resultMargin: null,
   },
   {
-    id: 'm11', roundNumber: 2, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
-    teamA: { name: 'Team Palmer', players: [STUB_PLAYERS[3], STUB_PLAYERS[9]], points: 0.5 },
-    teamB: { name: 'Team Nicklaus', players: [STUB_PLAYERS[1], STUB_PLAYERS[7]], points: 2.5 },
-    result: null, statusLabel: 'Team Nicklaus leads thru 11',
+    id: 'm15', roundNumber: 3, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
+    teamA: { name: 'Team Palmer', players: [STUB_PLAYERS[3], STUB_PLAYERS[9]], points: 0.5, scoreDiffs: [11, 7] },
+    teamB: { name: 'Team Nicklaus', players: [STUB_PLAYERS[1], STUB_PLAYERS[7]], points: 2.5, scoreDiffs: [5, 3] },
+    result: null, statusLabel: 'Team Nicklaus leads thru 7',
     courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
-    teeTime: '8:20 AM', thru: 11, resultMargin: null, teamAScoreDiff: 7, teamBScoreDiff: 3,
+    teeTime: '8:20 AM', thru: 7, resultMargin: null,
   },
   {
-    id: 'm12', roundNumber: 2, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
-    teamA: { name: 'Team Jones', players: [STUB_PLAYERS[13], STUB_PLAYERS[15]], points: 2 },
-    teamB: { name: 'Team Hogan', players: [STUB_PLAYERS[5], STUB_PLAYERS[11]], points: 1 },
-    result: null, statusLabel: 'Team Jones leads thru 9',
+    id: 'm16', roundNumber: 3, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'pending',
+    teamA: { name: 'Team Jones', players: [STUB_PLAYERS[13], STUB_PLAYERS[15]], points: 0, scoreDiffs: [null, null] },
+    teamB: { name: 'Team Hogan', players: [STUB_PLAYERS[5], STUB_PLAYERS[11]], points: 0, scoreDiffs: [null, null] },
+    result: null, statusLabel: null,
     courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
-    teeTime: '8:30 AM', thru: 9, resultMargin: null, teamAScoreDiff: 5, teamBScoreDiff: 8,
+    teeTime: '1:00 PM', thru: null, resultMargin: null,
   },
 ]
 
@@ -274,7 +306,8 @@ export const STUB_EARNINGS: PlayerEarnings[] = [
 
 export const STUB_TRIP_ROUNDS: TripRoundV2[] = [
   { roundNumber: 1, courseId: 'course1', courseName: 'Pebble Beach Golf Links', par: 72 },
-  { roundNumber: 2, courseId: 'course2', courseName: 'Spyglass Hill', par: 72 },
+  { roundNumber: 2, courseId: 'course1', courseName: 'Pebble Beach Golf Links', par: 72 },
+  { roundNumber: 3, courseId: 'course2', courseName: 'Spyglass Hill', par: 72 },
 ]
 
 // ─── Per-Round Scores (for Individual Leaderboard) ────────────────────────────
@@ -348,11 +381,15 @@ function _makeHoleStats(rdOffset: number): import('./types').HoleLeaderboardStat
 export const STUB_HOLE_STATS_BY_ROUND: Record<number, import('./types').HoleLeaderboardStats[]> = {
   1: _makeHoleStats(0),
   2: _makeHoleStats(1),
+  3: _makeHoleStats(2),
 }
 
 // ─── Skins by Round ───────────────────────────────────────────────────────────
 
 export const STUB_SKINS_BY_ROUND: Record<number, import('./types').SkinResultV2[]> = {
+  3: Array.from({ length: 18 }, (_, i) => ({
+    holeNumber: i + 1, par: _PARS18[i], winnerId: null, winnerName: null, grossScore: null, netScore: null,
+  })),
   1: [
     { holeNumber:  1, par: 4, winnerId: null,  winnerName: null,     grossScore: null, netScore: null },
     { holeNumber:  2, par: 5, winnerId: 'p3',  winnerName: 'Mike',   grossScore: 4,    netScore: 3    },
@@ -680,7 +717,7 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
   course1: {
     courseId: 'course1',
     courseName: 'Pebble Beach Golf Links',
-    location: 'Pebble Beach, CA',
+    location: '1700 17-Mile Drive, Pebble Beach, CA 93953',
     par: 72,
     slope: 145,
     courseRating: 74.3,
@@ -707,7 +744,7 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
   course3: {
     courseId: 'course3',
     courseName: 'Augusta National',
-    location: 'Augusta, GA',
+    location: '2604 Washington Rd, Augusta, GA 30904',
     par: 72,
     slope: 148,
     courseRating: 76.2,
@@ -732,7 +769,7 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
   course4: {
     courseId: 'course4',
     courseName: 'Pinehurst No. 2',
-    location: 'Pinehurst, NC',
+    location: '80 Carolina Vista Dr, Pinehurst, NC 28374',
     par: 70,
     slope: 140,
     courseRating: 73.8,
@@ -757,7 +794,7 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
   course5: {
     courseId: 'course5',
     courseName: 'Whistling Straits',
-    location: 'Kohler, WI',
+    location: 'N8501 County Rd LS, Sheboygan, WI 53083',
     par: 72,
     slope: 151,
     courseRating: 76.7,
@@ -825,6 +862,7 @@ function _makeUserHoleStats(courseId: string): UserHoleStatsV2[] {
   const pars = _COURSE_PARS[courseId] ?? _COURSE_PARS.course1
   const hcps = _COURSE_HCPS[courseId] ?? _COURSE_HCPS.course1
   const avgOffsets = [0.4, 0.2, 0.8, 0.3, 0.6, 0.5, 0.3, 0.1, 0.4, 0.3, 0.7, 0.5, 0.2, 0.4, 0.6, 0.3, 0.5, 0.4]
+  const netOffsets = [0.1, -0.2, 0.4, -0.1, 0.2, 0.1, -0.2, -0.3, 0.1, -0.1, 0.3, 0.2, -0.2, 0.1, 0.3, -0.1, 0.2, 0.1]
   const bestOffsets = [0, -1, 1, 0, 0, 1, 0, -1, 0, -1, 1, 0, -1, 0, 1, 0, 0, -1]
   const birdies =  [1, 2, 0, 1, 0, 0, 1, 2, 1, 2, 0, 1, 2, 1, 0, 1, 0, 1]
   const eaglesCnt= [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0]
@@ -840,6 +878,7 @@ function _makeUserHoleStats(courseId: string): UserHoleStatsV2[] {
     par,
     handicapIndex: hcps[i],
     avgGross: parseFloat((par + avgOffsets[i]).toFixed(1)),
+    avgNet: parseFloat((par + netOffsets[i]).toFixed(1)),
     bestGross: par + bestOffsets[i],
     birdies: birdies[i],
     eagles: eaglesCnt[i],

@@ -44,8 +44,8 @@ export interface MatchV2 {
   format: string
   formatLabel: string
   status: 'pending' | 'in_progress' | 'completed'
-  teamA: { name: string; players: PlayerV2[]; points: number }
-  teamB: { name: string; players: PlayerV2[]; points: number }
+  teamA: { name: string; players: PlayerV2[]; points: number; scoreDiffs: (number | null)[] }
+  teamB: { name: string; players: PlayerV2[]; points: number; scoreDiffs: (number | null)[] }
   result: string | null
   statusLabel: string | null
   courseId: string
@@ -54,8 +54,6 @@ export interface MatchV2 {
   teeTime: string | null
   thru: number | null
   resultMargin: string | null
-  teamAScoreDiff: number | null
-  teamBScoreDiff: number | null
 }
 
 export interface TripV2 {
@@ -252,6 +250,7 @@ export interface UserHoleStatsV2 {
   par: number
   handicapIndex: number
   avgGross: number
+  avgNet: number
   bestGross: number
   birdies: number
   pars: number
