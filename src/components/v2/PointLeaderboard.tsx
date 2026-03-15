@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type {
   MatchV2,
   PlayerLeaderboardStats,
@@ -177,7 +177,7 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
         const formatLabel = courseMatches[0]?.formatLabel ?? ''
         return (
           <div key={courseName}>
-            <div className="bg-emerald-50 rounded-t-lg px-3 py-2 text-center">
+            <div className="rounded-t-lg px-3 py-2 text-center">
               <span className="text-sm font-bold text-gray-900">{courseName}</span>
               <span className="text-xs text-gray-500 ml-1.5">&middot; {formatLabel}</span>
             </div>
@@ -196,20 +196,12 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                 const colorA = colorMap.get(m.teamA.name) ?? '#6b7280'
                 const colorB = colorMap.get(m.teamB.name) ?? '#6b7280'
 
-                // Background: losing side = no bg, tied completed = no bg, tied in_progress = both light
+                // Only the winning side gets shading; tied or losing side always 0
                 let aAlpha = 0
                 let bAlpha = 0
-                if (isPending) {
-                  // no background
-                } else if (isCompleted) {
-                  if (aWins) aAlpha = 0.20
-                  else if (bWins) bAlpha = 0.20
-                  // tied: both 0
-                } else if (isInProgress) {
-                  if (tied) { aAlpha = 0.08; bAlpha = 0.08 }
-                  else if (aWins) aAlpha = 0.12
-                  else bAlpha = 0.12
-                }
+                const alpha = isCompleted ? 0.20 : isInProgress ? 0.12 : 0
+                if (aWins) aAlpha = alpha
+                else if (bWins) bAlpha = alpha
 
                 return (
                   <div
@@ -685,18 +677,28 @@ export default function PointLeaderboard({
   holeStatsByRound, skinsByRound, earnings, teams,
 }: PointLeaderboardProps) {
   const defaultRound = rounds[0]?.roundNumber ?? 1
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const rdParam = searchParams.get('rd')
   const [view,         setView]         = useState<View>('matches')
-  const [roundFilter,  setRoundFilter]  = useState<number>(defaultRound)
+  const [roundFilter,  setRoundFilter]  = useState<number>(rdParam ? Number(rdParam) : defaultRound)
   const [scoreType,    setScoreType]    = useState<'gross' | 'net'>('gross')
   const [sortCol,      setSortCol]      = useState<string | null>(null)
   const [sortDir,      setSortDir]      = useState<SortDir>('desc')
+
+  function updateRound(n: number) {
+    setRoundFilter(n)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('rd', String(n))
+    router.replace(`${pathname}?${params.toString()}`)
+  }
 
   const needsRoundFilter = view === 'matches' || view === 'hole_stats' || view === 'skins'
   const needsScoreFilter = view === 'individual'
 
   function handleViewChange(v: View) {
     setView(v)
-    setRoundFilter(defaultRound)
+    updateRound(defaultRound)
     setSortCol(null)
     setSortDir('desc')
   }
@@ -743,7 +745,7 @@ export default function PointLeaderboard({
           <div className="flex items-center gap-1">
             <select
               value={roundFilter}
-              onChange={e => setRoundFilter(Number(e.target.value))}
+              onChange={e => updateRound(Number(e.target.value))}
               className="bg-transparent text-xs font-semibold text-white appearance-none cursor-pointer focus:outline-none"
             >
               {rounds.map(r => (

@@ -212,8 +212,9 @@ function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
 // ─── Course Info (tee-selectable slope/rating) ──────────────────────────────
 
 function CourseInfoSection({ course, location, par }: { course: import('@/lib/v2/types').CourseDetailV2; location: string; par: number }) {
-  const [selectedTeeIdx, setSelectedTeeIdx] = useState(0)
-  const selectedTee = course.tees[selectedTeeIdx] ?? null
+  const [selectedTeeName, setSelectedTeeName] = useState<string | null>(course.tees[0]?.name ?? null)
+  const sortedTees = [...course.tees].sort((a, b) => a.yardage - b.yardage)
+  const selectedTee = course.tees.find(t => t.name === selectedTeeName) ?? null
 
   return (
     <Section title="Course Info">
@@ -221,23 +222,23 @@ function CourseInfoSection({ course, location, par }: { course: import('@/lib/v2
         {location && (
           <div className="flex items-center justify-between px-4 py-3">
             <span className="text-sm text-gray-600">Address</span>
-            <span className="text-sm font-bold text-gray-900">{location}</span>
+            <span className="text-sm font-bold text-gray-900 text-right max-w-[60%]">{location}</span>
           </div>
         )}
         <div className="flex items-center justify-between px-4 py-3">
           <span className="text-sm text-gray-600">Par</span>
           <span className="text-sm font-bold text-gray-900">{par}</span>
         </div>
-        {course.tees.length > 0 && (
+        {sortedTees.length > 0 && (
           <div className="px-4 py-3">
             <p className="text-sm text-gray-600 mb-2">Tees</p>
             <div className="flex flex-wrap gap-2">
-              {course.tees.map((t, i) => (
+              {sortedTees.map(t => (
                 <button
                   key={t.name}
-                  onClick={() => setSelectedTeeIdx(i)}
+                  onClick={() => setSelectedTeeName(t.name)}
                   className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1 transition-colors ${
-                    i === selectedTeeIdx
+                    t.name === selectedTeeName
                       ? 'bg-golf-700 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
