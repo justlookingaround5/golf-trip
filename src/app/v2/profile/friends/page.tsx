@@ -58,7 +58,7 @@ export default function MyFriendsPage() {
           <div className="py-12 text-center">
             <p className="text-sm text-gray-400">No friends match &ldquo;{query}&rdquo;</p>
           </div>
-        ) : (
+        ) : query.trim() ? (
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             {filtered.map(f => (
               <Link
@@ -79,6 +79,44 @@ export default function MyFriendsPage() {
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {Object.entries(
+              filtered.reduce<Record<string, typeof filtered>>((acc, f) => {
+                const letter = f.name[0].toUpperCase()
+                ;(acc[letter] ??= []).push(f)
+                return acc
+              }, {})
+            ).map(([letter, members]) => (
+              <div key={letter}>
+                <div className="sticky top-0 z-10 bg-background px-1 py-1">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{letter}</span>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                  {members.map(f => (
+                    <Link
+                      key={f.id}
+                      href={`/v2/profile/${f.id}`}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-golf-600 text-sm font-bold text-white shrink-0">
+                        {f.name[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">{f.name}</p>
+                        {f.handicap != null && (
+                          <p className="text-xs text-gray-400">HCP {f.handicap}</p>
+                        )}
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
