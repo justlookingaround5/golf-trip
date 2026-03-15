@@ -858,17 +858,18 @@ const _COURSE_HCPS: Record<string, number[]> = {
   course5: [7, 13, 15, 1, 5, 17, 9, 11, 3, 8, 16, 10, 4, 6, 12, 18, 2, 14],
 }
 
-function _makeUserHoleStats(courseId: string): UserHoleStatsV2[] {
+function _makeUserHoleStats(courseId: string, rounds: number = 5): UserHoleStatsV2[] {
   const pars = _COURSE_PARS[courseId] ?? _COURSE_PARS.course1
   const hcps = _COURSE_HCPS[courseId] ?? _COURSE_HCPS.course1
   const avgOffsets = [0.4, 0.2, 0.8, 0.3, 0.6, 0.5, 0.3, 0.1, 0.4, 0.3, 0.7, 0.5, 0.2, 0.4, 0.6, 0.3, 0.5, 0.4]
   const netOffsets = [0.1, -0.2, 0.4, -0.1, 0.2, 0.1, -0.2, -0.3, 0.1, -0.1, 0.3, 0.2, -0.2, 0.1, 0.3, -0.1, 0.2, 0.1]
   const bestOffsets = [0, -1, 1, 0, 0, 1, 0, -1, 0, -1, 1, 0, -1, 0, 1, 0, 0, -1]
-  const birdies =  [1, 2, 0, 1, 0, 0, 1, 2, 1, 2, 0, 1, 2, 1, 0, 1, 0, 1]
+  // Each column (hole) sums to `rounds` (default 5)
   const eaglesCnt= [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0]
-  const parsCnt =  [3, 2, 1, 3, 2, 2, 3, 3, 2, 2, 1, 2, 2, 3, 2, 3, 2, 2]
-  const bogeys =   [1, 0, 2, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 0, 1, 0, 2, 1]
-  const doubles =  [0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
+  const birdies =  [1, 2, 0, 1, 0, 0, 1, 2, 1, 2, 0, 1, 1, 1, 0, 1, 0, 1]
+  const parsCnt =  [3, 2, 2, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3]
+  const bogeys =   [1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
+  const doubles =  [0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0]
   const fwPcts =   [65, 70, null, 55, null, 60, 50, 75, 60, 65, null, 55, 70, 60, 65, null, 55, 60]
   const girPcts =  [50, 60, 35, 45, 40, 45, 55, 65, 50, 55, 30, 40, 60, 50, 45, 55, 40, 50]
   const putts =    [1.8, 1.7, 2.0, 1.9, 2.1, 1.9, 1.7, 1.6, 1.8, 1.7, 2.2, 1.9, 1.7, 1.8, 2.0, 1.6, 1.9, 1.8]
@@ -893,12 +894,12 @@ function _makeUserHoleStats(courseId: string): UserHoleStatsV2[] {
 
 export const STUB_USER_HOLE_STATS: Record<string, Record<string, UserHoleStatsV2[]>> = {
   course1: {
-    [ME.id]: _makeUserHoleStats('course1'),
-    p2: _makeUserHoleStats('course1').map(h => ({ ...h, avgGross: +(h.avgGross + 0.4).toFixed(1), birdies: Math.max(0, h.birdies - 1), bogeys: h.bogeys + 1 })),
+    [ME.id]: _makeUserHoleStats('course1', 5),
+    p2: _makeUserHoleStats('course1', 5).map(h => ({ ...h, avgGross: +(h.avgGross + 0.4).toFixed(1), birdies: Math.max(0, h.birdies - 1), bogeys: h.bogeys + 1 })),
   },
-  course3: { [ME.id]: _makeUserHoleStats('course3') },
-  course4: { [ME.id]: _makeUserHoleStats('course4') },
-  course5: { [ME.id]: _makeUserHoleStats('course5') },
+  course3: { [ME.id]: _makeUserHoleStats('course3', 5) },
+  course4: { [ME.id]: _makeUserHoleStats('course4', 5) },
+  course5: { [ME.id]: _makeUserHoleStats('course5', 5) },
 }
 
 export const STUB_CHAT_MESSAGES: ChatMessageV2[] = [

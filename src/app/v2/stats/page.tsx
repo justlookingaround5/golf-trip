@@ -4,8 +4,22 @@
 // Header with career stats · GIR/FW/Putts boxes · Round list
 
 import Link from 'next/link'
-import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_EARNINGS, ME } from '@/lib/v2/stub-data'
+import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_EARNINGS, STUB_USER_HOLE_STATS, ME } from '@/lib/v2/stub-data'
 import type { RoundV2 } from '@/lib/v2/types'
+
+// ─── Scoring bar ──────────────────────────────────────────────────────────────
+
+function ScoringBar({ label, pct, color }: { label: string; pct: number; color: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-20 text-xs font-semibold text-gray-600 text-right shrink-0">{label}</span>
+      <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-8 text-xs font-bold text-gray-700 tabular-nums text-right">{Math.round(pct)}%</span>
+    </div>
+  )
+}
 
 // ─── Round row ────────────────────────────────────────────────────────────────
 
@@ -57,6 +71,17 @@ export default function StatsPage() {
   const me = STUB_PLAYER_STATS.find(s => s.player.id === ME.id)
   const meEarnings = STUB_EARNINGS.find(e => e.player.id === ME.id)
 
+  // Aggregate hole stats for ME across all courses
+  const allHoleStats = Object.values(STUB_USER_HOLE_STATS)
+    .flatMap(courseStats => courseStats[ME.id] ?? [])
+  const totalEagles  = allHoleStats.reduce((s, h) => s + h.eagles,  0)
+  const totalBirdies = allHoleStats.reduce((s, h) => s + h.birdies, 0)
+  const totalPars    = allHoleStats.reduce((s, h) => s + h.pars,    0)
+  const totalBogeys  = allHoleStats.reduce((s, h) => s + h.bogeys,  0)
+  const totalDoubles = allHoleStats.reduce((s, h) => s + h.doubles, 0)
+  const totalScores  = totalEagles + totalBirdies + totalPars + totalBogeys + totalDoubles
+  const scoringPct   = (n: number) => totalScores > 0 ? (n / totalScores) * 100 : 0
+
   const careerLow = completedRounds.length > 0
     ? Math.min(...completedRounds.map(r => r.grossTotal!))
     : null
@@ -64,6 +89,9 @@ export default function StatsPage() {
   const earnings = meEarnings
     ? (meEarnings.netEarnings >= 0 ? `+$${meEarnings.netEarnings}` : `-$${Math.abs(meEarnings.netEarnings)}`)
     : null
+  const earningsColor = meEarnings != null
+    ? (meEarnings.netEarnings >= 0 ? 'text-green-600' : 'text-red-600')
+    : 'text-gray-900'
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -96,20 +124,37 @@ export default function StatsPage() {
         {/* Stat boxes */}
         <div className="grid grid-cols-3 gap-3 mx-3 mt-3">
           {[
-            { label: 'Low', value: careerLow != null ? `${careerLow}` : '—' },
-            { label: 'Record', value: record ?? '—' },
-            { label: 'Earnings', value: earnings ?? '—' },
-          ].map(({ label, value }) => (
+            { label: 'Low',      value: careerLow != null ? `${careerLow}` : '—', color: 'text-gray-900' },
+            { label: 'Record',   value: record ?? '—',                             color: 'text-gray-900' },
+            { label: 'Earnings', value: earnings ?? '—',                           color: earningsColor   },
+          ].map(({ label, value, color }) => (
             <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
-              <p className="text-2xl font-black text-gray-900">{value}</p>
+              <p className={`text-2xl font-black ${color}`}>{value}</p>
               <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
             </div>
           ))}
         </div>
 
+        {/* Scoring Distribution */}
+        {allHoleStats.length > 0 && (
+          <div className="mx-3 mt-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Scoring Distribution</p>
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 space-y-2">
+              <ScoringBar label="Eagles"  pct={scoringPct(totalEagles)}  color="bg-yellow-500" />
+              <ScoringBar label="Birdies" pct={scoringPct(totalBirdies)} color="bg-red-500" />
+              <ScoringBar label="Pars"    pct={scoringPct(totalPars)}    color="bg-gray-400" />
+              <ScoringBar label="Bogeys"  pct={scoringPct(totalBogeys)}  color="bg-blue-500" />
+              <ScoringBar label="Double+" pct={scoringPct(totalDoubles)} color="bg-blue-800" />
+            </div>
+          </div>
+        )}
+
         {/* Round list */}
-        <div className="bg-white mt-3 mx-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {STUB_ALL_ROUNDS.map(r => <RoundRow key={r.id} round={r} />)}
+        <div className="mx-3 mt-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Rounds</p>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            {STUB_ALL_ROUNDS.map(r => <RoundRow key={r.id} round={r} />)}
+          </div>
         </div>
       </div>
     </div>
