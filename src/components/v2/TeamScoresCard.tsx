@@ -179,7 +179,7 @@ export default function TeamScoresCard({ matches, tripId, tripName, linkToFull, 
   )
 
   if (linkToFull) {
-    return <Link href={`/v2/trip/${tripId}/leaderboard`}>{card}</Link>
+    return <Link href={`/v2/trip/${tripId}/leaderboard?from=home`}>{card}</Link>
   }
   return card
 }

@@ -4,7 +4,8 @@
 // Used for both active trip (linked from home) and past trips (linked from Profile).
 // Shows team scores widget at top + full 4-tab leaderboard below.
 
-import { use } from 'react'
+import { use, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import PointLeaderboard from '@/components/v2/PointLeaderboard'
 import TeamScoresCard from '@/components/v2/TeamScoresCard'
@@ -20,8 +21,16 @@ import {
   STUB_TRIP_EARNINGS,
 } from '@/lib/v2/stub-data'
 
-export default function TripLeaderboardPage({ params }: { params: Promise<{ tripId: string }> }) {
-  const { tripId } = use(params)
+const backMap: Record<string, { href: string; label: string }> = {
+  home:     { href: '/v2',                    label: 'Home'     },
+  profile:  { href: '/v2/profile',            label: 'My Trips' },
+  messages: { href: '/v2/messages?tab=trips', label: 'Messages' },
+}
+
+function TripLeaderboardContent({ tripId }: { tripId: string }) {
+  const searchParams = useSearchParams()
+  const from = searchParams.get('from') ?? ''
+  const back = backMap[from] ?? { href: '/v2', label: 'Home' }
 
   const trip =
     STUB_PAST_TRIPS.find(t => t.id === tripId) ??
@@ -35,8 +44,6 @@ export default function TripLeaderboardPage({ params }: { params: Promise<{ trip
       playerCount: 0,
       players: [],
     }
-
-  const isActive = trip.status === 'active'
 
   const dateRange = (() => {
     if (!trip.startDate && !trip.endDate) return null
@@ -55,13 +62,13 @@ export default function TripLeaderboardPage({ params }: { params: Promise<{ trip
       <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
         <div className="mx-auto max-w-lg">
           <Link
-            href={isActive ? '/v2' : '/v2/profile'}
+            href={back.href}
             className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            {isActive ? 'Home' : 'My Trips'}
+            {back.label}
           </Link>
           <h1 className="text-xl font-bold">{trip.name}</h1>
           <div className="flex items-center gap-3 text-sm text-golf-200 mt-0.5">
@@ -93,5 +100,14 @@ export default function TripLeaderboardPage({ params }: { params: Promise<{ trip
         />
       </div>
     </div>
+  )
+}
+
+export default function TripLeaderboardPage({ params }: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = use(params)
+  return (
+    <Suspense>
+      <TripLeaderboardContent tripId={tripId} />
+    </Suspense>
   )
 }

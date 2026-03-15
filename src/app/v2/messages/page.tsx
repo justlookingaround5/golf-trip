@@ -25,7 +25,7 @@ function ThreadRow({ thread }: { thread: MessageThread }) {
   const profileHref = thread.type === 'dm' && thread.friendUserId
     ? `/v2/profile/${thread.friendUserId}`
     : thread.type === 'trip' && thread.tripId
-    ? `/v2/trip/${thread.tripId}/leaderboard`
+    ? `/v2/trip/${thread.tripId}/leaderboard?from=messages`
     : null
 
   return (

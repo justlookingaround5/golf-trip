@@ -49,7 +49,7 @@ export default function UserProfileCard({
 
   return (
     <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-      <Link href={dest} className="shrink-0">
+      <Link href={`/v2/profile/${player.id}`} className="shrink-0">
         <Avatar player={player} />
       </Link>
 

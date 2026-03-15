@@ -180,6 +180,7 @@ function IndividualLeaderboard({
 
   const sorted = sortCol
     ? sortRows(defaultSorted, sortCol, sortDir, (row, col) => {
+        if (col === 'player') return row.player.name
         if (col === 'diff') return row.diff
         const rdIdx = rounds.findIndex(r => `rd_${r.roundNumber}` === col)
         if (rdIdx >= 0) return row.scores[rdIdx]
@@ -194,7 +195,14 @@ function IndividualLeaderboard({
       <table className="min-w-full text-xs">
         <thead>
           <tr className="bg-golf-800">
-            <th className={TH_LEFT}>Player</th>
+            <th
+              className={`sticky left-0 px-3 py-2 text-left text-[10px] font-bold text-white uppercase tracking-wide cursor-pointer select-none transition-colors ${
+                sortCol === 'player' ? 'bg-golf-700' : 'bg-golf-800 hover:bg-golf-700'
+              }`}
+              onClick={() => onSort('player')}
+            >
+              Player<SortArrow col="player" sortCol={sortCol} sortDir={sortDir} />
+            </th>
             {rounds.map(r => (
               <th
                 key={r.roundNumber}
@@ -253,6 +261,7 @@ function PlayerStatsView({ stats, sortCol, sortDir, onSort, playerFilter, onPlay
   const sorted = sortCol
     ? sortRows(baseRows, sortCol, sortDir, (row, col) => {
         switch (col) {
+          case 'player': return row.player.name
           case 'wlt':   return row.matchRecord.wins
           case 'pts':   return row.points
           case 'skins': return row.skinsWon
@@ -271,7 +280,14 @@ function PlayerStatsView({ stats, sortCol, sortDir, onSort, playerFilter, onPlay
       <table className="min-w-full text-xs">
         <thead>
           <tr className="bg-golf-800">
-            <th className={TH_LEFT}>Player</th>
+            <th
+              className={`sticky left-0 px-3 py-2 text-left text-[10px] font-bold text-white uppercase tracking-wide cursor-pointer select-none transition-colors ${
+                sortCol === 'player' ? 'bg-golf-700' : 'bg-golf-800 hover:bg-golf-700'
+              }`}
+              onClick={() => onSort('player')}
+            >
+              Player<SortArrow col="player" sortCol={sortCol} sortDir={sortDir} />
+            </th>
             <th className={thSort('wlt', sortCol)} onClick={() => onSort('wlt')}>
               W-L-T<SortArrow col="wlt" sortCol={sortCol} sortDir={sortDir} />
             </th>
@@ -467,6 +483,7 @@ function EarningsView({ earnings, sortCol, sortDir, onSort, playerFilter, onPlay
   const sorted = sortCol
     ? sortRows(baseRows, sortCol, sortDir, (row, col) => {
         switch (col) {
+          case 'player':    return row.player.name
           case 'team':      return row.team
           case 'matches':   return row.matches
           case 'skins':     return row.skins
@@ -483,7 +500,14 @@ function EarningsView({ earnings, sortCol, sortDir, onSort, playerFilter, onPlay
       <table className="min-w-full text-xs">
         <thead>
           <tr className="bg-golf-800">
-            <th className={TH_LEFT}>Player</th>
+            <th
+              className={`sticky left-0 px-3 py-2 text-left text-[10px] font-bold text-white uppercase tracking-wide cursor-pointer select-none transition-colors ${
+                sortCol === 'player' ? 'bg-golf-700' : 'bg-golf-800 hover:bg-golf-700'
+              }`}
+              onClick={() => onSort('player')}
+            >
+              Player<SortArrow col="player" sortCol={sortCol} sortDir={sortDir} />
+            </th>
             <th className={thSort('team', sortCol)} onClick={() => onSort('team')}>
               Team<SortArrow col="team" sortCol={sortCol} sortDir={sortDir} />
             </th>

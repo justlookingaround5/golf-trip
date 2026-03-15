@@ -41,7 +41,7 @@ function TripRow({ trip, past }: { trip: TripV2; past: boolean }) {
   )
 
   if (!past) return <div>{inner}</div>
-  return <Link href={`/v2/trip/${trip.id}/leaderboard`}>{inner}</Link>
+  return <Link href={`/v2/trip/${trip.id}/leaderboard?from=profile`}>{inner}</Link>
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
