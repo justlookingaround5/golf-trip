@@ -87,10 +87,6 @@ interface SortProps {
   onSort: (col: string) => void
 }
 
-interface FilterProps {
-  playerFilter: string | null
-  onPlayerFilter: (id: string) => void
-}
 
 function thSort(col: string, sortCol: string | null, base = TH) {
   const active = sortCol === col
@@ -286,13 +282,13 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
 // ─── Individual Leaderboard ───────────────────────────────────────────────────
 
 function IndividualLeaderboard({
-  rounds, roundScores, players, scoreType, sortCol, sortDir, onSort, playerFilter, onPlayerFilter,
+  rounds, roundScores, players, scoreType, sortCol, sortDir, onSort,
 }: {
   rounds: TripRoundV2[]
   roundScores: TripRoundScoreV2[]
   players: PlayerV2[]
   scoreType: 'gross' | 'net'
-} & SortProps & FilterProps) {
+} & SortProps) {
   type Row = { player: PlayerV2; scores: (number | null)[]; diff: number | null }
 
   const baseRows: Row[] = players.map(p => {
@@ -325,8 +321,6 @@ function IndividualLeaderboard({
       })
     : defaultSorted
 
-  const rows = playerFilter ? sorted.filter(r => r.player.id === playerFilter) : sorted
-
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-xs">
@@ -356,27 +350,21 @@ function IndividualLeaderboard({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {rows.map(({ player, scores, diff }, i) => {
-            const isFiltered = playerFilter === player.id
+          {sorted.map(({ player, scores, diff }, i) => {
             const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
             return (
               <tr key={player.id} className={bg}>
-                <td
-                  className={`${tdLeft(isFiltered ? 'bg-golf-50' : bg)} cursor-pointer ${isFiltered ? 'text-golf-800 font-bold' : ''}`}
-                  onClick={() => onPlayerFilter(player.id)}
-                >
-                  {player.name}
-                </td>
+                <td className={tdLeft(bg)}>{player.name}</td>
                 {scores.map((s, j) => {
                   const roundPar = rounds[j]?.par ?? 0
                   const underPar = s != null && s < roundPar
                   return (
-                    <td key={j} className={`${TD} ${isFiltered ? 'bg-golf-50' : ''} ${underPar ? 'text-red-600 font-semibold' : ''}`}>
+                    <td key={j} className={`${TD} ${underPar ? 'text-red-600 font-semibold' : ''}`}>
                       {s ?? '—'}
                     </td>
                   )
                 })}
-                <td className={`${TD} font-bold ${isFiltered ? 'bg-golf-50' : ''} ${
+                <td className={`${TD} font-bold ${
                   diff == null ? 'text-gray-400' :
                   diff < 0    ? 'text-red-600'  :
                   diff > 0    ? 'text-blue-600' : 'text-gray-700'
@@ -392,7 +380,7 @@ function IndividualLeaderboard({
 
 // ─── Player Stats ─────────────────────────────────────────────────────────────
 
-function PlayerStatsView({ stats, sortCol, sortDir, onSort, playerFilter, onPlayerFilter }: { stats: PlayerLeaderboardStats[] } & SortProps & FilterProps) {
+function PlayerStatsView({ stats, sortCol, sortDir, onSort }: { stats: PlayerLeaderboardStats[] } & SortProps) {
   const baseRows = [...stats].sort((a, b) => b.points - a.points)
 
   const sorted = sortCol
@@ -409,8 +397,6 @@ function PlayerStatsView({ stats, sortCol, sortDir, onSort, playerFilter, onPlay
         }
       })
     : baseRows
-
-  const rows = playerFilter ? sorted.filter(r => r.player.id === playerFilter) : sorted
 
   return (
     <div className="overflow-x-auto">
@@ -443,22 +429,16 @@ function PlayerStatsView({ stats, sortCol, sortDir, onSort, playerFilter, onPlay
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {rows.map(({ player, matchRecord: r, points, skinsWon, fairwayPct, girPct, puttsAvg }, i) => {
-            const isFiltered = playerFilter === player.id
+          {sorted.map(({ player, matchRecord: r, skinsWon, fairwayPct, girPct, puttsAvg }, i) => {
             const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
             return (
               <tr key={player.id} className={bg}>
-                <td
-                  className={`${tdLeft(isFiltered ? 'bg-golf-50' : bg)} cursor-pointer ${isFiltered ? 'text-golf-800 font-bold' : ''}`}
-                  onClick={() => onPlayerFilter(player.id)}
-                >
-                  {player.name}
-                </td>
-                <td className={`${TD} ${isFiltered ? 'bg-golf-50' : ''}`}>{r.wins}-{r.losses}-{r.ties}</td>
-                <td className={`${TD} ${isFiltered ? 'bg-golf-50' : ''}`}>{skinsWon}</td>
-                <td className={`${TD} ${isFiltered ? 'bg-golf-50' : ''}`}>{pct(fairwayPct)}</td>
-                <td className={`${TD} ${isFiltered ? 'bg-golf-50' : ''}`}>{pct(girPct)}</td>
-                <td className={`${TD} ${isFiltered ? 'bg-golf-50' : ''}`}>{fmt1(puttsAvg)}</td>
+                <td className={tdLeft(bg)}>{player.name}</td>
+                <td className={TD}>{r.wins}-{r.losses}-{r.ties}</td>
+                <td className={TD}>{skinsWon}</td>
+                <td className={TD}>{pct(fairwayPct)}</td>
+                <td className={TD}>{pct(girPct)}</td>
+                <td className={TD}>{fmt1(puttsAvg)}</td>
               </tr>
             )
           })}
@@ -501,8 +481,6 @@ function HoleStatsView({ holeStats, sortCol, sortDir, onSort }: { holeStats: Hol
   const rows = sortCol
     ? sortRows(baseRows, sortCol, sortDir, (row, col) => {
         switch (col) {
-          case 'hole':      return row.holeNumber
-          case 'par':       return row.par
           case 'hcp':       return row.handicapIndex
           case 'avg_gross': return row.avgGross
           case 'avg_net':   return row.avgNet
@@ -520,12 +498,8 @@ function HoleStatsView({ holeStats, sortCol, sortDir, onSort }: { holeStats: Hol
       <table className="min-w-full text-xs">
         <thead>
           <tr className="bg-golf-800">
-            <th className={thSort('hole', sortCol)} onClick={() => onSort('hole')}>
-              Hole<SortArrow col="hole" sortCol={sortCol} sortDir={sortDir} />
-            </th>
-            <th className={thSort('par', sortCol)} onClick={() => onSort('par')}>
-              Par<SortArrow col="par" sortCol={sortCol} sortDir={sortDir} />
-            </th>
+            <th className={TH}>Hole</th>
+            <th className={TH}>Par</th>
             <th className={thSort('hcp', sortCol)} onClick={() => onSort('hcp')}>
               HCP<SortArrow col="hcp" sortCol={sortCol} sortDir={sortDir} />
             </th>
@@ -619,7 +593,7 @@ function SkinsView({ skins }: { skins: SkinResultV2[] }) {
 
 // ─── Earnings ─────────────────────────────────────────────────────────────────
 
-function EarningsView({ earnings, sortCol, sortDir, onSort, playerFilter, onPlayerFilter }: { earnings: TripEarningsRow[] } & SortProps & FilterProps) {
+function EarningsView({ earnings, sortCol, sortDir, onSort }: { earnings: TripEarningsRow[] } & SortProps) {
   const baseRows = [...earnings].sort((a, b) => b.netTotal - a.netTotal)
 
   const sorted = sortCol
@@ -634,8 +608,6 @@ function EarningsView({ earnings, sortCol, sortDir, onSort, playerFilter, onPlay
         }
       })
     : baseRows
-
-  const rows = playerFilter ? sorted.filter(r => r.player.id === playerFilter) : sorted
 
   return (
     <div className="overflow-x-auto">
@@ -665,21 +637,15 @@ function EarningsView({ earnings, sortCol, sortDir, onSort, playerFilter, onPlay
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {rows.map(({ player, team, matches, skins, netTotal }, i) => {
-            const isFiltered = playerFilter === player.id
+          {sorted.map(({ player, team, matches, skins, netTotal }, i) => {
             const bg = i % 2 === 0 ? 'bg-white' : 'bg-gray-50'
             return (
               <tr key={player.id} className={bg}>
-                <td
-                  className={`${tdLeft(isFiltered ? 'bg-golf-50' : bg)} cursor-pointer ${isFiltered ? 'text-golf-800 font-bold' : ''}`}
-                  onClick={() => onPlayerFilter(player.id)}
-                >
-                  {player.name}
-                </td>
-                <td className={`${TD} font-semibold ${isFiltered ? 'bg-golf-50 ' : ''}${team    >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(team)}</td>
-                <td className={`${TD} font-semibold ${isFiltered ? 'bg-golf-50 ' : ''}${matches >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(matches)}</td>
-                <td className={`${TD} font-semibold ${isFiltered ? 'bg-golf-50 ' : ''}${skins   >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(skins)}</td>
-                <td className={`${TD} font-black   ${isFiltered ? 'bg-golf-50 ' : ''}${netTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(netTotal)}</td>
+                <td className={tdLeft(bg)}>{player.name}</td>
+                <td className={`${TD} font-semibold ${team    >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(team)}</td>
+                <td className={`${TD} font-semibold ${matches >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(matches)}</td>
+                <td className={`${TD} font-semibold ${skins   >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(skins)}</td>
+                <td className={`${TD} font-black   ${netTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(netTotal)}</td>
               </tr>
             )
           })}
@@ -724,7 +690,6 @@ export default function PointLeaderboard({
   const [scoreType,    setScoreType]    = useState<'gross' | 'net'>('gross')
   const [sortCol,      setSortCol]      = useState<string | null>(null)
   const [sortDir,      setSortDir]      = useState<SortDir>('desc')
-  const [playerFilter, setPlayerFilter] = useState<string | null>(null)
 
   const needsRoundFilter = view === 'matches' || view === 'hole_stats' || view === 'skins'
   const needsScoreFilter = view === 'individual'
@@ -734,7 +699,6 @@ export default function PointLeaderboard({
     setRoundFilter(defaultRound)
     setSortCol(null)
     setSortDir('desc')
-    setPlayerFilter(null)
   }
 
   function handleSort(col: string) {
@@ -752,12 +716,7 @@ export default function PointLeaderboard({
     }
   }
 
-  function handlePlayerFilter(id: string) {
-    setPlayerFilter(prev => prev === id ? null : id)
-  }
-
   const sortProps: SortProps = { sortCol, sortDir, onSort: handleSort }
-  const filterProps: FilterProps = { playerFilter, onPlayerFilter: handlePlayerFilter }
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -820,13 +779,13 @@ export default function PointLeaderboard({
         <IndividualLeaderboard
           rounds={rounds} roundScores={roundScores}
           players={players} scoreType={scoreType}
-          {...sortProps} {...filterProps}
+          {...sortProps}
         />
       )}
-      {view === 'player_stats' && <PlayerStatsView stats={playerStats} {...sortProps} {...filterProps} />}
+      {view === 'player_stats' && <PlayerStatsView stats={playerStats} {...sortProps} />}
       {view === 'hole_stats'   && <HoleStatsView   holeStats={holeStatsByRound[roundFilter] ?? []} {...sortProps} />}
       {view === 'skins'        && <SkinsView        skins={skinsByRound[roundFilter] ?? []} />}
-      {view === 'earnings'     && <EarningsView     earnings={earnings} {...sortProps} {...filterProps} />}
+      {view === 'earnings'     && <EarningsView     earnings={earnings} {...sortProps} />}
     </div>
   )
 }

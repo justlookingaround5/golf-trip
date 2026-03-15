@@ -96,16 +96,6 @@ function ScoringBar({ label, count, maxCount, color }: { label: string; count: n
 
 // ─── Hole-by-Hole table ─────────────────────────────────────────────────────
 
-function avgBgColor(diff: number, maxDiff: number, minDiff: number): string {
-  if (diff === 0) return 'transparent'
-  if (diff > 0) {
-    const alpha = Math.min(diff / (maxDiff || 0.01), 1) * 0.55
-    return `rgba(239, 68, 68, ${alpha.toFixed(2)})`
-  }
-  const alpha = Math.min(Math.abs(diff) / (Math.abs(minDiff) || 0.01), 1) * 0.55
-  return `rgba(34, 197, 94, ${alpha.toFixed(2)})`
-}
-
 function BestScoreCell({ score, par }: { score: number; par: number }) {
   const diff = score - par
   if (diff <= -2) {
@@ -136,11 +126,48 @@ function BestScoreCell({ score, par }: { score: number; par: number }) {
 }
 
 function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
-  const netDiffs = holes.map(h => h.avgNet - h.par)
-  const posNetDiffs = netDiffs.filter(d => d > 0)
-  const negNetDiffs = netDiffs.filter(d => d < 0)
-  const maxDiff = posNetDiffs.length > 0 ? Math.max(...posNetDiffs) : 0.01
-  const minDiff = negNetDiffs.length > 0 ? Math.min(...negNetDiffs) : -0.01
+  const [sortCol, setSortCol] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  function handleSort(col: string) {
+    if (sortCol === col) {
+      if (sortDir === 'desc') {
+        setSortDir('asc')
+      } else {
+        setSortCol(null)
+        setSortDir('desc')
+      }
+    } else {
+      setSortCol(col)
+      setSortDir('desc')
+    }
+  }
+
+  const sortedHoles = sortCol
+    ? [...holes].sort((a, b) => {
+        let av: number | null = null
+        let bv: number | null = null
+        switch (sortCol) {
+          case 'hcp':   av = a.handicapIndex; bv = b.handicapIndex; break
+          case 'avg':   av = a.avgGross;      bv = b.avgGross;      break
+          case 'best':  av = a.bestGross;     bv = b.bestGross;     break
+          case 'fw':    av = a.fairwayPct;    bv = b.fairwayPct;    break
+          case 'gir':   av = a.girPct;        bv = b.girPct;        break
+          case 'putts': av = a.avgPutts;      bv = b.avgPutts;      break
+        }
+        if (av == null && bv == null) return 0
+        if (av == null) return 1
+        if (bv == null) return -1
+        return sortDir === 'desc' ? bv - av : av - bv
+      })
+    : holes
+
+  function SortIndicator({ col }: { col: string }) {
+    if (sortCol !== col) return null
+    return <span className="ml-0.5">{sortDir === 'desc' ? '↓' : '↑'}</span>
+  }
+
+  const thSortable = 'px-2 py-2 text-center font-semibold text-gray-500 cursor-pointer select-none hover:bg-gray-100 transition-colors'
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -150,45 +177,31 @@ function HoleTable({ holes }: { holes: UserHoleStatsV2[] }) {
             <tr className="bg-gray-50 border-b border-gray-100">
               <th className="px-3 py-2 text-left font-semibold text-gray-500">Hole</th>
               <th className="px-2 py-2 text-center font-semibold text-gray-500">Par</th>
-              <th className="px-2 py-2 text-center font-semibold text-gray-500">HCP</th>
-              <th className="px-2 py-2 text-center font-semibold text-gray-500">Best</th>
-              <th className="px-2 py-2 text-center font-semibold text-gray-500">Avg Gross</th>
-              <th className="px-2 py-2 text-center font-semibold text-gray-500">Avg Net</th>
-              <th className="px-2 py-2 text-center font-semibold text-gray-500">Diff</th>
-              <th className="px-2 py-2 text-center font-semibold text-gray-500">FW%</th>
-              <th className="px-2 py-2 text-center font-semibold text-gray-500">GIR%</th>
-              <th className="px-2 py-2 text-center font-semibold text-gray-500">Avg Putts</th>
+              <th className={thSortable} onClick={() => handleSort('hcp')}>HCP<SortIndicator col="hcp" /></th>
+              <th className={thSortable} onClick={() => handleSort('best')}>Best<SortIndicator col="best" /></th>
+              <th className={thSortable} onClick={() => handleSort('avg')}>Avg<SortIndicator col="avg" /></th>
+              <th className={thSortable} onClick={() => handleSort('fw')}>FW%<SortIndicator col="fw" /></th>
+              <th className={thSortable} onClick={() => handleSort('gir')}>GIR%<SortIndicator col="gir" /></th>
+              <th className={thSortable} onClick={() => handleSort('putts')}>Avg Putts<SortIndicator col="putts" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {holes.map(h => {
-              const netDiff = h.avgNet - h.par
-              return (
-                <tr key={h.holeNumber}>
-                  <td className="px-3 py-2 font-bold text-gray-900">{h.holeNumber}</td>
-                  <td className="px-2 py-2 text-center text-gray-600">{h.par}</td>
-                  <td className="px-2 py-2 text-center text-gray-400 tabular-nums">{h.handicapIndex}</td>
-                  <td className="px-2 py-2 text-center tabular-nums">
-                    <BestScoreCell score={h.bestGross} par={h.par} />
-                  </td>
-                  <td className="px-2 py-2 text-center font-bold tabular-nums text-gray-700">
-                    {h.avgGross.toFixed(1)}
-                  </td>
-                  <td className="px-2 py-2 text-center tabular-nums text-gray-700">
-                    {h.avgNet.toFixed(1)}
-                  </td>
-                  <td
-                    className="px-2 py-2 text-center font-bold tabular-nums"
-                    style={{ backgroundColor: avgBgColor(netDiff, maxDiff, minDiff) }}
-                  >
-                    {netDiff === 0 ? '0.0' : netDiff > 0 ? `+${netDiff.toFixed(1)}` : netDiff.toFixed(1)}
-                  </td>
-                  <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.fairwayPct != null ? `${h.fairwayPct}%` : '—'}</td>
-                  <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.girPct != null ? `${h.girPct}%` : '—'}</td>
-                  <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.avgPutts != null ? h.avgPutts.toFixed(1) : '—'}</td>
-                </tr>
-              )
-            })}
+            {sortedHoles.map(h => (
+              <tr key={h.holeNumber}>
+                <td className="px-3 py-2 font-bold text-gray-900">{h.holeNumber}</td>
+                <td className="px-2 py-2 text-center text-gray-600">{h.par}</td>
+                <td className="px-2 py-2 text-center text-gray-400 tabular-nums">{h.handicapIndex}</td>
+                <td className="px-2 py-2 text-center tabular-nums">
+                  <BestScoreCell score={h.bestGross} par={h.par} />
+                </td>
+                <td className="px-2 py-2 text-center font-bold tabular-nums text-gray-700">
+                  {h.avgGross.toFixed(1)}
+                </td>
+                <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.fairwayPct != null ? `${h.fairwayPct}%` : '—'}</td>
+                <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.girPct != null ? `${h.girPct}%` : '—'}</td>
+                <td className="px-2 py-2 text-center tabular-nums text-gray-600">{h.avgPutts != null ? h.avgPutts.toFixed(1) : '—'}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
