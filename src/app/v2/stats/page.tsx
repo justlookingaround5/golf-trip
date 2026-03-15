@@ -84,13 +84,13 @@ export default function StatsPage() {
           </div>
           <div className="text-right text-sm text-golf-200 pt-8">
             {careerLow != null && (
-              <div>Low <span className="font-bold text-white">{careerLow}</span></div>
+              <div>Low <span className="text-base font-bold text-white">{careerLow}</span></div>
             )}
             {record != null && (
-              <div><span className="font-bold text-white">{record}</span></div>
+              <div>Record <span className="text-base font-bold text-white">{record}</span></div>
             )}
             {earnings != null && (
-              <div><span className="font-bold text-white">{earnings}</span></div>
+              <div>Earnings <span className="text-base font-bold text-white">{earnings}</span></div>
             )}
           </div>
         </div>
