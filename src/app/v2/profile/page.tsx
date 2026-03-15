@@ -30,8 +30,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ─── Course Ratings ───────────────────────────────────────────────────────────
 
 function CourseRatings() {
-  const rated = STUB_PINS
-    .filter(p => p.rating != null)
+  const byId = new Map<string, typeof STUB_PINS[0]>()
+  for (const p of STUB_PINS) {
+    if (p.rating == null) continue
+    const existing = byId.get(p.courseId)
+    if (!existing || p.date > existing.date) byId.set(p.courseId, p)
+  }
+  const rated = [...byId.values()]
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
     .slice(0, 10)
 

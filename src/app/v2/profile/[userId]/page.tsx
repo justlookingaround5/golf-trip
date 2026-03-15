@@ -57,14 +57,17 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
     handicap: null,
   }
 
-  // Top 10 rated pins
   const friendPins = [...STUB_PINS]
+
+  const ratedById = new Map<string, typeof STUB_PINS[0]>()
+  for (const p of STUB_PINS) {
+    if (p.rating == null) continue
+    const existing = ratedById.get(p.courseId)
+    if (!existing || p.date > existing.date) ratedById.set(p.courseId, p)
+  }
+  const ratedPins = [...ratedById.values()]
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
     .slice(0, 10)
-
-  const ratedPins = [...friendPins]
-    .filter(p => p.rating != null)
-    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
 
   // Only trips this friend is a member of
   const friendUpcoming = STUB_UPCOMING_TRIPS.filter(t => t.players.some(p => p.id === userId))

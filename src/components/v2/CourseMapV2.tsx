@@ -4,18 +4,10 @@
 // Pins include a rating field; popup shows course, date, score, trip, and stars.
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps'
 import type { CoursePinV2 } from '@/lib/v2/types'
 
 const GEO_URL = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json'
-
-function Rating({ rating }: { rating: number | null }) {
-  if (rating == null) return <span className="text-xs text-gray-400">Unrated</span>
-  return (
-    <span className="text-sm font-bold text-gray-900 tabular-nums">{rating.toFixed(1)}</span>
-  )
-}
 
 interface CourseMapV2Props {
   pins: CoursePinV2[]
@@ -23,7 +15,6 @@ interface CourseMapV2Props {
 
 export default function CourseMapV2({ pins }: CourseMapV2Props) {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
-  const router = useRouter()
 
   if (pins.length === 0) {
     return (
@@ -49,7 +40,9 @@ export default function CourseMapV2({ pins }: CourseMapV2Props) {
     const bestPin = bestGross != null ? coursePins.find(p => p.grossScore === bestGross) : null
     const par = bestPin?.par ?? coursePins[0]?.par ?? 72
     const bestVsPar = bestGross != null ? bestGross - par : null
-    return { bestGross, bestVsPar, par, roundCount: coursePins.length, rating: coursePins[0]?.rating ?? null }
+    const dates = coursePins.map(p => p.date).filter(Boolean)
+    const mostRecentDate = dates.length > 0 ? [...dates].sort().at(-1)! : null
+    return { bestGross, bestVsPar, par, roundCount: coursePins.length, mostRecentDate }
   })() : null
 
   return (
@@ -102,23 +95,19 @@ export default function CourseMapV2({ pins }: CourseMapV2Props) {
 
       {/* Selected pin popup */}
       {selectedPin && courseAgg && (
-        <div
-          className="rounded-xl border border-red-200 bg-red-50 p-4 cursor-pointer active:bg-red-100 transition-colors"
-          onClick={() => router.push(`/v2/course/${selectedPin.courseId}`)}
-        >
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 transition-colors">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-gray-900 truncate">{selectedPin.courseName}</p>
               {selectedPin.tripName && (
                 <p className="text-xs text-gray-500">{selectedPin.tripName}</p>
               )}
+              {courseAgg.mostRecentDate && (
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Last played {new Date(courseAgg.mostRecentDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </p>
+              )}
             </div>
-            {/* Large rating badge */}
-            {courseAgg.rating != null && (
-              <div className="bg-yellow-400 text-yellow-900 text-lg font-black rounded-lg px-3 py-1 shrink-0">
-                {courseAgg.rating.toFixed(1)}
-              </div>
-            )}
             <button
               onClick={(e) => { e.stopPropagation(); setSelectedCourseId(null) }}
               className="shrink-0 text-gray-400 hover:text-gray-600 text-lg leading-none ml-1"
@@ -129,6 +118,10 @@ export default function CourseMapV2({ pins }: CourseMapV2Props) {
           </div>
 
           <div className="mt-3 grid grid-cols-3 gap-2">
+            <Tile
+              label="Rounds"
+              value={courseAgg.roundCount}
+            />
             <Tile
               label="Best Gross"
               value={courseAgg.bestGross ?? '—'}
@@ -142,10 +135,6 @@ export default function CourseMapV2({ pins }: CourseMapV2Props) {
                     : courseAgg.bestVsPar > 0 ? 'text-blue-600'
                       : 'text-gray-600'
               }
-            />
-            <Tile
-              label="Rounds"
-              value={courseAgg.roundCount}
             />
           </div>
         </div>
