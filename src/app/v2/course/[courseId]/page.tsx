@@ -221,10 +221,6 @@ function CourseInfoSection({ course, location, par }: { course: import('@/lib/v2
             <span className="text-sm font-bold text-gray-900 text-right max-w-[60%]">{location}</span>
           </div>
         )}
-        <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-sm text-gray-600">Par</span>
-          <span className="text-sm font-bold text-gray-900">{par}</span>
-        </div>
         {course.tees.length > 0 && (
           <div className="px-4 py-3">
             <table className="w-full text-sm">
@@ -238,15 +234,19 @@ function CourseInfoSection({ course, location, par }: { course: import('@/lib/v2
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {[...course.tees]
-                  .sort((a, b) => b.yardage - a.yardage)
-                  .map(t => (
-                    <tr key={t.name}>
-                      <td className="py-2 font-semibold text-gray-900">{t.name}</td>
-                      <td className="py-2 text-right text-gray-700 tabular-nums">{t.yardage.toLocaleString()}</td>
-                      <td className="py-2 text-right text-gray-700 tabular-nums">{t.slope}</td>
-                      <td className="py-2 text-right text-gray-700 tabular-nums">{t.rating.toFixed(1)}</td>
-                    </tr>
-                  ))}
+                  .sort((a, b) => a.yardage - b.yardage)
+                  .map(t => {
+                    const diff = t.rating - par
+                    const ratingStr = diff === 0 ? 'E' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}`
+                    return (
+                      <tr key={t.name}>
+                        <td className="py-2 font-semibold text-gray-900">{t.name}</td>
+                        <td className="py-2 text-right text-gray-700 tabular-nums">{t.yardage.toLocaleString()}</td>
+                        <td className="py-2 text-right text-gray-700 tabular-nums">{t.slope}</td>
+                        <td className="py-2 text-right tabular-nums font-semibold">{ratingStr}</td>
+                      </tr>
+                    )
+                  })}
               </tbody>
             </table>
           </div>
