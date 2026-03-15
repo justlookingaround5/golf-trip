@@ -203,6 +203,13 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                 if (aWins) aAlpha = alpha
                 else if (bWins) bAlpha = alpha
 
+                const pointDiff = Math.abs(m.teamA.points - m.teamB.points)
+                const resultBadge = isCompleted
+                  ? m.resultMargin
+                  : isInProgress && !tied
+                    ? `${pointDiff}UP`
+                    : null
+
                 return (
                   <div
                     key={m.id}
@@ -223,8 +230,8 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                         </span>
                       ))}
                       {/* Result badge in winner's panel */}
-                      {aWins && m.resultMargin && !isTiedResult && (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-black text-gray-900">{m.resultMargin}</span>
+                      {aWins && resultBadge && !isTiedResult && (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-black text-gray-900">{resultBadge}</span>
                       )}
                     </div>
 
@@ -234,10 +241,6 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                         <span className={`text-[10px] font-bold ${isCompleted ? 'text-gray-400' : 'text-gray-300'}`}>AS</span>
                       ) : isPending ? (
                         <span className="text-[10px] text-gray-300">—</span>
-                      ) : isInProgress && !tied ? (
-                        <span className="text-[10px] font-bold text-gray-400">
-                          {aWins ? m.teamA.name.split(' ').pop() : m.teamB.name.split(' ').pop()}
-                        </span>
                       ) : null}
                       <span className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider">{thruLabel}</span>
                     </div>
@@ -256,8 +259,8 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                         </span>
                       ))}
                       {/* Result badge in winner's panel */}
-                      {bWins && m.resultMargin && !isTiedResult && (
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-black text-gray-900">{m.resultMargin}</span>
+                      {bWins && resultBadge && !isTiedResult && (
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-black text-gray-900">{resultBadge}</span>
                       )}
                     </div>
                   </div>

@@ -232,7 +232,7 @@ function CourseInfoSection({ course, location, par }: { course: import('@/lib/v2
         {sortedTees.length > 0 && (
           <div className="px-4 py-3">
             <p className="text-sm text-gray-600 mb-2">Tees</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2">
               {sortedTees.map(t => (
                 <button
                   key={t.name}
