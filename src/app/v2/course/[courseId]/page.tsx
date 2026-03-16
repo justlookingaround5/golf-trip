@@ -126,7 +126,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
       <div className="mx-auto max-w-lg px-4 py-6 space-y-8">
         {/* Ratings */}
         {(course?.conditionRating != null || course?.layoutRating != null || course?.valueRating != null) && (
-          <Section title="Ratings">
+          <Section title="Community Ratings">
             <div className="grid grid-cols-3 gap-3">
               {course?.conditionRating != null && (
                 <div className="rounded-xl border border-gray-200 bg-white px-3 py-4 text-center">
