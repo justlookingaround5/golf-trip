@@ -168,7 +168,7 @@ export default function ProfilePage() {
           <CourseMapV2 pins={STUB_PINS} />
         </Section>
 
-        <Section title="Course Ratings">
+        <Section title="Top Courses">
           <CourseRatings />
         </Section>
 
