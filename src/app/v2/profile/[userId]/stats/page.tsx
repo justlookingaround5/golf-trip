@@ -7,10 +7,24 @@
 import { use, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_EARNINGS, STUB_FRIENDS } from '@/lib/v2/stub-data'
+import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_EARNINGS, STUB_FRIENDS, STUB_USER_HOLE_STATS } from '@/lib/v2/stub-data'
 import type { RoundV2 } from '@/lib/v2/types'
 
 type Tab = 'rounds' | 'matches' | 'earnings'
+
+// ─── Scoring Distribution bar ──────────────────────────────────────────────────
+
+function ScoringBar({ label, pct, color }: { label: string; pct: number; color: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-20 text-xs font-semibold text-gray-600 text-right shrink-0">{label}</span>
+      <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-10 text-xs font-bold text-gray-700 tabular-nums text-right">{pct.toFixed(0)}%</span>
+    </div>
+  )
+}
 
 // ─── Round row ─────────────────────────────────────────────────────────────────
 
@@ -139,10 +153,23 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
   const friend = STUB_FRIENDS.find(f => f.id === userId)
   const friendName = (friend?.name ?? 'Player').split(' ')[0]
 
-  const totalRounds = STUB_ALL_ROUNDS.length
-  const avgGross = STUB_ALL_ROUNDS
-    .filter(r => r.grossTotal != null)
-    .reduce((s, r, _, arr) => s + (r.grossTotal! / arr.length), 0)
+  const friendRounds = STUB_ALL_ROUNDS.filter(r => r.userId === userId)
+  const totalRounds = friendRounds.length
+  const completedRounds = friendRounds.filter(r => r.grossTotal != null)
+  const avgGross = completedRounds.length > 0
+    ? completedRounds.reduce((s, r) => s + r.grossTotal!, 0) / completedRounds.length
+    : 0
+
+  // Scoring distribution from hole stats across all courses
+  const allHoleStats = Object.values(STUB_USER_HOLE_STATS)
+    .flatMap(courseStats => courseStats[userId] ?? [])
+  const totalEagles  = allHoleStats.reduce((s, h) => s + h.eagles,  0)
+  const totalBirdies = allHoleStats.reduce((s, h) => s + h.birdies, 0)
+  const totalPars    = allHoleStats.reduce((s, h) => s + h.pars,    0)
+  const totalBogeys  = allHoleStats.reduce((s, h) => s + h.bogeys,  0)
+  const totalDoubles = allHoleStats.reduce((s, h) => s + h.doubles, 0)
+  const totalScored  = totalEagles + totalBirdies + totalPars + totalBogeys + totalDoubles
+  const scoringPct   = (n: number) => totalScored > 0 ? (n / totalScored) * 100 : 0
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -188,8 +215,31 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
 
       <div className="mx-auto max-w-lg">
         {tab === 'rounds' && (
-          <div className="bg-white mt-3 mx-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            {STUB_ALL_ROUNDS.map(r => <RoundRow key={r.id} round={r} userId={userId} />)}
+          <div className="px-3 pt-3 space-y-4">
+            {/* Scoring Distribution */}
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
+              <h2 className="text-sm font-bold text-gray-900 mb-3">Scoring Distribution</h2>
+              {totalScored > 0 ? (
+                <div className="space-y-2">
+                  <ScoringBar label="Eagles"  pct={scoringPct(totalEagles)}  color="bg-yellow-500" />
+                  <ScoringBar label="Birdies" pct={scoringPct(totalBirdies)} color="bg-red-500" />
+                  <ScoringBar label="Pars"    pct={scoringPct(totalPars)}    color="bg-gray-400" />
+                  <ScoringBar label="Bogeys"  pct={scoringPct(totalBogeys)}  color="bg-blue-500" />
+                  <ScoringBar label="Double+" pct={scoringPct(totalDoubles)} color="bg-blue-800" />
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 text-center py-4">No data yet</p>
+              )}
+            </div>
+
+            {/* Round History */}
+            {friendRounds.length > 0 ? (
+              <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                {friendRounds.map(r => <RoundRow key={r.id} round={r} userId={userId} />)}
+              </div>
+            ) : (
+              <p className="py-8 text-center text-sm text-gray-400">No rounds yet.</p>
+            )}
           </div>
         )}
         {tab === 'matches'  && <MatchRecord userId={userId} />}

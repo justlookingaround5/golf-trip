@@ -563,34 +563,145 @@ export const STUB_PINS: CoursePinV2[] = [
 // ─── All Logged Rounds (for Stats tab) ───────────────────────────────────────
 
 export const STUB_ALL_ROUNDS: RoundV2[] = [
+  // ── ME (p1) ──────────────────────────────────────────────────────────────────
   {
     id: 'r1', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
-    date: '2025-06-11', tripId: 'trip1', tripName: 'Pebble Beach 2025',
+    date: '2025-06-11', userId: ME.id, tripId: 'trip1', tripName: 'Pebble Beach 2025',
     isQuickRound: false, grossTotal: 78, netTotal: 70, par: 72, holesPlayed: 18,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r2', courseId: 'course3', courseName: 'Augusta National',
-    date: '2024-04-10', tripId: 'trip2', tripName: 'Masters Trip 2024',
+    date: '2024-04-10', userId: ME.id, tripId: 'trip2', tripName: 'Masters Trip 2024',
     isQuickRound: false, grossTotal: 81, netTotal: 73, par: 72, holesPlayed: 18,
     latitude: 33.5021, longitude: -82.0232,
   },
   {
     id: 'r3', courseId: 'course4', courseName: 'Pinehurst No. 2',
-    date: '2024-07-15', tripId: 'trip3', tripName: 'Pinehurst 2024',
+    date: '2024-07-15', userId: ME.id, tripId: 'trip3', tripName: 'Pinehurst 2024',
     isQuickRound: false, grossTotal: 80, netTotal: 72, par: 70, holesPlayed: 18,
     latitude: 35.1954, longitude: -79.4699,
   },
   {
     id: 'r4', courseId: 'course6', courseName: 'Torrey Pines (South)',
-    date: '2024-02-03', tripId: null, tripName: null,
+    date: '2024-02-03', userId: ME.id, tripId: null, tripName: null,
     isQuickRound: true, grossTotal: 82, netTotal: 74, par: 72, holesPlayed: 18,
     latitude: 32.8998, longitude: -117.2498,
   },
   {
     id: 'r5', courseId: 'course5', courseName: 'Whistling Straits',
-    date: '2023-08-22', tripId: 'trip4', tripName: 'Kohler Trip 2023',
+    date: '2023-08-22', userId: ME.id, tripId: 'trip4', tripName: 'Kohler Trip 2023',
     isQuickRound: false, grossTotal: 84, netTotal: 76, par: 72, holesPlayed: 18,
+    latitude: 43.8567, longitude: -87.7245,
+  },
+
+  // ── p2: Jake Brennan — course1 ×5, course3 ×2 ────────────────────────────
+  {
+    id: 'r_p2_1', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
+    date: '2025-06-11', userId: 'p2', tripId: 'trip1', tripName: 'Pebble Beach 2025',
+    isQuickRound: false, grossTotal: 83, netTotal: 71, par: 72, holesPlayed: 18,
+    latitude: 36.5677, longitude: -121.9500,
+  },
+  {
+    id: 'r_p2_2', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
+    date: '2024-04-10', userId: 'p2', tripId: 'trip2', tripName: 'Masters Trip 2024',
+    isQuickRound: false, grossTotal: 86, netTotal: 74, par: 72, holesPlayed: 18,
+    latitude: 36.5677, longitude: -121.9500,
+  },
+  {
+    id: 'r_p2_3', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
+    date: '2024-07-15', userId: 'p2', tripId: 'trip3', tripName: 'Pinehurst 2024',
+    isQuickRound: false, grossTotal: 85, netTotal: 73, par: 72, holesPlayed: 18,
+    latitude: 36.5677, longitude: -121.9500,
+  },
+  {
+    id: 'r_p2_4', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
+    date: '2024-02-03', userId: 'p2', tripId: null, tripName: null,
+    isQuickRound: true, grossTotal: 87, netTotal: 75, par: 72, holesPlayed: 18,
+    latitude: 36.5677, longitude: -121.9500,
+  },
+  {
+    id: 'r_p2_5', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
+    date: '2023-08-22', userId: 'p2', tripId: 'trip4', tripName: 'Kohler Trip 2023',
+    isQuickRound: false, grossTotal: 84, netTotal: 72, par: 72, holesPlayed: 18,
+    latitude: 36.5677, longitude: -121.9500,
+  },
+  {
+    id: 'r_p2_6', courseId: 'course3', courseName: 'Augusta National',
+    date: '2024-04-11', userId: 'p2', tripId: 'trip2', tripName: 'Masters Trip 2024',
+    isQuickRound: false, grossTotal: 89, netTotal: 77, par: 72, holesPlayed: 18,
+    latitude: 33.5021, longitude: -82.0232,
+  },
+  {
+    id: 'r_p2_7', courseId: 'course3', courseName: 'Augusta National',
+    date: '2024-04-12', userId: 'p2', tripId: 'trip2', tripName: 'Masters Trip 2024',
+    isQuickRound: false, grossTotal: 91, netTotal: 79, par: 72, holesPlayed: 18,
+    latitude: 33.5021, longitude: -82.0232,
+  },
+
+  // ── p3: Mike Stanton — course1 ×3, course4 ×1 ────────────────────────────
+  {
+    id: 'r_p3_1', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
+    date: '2025-06-11', userId: 'p3', tripId: 'trip1', tripName: 'Pebble Beach 2025',
+    isQuickRound: false, grossTotal: 74, netTotal: 69, par: 72, holesPlayed: 18,
+    latitude: 36.5677, longitude: -121.9500,
+  },
+  {
+    id: 'r_p3_2', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
+    date: '2024-04-10', userId: 'p3', tripId: 'trip2', tripName: 'Masters Trip 2024',
+    isQuickRound: false, grossTotal: 76, netTotal: 71, par: 72, holesPlayed: 18,
+    latitude: 36.5677, longitude: -121.9500,
+  },
+  {
+    id: 'r_p3_3', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
+    date: '2024-07-15', userId: 'p3', tripId: null, tripName: null,
+    isQuickRound: true, grossTotal: 75, netTotal: 70, par: 72, holesPlayed: 18,
+    latitude: 36.5677, longitude: -121.9500,
+  },
+  {
+    id: 'r_p3_4', courseId: 'course4', courseName: 'Pinehurst No. 2',
+    date: '2024-07-16', userId: 'p3', tripId: 'trip3', tripName: 'Pinehurst 2024',
+    isQuickRound: false, grossTotal: 73, netTotal: 68, par: 70, holesPlayed: 18,
+    latitude: 35.1954, longitude: -79.4699,
+  },
+
+  // ── p4: Tom Whitley — course3 ×2, course5 ×1 ─────────────────────────────
+  {
+    id: 'r_p4_1', courseId: 'course3', courseName: 'Augusta National',
+    date: '2024-04-10', userId: 'p4', tripId: 'trip2', tripName: 'Masters Trip 2024',
+    isQuickRound: false, grossTotal: 91, netTotal: 73, par: 72, holesPlayed: 18,
+    latitude: 33.5021, longitude: -82.0232,
+  },
+  {
+    id: 'r_p4_2', courseId: 'course3', courseName: 'Augusta National',
+    date: '2024-04-11', userId: 'p4', tripId: 'trip2', tripName: 'Masters Trip 2024',
+    isQuickRound: false, grossTotal: 93, netTotal: 75, par: 72, holesPlayed: 18,
+    latitude: 33.5021, longitude: -82.0232,
+  },
+  {
+    id: 'r_p4_3', courseId: 'course5', courseName: 'Whistling Straits',
+    date: '2023-08-22', userId: 'p4', tripId: 'trip4', tripName: 'Kohler Trip 2023',
+    isQuickRound: false, grossTotal: 95, netTotal: 77, par: 72, holesPlayed: 18,
+    latitude: 43.8567, longitude: -87.7245,
+  },
+
+  // ── p5: Griffin Haas — course1 ×1, course5 ×2 ────────────────────────────
+  {
+    id: 'r_p5_1', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
+    date: '2025-06-11', userId: 'p5', tripId: 'trip1', tripName: 'Pebble Beach 2025',
+    isQuickRound: false, grossTotal: 80, netTotal: 70, par: 72, holesPlayed: 18,
+    latitude: 36.5677, longitude: -121.9500,
+  },
+  {
+    id: 'r_p5_2', courseId: 'course5', courseName: 'Whistling Straits',
+    date: '2023-08-22', userId: 'p5', tripId: 'trip4', tripName: 'Kohler Trip 2023',
+    isQuickRound: false, grossTotal: 83, netTotal: 73, par: 72, holesPlayed: 18,
+    latitude: 43.8567, longitude: -87.7245,
+  },
+  {
+    id: 'r_p5_3', courseId: 'course5', courseName: 'Whistling Straits',
+    date: '2023-08-23', userId: 'p5', tripId: 'trip4', tripName: 'Kohler Trip 2023',
+    isQuickRound: false, grossTotal: 85, netTotal: 75, par: 72, holesPlayed: 18,
     latitude: 43.8567, longitude: -87.7245,
   },
 ]
@@ -897,10 +1008,23 @@ export const STUB_USER_HOLE_STATS: Record<string, Record<string, UserHoleStatsV2
   course1: {
     [ME.id]: _makeUserHoleStats('course1', 1),
     p2: _makeUserHoleStats('course1', 5).map(h => ({ ...h, avgGross: +(h.avgGross + 0.4).toFixed(1), birdies: Math.max(0, h.birdies - 1), bogeys: h.bogeys + 1 })),
+    p3: _makeUserHoleStats('course1', 3),
+    p5: _makeUserHoleStats('course1', 1),
   },
-  course3: { [ME.id]: _makeUserHoleStats('course3', 1) },
-  course4: { [ME.id]: _makeUserHoleStats('course4', 1) },
-  course5: { [ME.id]: _makeUserHoleStats('course5', 1) },
+  course3: {
+    [ME.id]: _makeUserHoleStats('course3', 1),
+    p2: _makeUserHoleStats('course3', 2),
+    p4: _makeUserHoleStats('course3', 2).map(h => ({ ...h, avgGross: +(h.avgGross + 0.8).toFixed(1), bogeys: h.bogeys + 2, doubles: h.doubles + 1 })),
+  },
+  course4: {
+    [ME.id]: _makeUserHoleStats('course4', 1),
+    p3: _makeUserHoleStats('course4', 1),
+  },
+  course5: {
+    [ME.id]: _makeUserHoleStats('course5', 1),
+    p4: _makeUserHoleStats('course5', 1).map(h => ({ ...h, avgGross: +(h.avgGross + 1.0).toFixed(1), bogeys: h.bogeys + 2, doubles: h.doubles + 1 })),
+    p5: _makeUserHoleStats('course5', 2),
+  },
 }
 
 export const STUB_CHAT_MESSAGES: ChatMessageV2[] = [

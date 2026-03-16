@@ -72,6 +72,7 @@ export interface RoundV2 {
   courseId: string
   courseName: string
   date: string
+  userId?: string
   tripId: string | null
   tripName: string | null
   isQuickRound: boolean

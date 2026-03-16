@@ -6,7 +6,7 @@
 
 import { use, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   STUB_COURSE_DETAILS,
   STUB_USER_HOLE_STATS,
@@ -270,12 +270,14 @@ function CourseInfoSection({ course, location, par }: { course: import('@/lib/v2
 export default function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const viewUserId = searchParams.get('userId') ?? ME.id
 
   const course = STUB_COURSE_DETAILS[courseId]
   const pin = STUB_PINS.find(p => p.courseId === courseId)
-  const holeStats = STUB_USER_HOLE_STATS[courseId]?.[ME.id] ?? []
+  const holeStats = STUB_USER_HOLE_STATS[courseId]?.[viewUserId] ?? []
   const courseRounds = STUB_ALL_ROUNDS
-    .filter(r => r.courseId === courseId)
+    .filter(r => r.courseId === courseId && r.userId === viewUserId)
     .sort((a, b) => b.date.localeCompare(a.date))
 
   // If no course detail found, show fallback from pin data
