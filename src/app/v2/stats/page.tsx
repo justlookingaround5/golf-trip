@@ -3,9 +3,18 @@
 // STATS PAGE
 // Header with career stats · GIR/FW/Putts boxes · Round list
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_EARNINGS, STUB_USER_HOLE_STATS, ME } from '@/lib/v2/stub-data'
 import type { RoundV2 } from '@/lib/v2/types'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function avg(values: number[]): number | null {
+  return values.length > 0
+    ? Math.round(values.reduce((s, v) => s + v, 0) / values.length * 10) / 10
+    : null
+}
 
 // ─── Scoring bar ──────────────────────────────────────────────────────────────
 
@@ -66,28 +75,44 @@ function RoundRow({ round }: { round: RoundV2 }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function StatsPage() {
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
+
   const myRounds = STUB_ALL_ROUNDS
     .filter(r => r.userId === ME.id)
     .sort((a, b) => b.date.localeCompare(a.date))
-  const totalRounds = myRounds.length
-  const completedRounds = myRounds.filter(r => r.grossTotal != null)
+
   const me = STUB_PLAYER_STATS.find(s => s.player.id === ME.id)
   const meEarnings = STUB_EARNINGS.find(e => e.player.id === ME.id)
 
-  // Aggregate hole stats for ME across all courses
-  const allHoleStats = Object.values(STUB_USER_HOLE_STATS)
-    .flatMap(courseStats => courseStats[ME.id] ?? [])
-  const totalEagles  = allHoleStats.reduce((s, h) => s + h.eagles,  0)
-  const totalBirdies = allHoleStats.reduce((s, h) => s + h.birdies, 0)
-  const totalPars    = allHoleStats.reduce((s, h) => s + h.pars,    0)
-  const totalBogeys  = allHoleStats.reduce((s, h) => s + h.bogeys,  0)
-  const totalDoubles = allHoleStats.reduce((s, h) => s + h.doubles, 0)
+  const courses = Array.from(
+    new Map(myRounds.map(r => [r.courseId, r.courseName])).entries()
+  ).map(([id, name]) => ({ id, name }))
+
+  const filteredRounds = selectedCourseId
+    ? myRounds.filter(r => r.courseId === selectedCourseId)
+    : myRounds
+
+  const filteredCompleted = filteredRounds.filter(r => r.grossTotal != null)
+
+  const filteredHoleStats = selectedCourseId
+    ? (STUB_USER_HOLE_STATS[selectedCourseId]?.[ME.id] ?? [])
+    : Object.values(STUB_USER_HOLE_STATS).flatMap(c => c[ME.id] ?? [])
+
+  // Scoring distribution
+  const totalEagles  = filteredHoleStats.reduce((s, h) => s + h.eagles,  0)
+  const totalBirdies = filteredHoleStats.reduce((s, h) => s + h.birdies, 0)
+  const totalPars    = filteredHoleStats.reduce((s, h) => s + h.pars,    0)
+  const totalBogeys  = filteredHoleStats.reduce((s, h) => s + h.bogeys,  0)
+  const totalDoubles = filteredHoleStats.reduce((s, h) => s + h.doubles, 0)
   const totalScores  = totalEagles + totalBirdies + totalPars + totalBogeys + totalDoubles
   const scoringPct   = (n: number) => totalScores > 0 ? (n / totalScores) * 100 : 0
 
-  const careerLow = completedRounds.length > 0
-    ? Math.min(...completedRounds.map(r => r.grossTotal!))
+  // Career low (per course when filtered)
+  const careerLow = filteredCompleted.length > 0
+    ? Math.min(...filteredCompleted.map(r => r.grossTotal!))
     : null
+
+  // Record and Earnings remain global
   const record = me ? `${me.matchRecord.wins}-${me.matchRecord.losses}-${me.matchRecord.ties}` : null
   const earnings = meEarnings
     ? (meEarnings.netEarnings >= 0 ? `+$${meEarnings.netEarnings}` : `-$${Math.abs(meEarnings.netEarnings)}`)
@@ -96,50 +121,89 @@ export default function StatsPage() {
     ? (meEarnings.netEarnings >= 0 ? 'text-green-600' : 'text-red-600')
     : 'text-gray-900'
 
+  // GIR/FW/Putts: derive from hole stats when filtered, else use STUB_PLAYER_STATS
+  const girPct     = selectedCourseId ? avg(filteredHoleStats.map(h => h.girPct     ?? 0)) : me?.girPct     ?? null
+  const fairwayPct = selectedCourseId ? avg(filteredHoleStats.map(h => h.fairwayPct ?? 0)) : me?.fairwayPct ?? null
+  const puttsAvg   = selectedCourseId ? avg(filteredHoleStats.map(h => h.avgPutts   ?? 0)) : me?.puttsAvg   ?? null
+
   return (
     <div className="min-h-screen bg-background pb-28">
       <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
-        <div className="mx-auto max-w-lg flex items-start justify-between">
-          <div>
-            <Link
-              href="/v2/profile"
-              className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              Profile
-            </Link>
-            <h1 className="text-2xl font-bold">My Stats</h1>
-            <p className="mt-1 text-sm text-golf-200">{totalRounds} rounds</p>
-          </div>
-          {me && (
-            <div className="text-right text-sm text-golf-200 pt-8">
-              <div>GIR% <span className="text-base font-bold text-white">{me.girPct}%</span></div>
-              <div>FW% <span className="text-base font-bold text-white">{me.fairwayPct}%</span></div>
-              <div>Putts <span className="text-base font-bold text-white">{me.puttsAvg}</span></div>
-            </div>
-          )}
+        <div className="mx-auto max-w-lg">
+          <Link
+            href="/v2/profile"
+            className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Profile
+          </Link>
+          <h1 className="text-2xl font-bold">My Stats</h1>
         </div>
       </header>
 
       <div className="mx-auto max-w-lg">
-        {/* Stat boxes */}
-        <div className="grid grid-cols-3 gap-3 mx-3 mt-3">
-          {[
-            { label: 'Low',      value: careerLow != null ? `${careerLow}` : '—', color: 'text-gray-900' },
-            { label: 'Record',   value: record ?? '—',                             color: 'text-gray-900' },
-            { label: 'Earnings', value: earnings ?? '—',                           color: earningsColor   },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
-              <p className={`text-2xl font-black ${color}`}>{value}</p>
-              <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
-            </div>
-          ))}
+        {/* Course filter + stats section */}
+        <div className="mx-3 mt-3">
+          {/* Filter pills act as the section title */}
+          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button
+              onClick={() => setSelectedCourseId(null)}
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                selectedCourseId === null
+                  ? 'bg-golf-800 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              All
+            </button>
+            {courses.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCourseId(c.id)}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  selectedCourseId === c.id
+                    ? 'bg-golf-800 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Row 1: Low, Record, Earnings */}
+          <div className="grid grid-cols-3 gap-3 mt-2">
+            {[
+              { label: 'Low',      value: careerLow != null ? `${careerLow}` : '—', color: 'text-gray-900' },
+              { label: 'Record',   value: record ?? '—',                             color: 'text-gray-900' },
+              { label: 'Earnings', value: earnings ?? '—',                           color: earningsColor   },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
+                <p className={`text-2xl font-black ${color}`}>{value}</p>
+                <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Row 2: GIR%, FW%, Putts */}
+          <div className="grid grid-cols-3 gap-3 mt-3">
+            {[
+              { label: 'GIR%',  value: girPct     != null ? `${girPct}%`     : '—' },
+              { label: 'FW%',   value: fairwayPct != null ? `${fairwayPct}%` : '—' },
+              { label: 'Putts', value: puttsAvg   != null ? `${puttsAvg}`    : '—' },
+            ].map(({ label, value }) => (
+              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
+                <p className="text-2xl font-black text-gray-900">{value}</p>
+                <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Scoring Distribution */}
-        {allHoleStats.length > 0 && (
+        {filteredHoleStats.length > 0 && (
           <div className="mx-3 mt-3">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Scoring Distribution</p>
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 space-y-2">
@@ -156,7 +220,7 @@ export default function StatsPage() {
         <div className="mx-3 mt-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Rounds</p>
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            {myRounds.map(r => <RoundRow key={r.id} round={r} />)}
+            {filteredRounds.map(r => <RoundRow key={r.id} round={r} />)}
           </div>
         </div>
       </div>
