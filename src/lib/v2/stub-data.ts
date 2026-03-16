@@ -1006,24 +1006,24 @@ function _makeUserHoleStats(courseId: string, rounds: number = 5): UserHoleStats
 
 export const STUB_USER_HOLE_STATS: Record<string, Record<string, UserHoleStatsV2[]>> = {
   course1: {
-    [ME.id]: _makeUserHoleStats('course1', 1),
-    p2: _makeUserHoleStats('course1', 5).map(h => ({ ...h, avgGross: +(h.avgGross + 0.4).toFixed(1), birdies: Math.max(0, h.birdies - 1), bogeys: h.bogeys + 1 })),
-    p3: _makeUserHoleStats('course1', 3),
-    p5: _makeUserHoleStats('course1', 1),
+    [ME.id]: _makeUserHoleStats('course1'),
+    p2: _makeUserHoleStats('course1').map(h => ({ ...h, avgGross: +(h.avgGross + 0.4).toFixed(1), birdies: Math.max(0, h.birdies - 1), bogeys: h.bogeys + 1 })),
+    p3: _makeUserHoleStats('course1'),
+    p5: _makeUserHoleStats('course1'),
   },
   course3: {
-    [ME.id]: _makeUserHoleStats('course3', 1),
-    p2: _makeUserHoleStats('course3', 2),
-    p4: _makeUserHoleStats('course3', 2).map(h => ({ ...h, avgGross: +(h.avgGross + 0.8).toFixed(1), bogeys: h.bogeys + 2, doubles: h.doubles + 1 })),
+    [ME.id]: _makeUserHoleStats('course3'),
+    p2: _makeUserHoleStats('course3'),
+    p4: _makeUserHoleStats('course3').map(h => ({ ...h, avgGross: +(h.avgGross + 0.8).toFixed(1), bogeys: h.bogeys + 2, doubles: h.doubles + 1 })),
   },
   course4: {
-    [ME.id]: _makeUserHoleStats('course4', 1),
-    p3: _makeUserHoleStats('course4', 1),
+    [ME.id]: _makeUserHoleStats('course4'),
+    p3: _makeUserHoleStats('course4'),
   },
   course5: {
-    [ME.id]: _makeUserHoleStats('course5', 1),
-    p4: _makeUserHoleStats('course5', 1).map(h => ({ ...h, avgGross: +(h.avgGross + 1.0).toFixed(1), bogeys: h.bogeys + 2, doubles: h.doubles + 1 })),
-    p5: _makeUserHoleStats('course5', 2),
+    [ME.id]: _makeUserHoleStats('course5'),
+    p4: _makeUserHoleStats('course5').map(h => ({ ...h, avgGross: +(h.avgGross + 1.0).toFixed(1), bogeys: h.bogeys + 2, doubles: h.doubles + 1 })),
+    p5: _makeUserHoleStats('course5'),
   },
 }
 
