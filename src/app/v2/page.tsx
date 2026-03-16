@@ -87,7 +87,7 @@ export default function HomeV2() {
                 return (
                   <UserProfileCard
                     key={fr.userId}
-                    player={{ id: fr.userId, name: fr.userName, avatarUrl: fr.userAvatarUrl, handicap: null }}
+                    player={{ id: fr.userId, name: fr.userName, avatarUrl: fr.userAvatarUrl, handicap: null, location: null }}
                     href={`/v2/scorecard/${fr.roundId}`}
                     subLabel={`${fr.courseName} · ${fr.holesPlayed} holes`}
                     badge={
