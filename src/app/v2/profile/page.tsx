@@ -144,8 +144,10 @@ export default function ProfilePage() {
               <p className="text-xs text-golf-300 mt-0.5">{ME.handicap != null ? `HCP ${ME.handicap.toFixed(1)}` : 'No handicap set'}</p>
               <Link href="/v2/stats" className="text-sm font-semibold text-golf-200 hover:text-white transition mt-0.5 inline-block">Stats</Link>
             </div>
-            <Link href="/v2/profile/friends" className="shrink-0 text-center hover:opacity-80 transition">
-              <p className="text-2xl font-bold leading-none">{STUB_FRIENDS.length}</p>
+            <Link href="/v2/profile/friends" className="shrink-0 text-center hover:opacity-80 transition mr-2">
+              <div className="inline-flex items-center justify-center rounded-full border border-white/50 px-3 py-0.5">
+                <p className="text-2xl font-bold leading-none">{STUB_FRIENDS.length}</p>
+              </div>
               <p className="text-xs text-golf-300 mt-1">Friends</p>
             </Link>
           </div>

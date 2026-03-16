@@ -60,18 +60,22 @@ export default function HomeV2() {
       <div className="mx-auto max-w-lg px-4 py-4 space-y-5">
         {/* 1 · Team Scores (links to full leaderboard) */}
         {hasActiveTrip && (
-          <TeamScoresCard
-            matches={STUB_MATCHES}
-            tripId={ACTIVE_TRIP.id}
-            tripName={ACTIVE_TRIP.name}
-            teams={STUB_TEAMS}
-            linkToFull
-          />
+          <div>
+            <h2 className="text-sm font-bold text-gray-700 mb-2">Active Trip</h2>
+            <TeamScoresCard
+              matches={STUB_MATCHES}
+              tripId={ACTIVE_TRIP.id}
+              tripName={ACTIVE_TRIP.name}
+              teams={STUB_TEAMS}
+              linkToFull
+            />
+          </div>
         )}
 
         {/* 2 · Active Round */}
         {hasActiveRound && (
           <div className="pt-3">
+            <h2 className="text-sm font-bold text-gray-700 mb-2">Active Round</h2>
             <ActiveRoundCard />
           </div>
         )}
