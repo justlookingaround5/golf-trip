@@ -95,8 +95,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const location = course?.location ?? ''
   const par = course?.par ?? pin?.par ?? 72
   const avgUserRating = course?.avgUserRating ?? null
-  const totalRatings = course?.totalRatings ?? 0
-  const myRating = pin?.rating ?? null
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -112,58 +110,42 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
             </svg>
             Profile
           </button>
-          <h1 className="text-2xl font-bold">{name}</h1>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-2xl font-bold">{name}</h1>
+            {avgUserRating != null && (
+              <span className="inline-flex items-center justify-center bg-yellow-400 text-yellow-900 text-2xl font-black rounded-xl px-3 py-1 shrink-0">
+                {avgUserRating.toFixed(1)}
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-lg px-4 py-6 space-y-8">
-        {/* Course Ratings */}
-        {(avgUserRating != null || myRating != null || course?.conditionRating != null || course?.layoutRating != null || course?.valueRating != null) && (
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm divide-y divide-gray-100">
-            {/* Avg rating row */}
-            {avgUserRating != null && (
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-gray-600">Avg Rating</span>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center bg-yellow-400 text-yellow-900 text-base font-black rounded-lg px-2.5 py-1">
-                    {avgUserRating.toFixed(1)}
-                  </span>
-                  <span className="text-xs text-gray-400">{totalRatings} ratings</span>
+        {/* Ratings */}
+        {(course?.conditionRating != null || course?.layoutRating != null || course?.valueRating != null) && (
+          <Section title="Ratings">
+            <div className="grid grid-cols-3 gap-3">
+              {course?.conditionRating != null && (
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-4 text-center">
+                  <p className="text-2xl font-black text-gray-900 tabular-nums">{course.conditionRating.toFixed(1)}</p>
+                  <p className="text-xs font-semibold text-gray-500 mt-0.5">Condition</p>
                 </div>
-              </div>
-            )}
-            {/* Your rating row */}
-            {myRating != null ? (
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-gray-600">Your Rating</span>
-                <span className="text-sm font-bold text-gray-900">{myRating.toFixed(1)}</span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-gray-400">Rate this course</span>
-              </div>
-            )}
-            {/* Sub-ratings */}
-            {(course?.conditionRating != null || course?.layoutRating != null || course?.valueRating != null) && (
-              <div className="flex gap-2 px-4 py-3 flex-wrap">
-                {course?.conditionRating != null && (
-                  <span className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full px-2.5 py-0.5 font-semibold">
-                    Condition {course.conditionRating.toFixed(1)}
-                  </span>
-                )}
-                {course?.layoutRating != null && (
-                  <span className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full px-2.5 py-0.5 font-semibold">
-                    Layout {course.layoutRating.toFixed(1)}
-                  </span>
-                )}
-                {course?.valueRating != null && (
-                  <span className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full px-2.5 py-0.5 font-semibold">
-                    Value {course.valueRating.toFixed(1)}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+              )}
+              {course?.layoutRating != null && (
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-4 text-center">
+                  <p className="text-2xl font-black text-gray-900 tabular-nums">{course.layoutRating.toFixed(1)}</p>
+                  <p className="text-xs font-semibold text-gray-500 mt-0.5">Layout</p>
+                </div>
+              )}
+              {course?.valueRating != null && (
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-4 text-center">
+                  <p className="text-2xl font-black text-gray-900 tabular-nums">{course.valueRating.toFixed(1)}</p>
+                  <p className="text-xs font-semibold text-gray-500 mt-0.5">Value</p>
+                </div>
+              )}
+            </div>
+          </Section>
         )}
 
         {/* Course Info */}
