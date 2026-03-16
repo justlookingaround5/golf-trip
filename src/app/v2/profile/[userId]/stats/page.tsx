@@ -96,6 +96,7 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
   const courses = Array.from(
     new Map(friendRounds.map(r => [r.courseId, r.courseName])).entries()
   ).map(([id, name]) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   const filteredRounds = selectedCourseId
     ? friendRounds.filter(r => r.courseId === selectedCourseId)
@@ -226,11 +227,11 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-black/40 z-[60]"
             onClick={() => setSheetOpen(false)}
           />
           {/* Sheet */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-white shadow-xl pb-safe">
+          <div className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-2xl bg-white shadow-xl pb-safe">
             <div className="px-4 pt-4 pb-2">
               <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-400 shrink-0">
@@ -262,25 +263,38 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
                   All Courses
                 </button>
               )}
-              {courses
-                .filter(c => c.name.toLowerCase().includes(courseSearch.toLowerCase()))
-                .map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => { setSelectedCourseId(c.id); setSheetOpen(false) }}
-                    className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${
-                      selectedCourseId === c.id ? 'font-semibold text-golf-800' : 'text-gray-700'
-                    }`}
-                  >
-                    {selectedCourseId === c.id && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="shrink-0">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                    {c.name}
-                  </button>
-                ))
-              }
+              {/* Grouped, sorted course list */}
+              {Object.entries(
+                courses
+                  .filter(c => c.name.toLowerCase().includes(courseSearch.toLowerCase()))
+                  .reduce<Record<string, typeof courses>>((acc, c) => {
+                    const letter = c.name[0].toUpperCase()
+                    ;(acc[letter] ??= []).push(c)
+                    return acc
+                  }, {})
+              ).map(([letter, group]) => (
+                <div key={letter}>
+                  <div className="sticky top-0 bg-white px-4 py-1 border-b border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{letter}</span>
+                  </div>
+                  {group.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => { setSelectedCourseId(c.id); setSheetOpen(false) }}
+                      className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 border-b border-gray-100 last:border-b-0 ${
+                        selectedCourseId === c.id ? 'font-semibold text-golf-800' : 'text-gray-700'
+                      }`}
+                    >
+                      {selectedCourseId === c.id && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="shrink-0">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
         </>
