@@ -72,7 +72,7 @@ export default function MyFriendsPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900">{f.name}</p>
                   {f.handicap != null && (
-                    <p className="text-xs text-gray-400">HCP {f.handicap}</p>
+                    <p className="text-xs text-gray-400">HCP {f.handicap.toFixed(1)}</p>
                   )}
                 </div>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">
@@ -107,7 +107,7 @@ export default function MyFriendsPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900">{f.name}</p>
                         {f.handicap != null && (
-                          <p className="text-xs text-gray-400">HCP {f.handicap}</p>
+                          <p className="text-xs text-gray-400">HCP {f.handicap.toFixed(1)}</p>
                         )}
                       </div>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">
