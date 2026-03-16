@@ -144,24 +144,19 @@ export default function ProfilePage() {
               {ME.location && (
                 <p className="text-xs text-golf-300 mt-0.5">{ME.location}</p>
               )}
-              <p className="text-sm text-golf-200 mt-0.5">
-                {ME.handicap != null ? `HCP ${ME.handicap}` : 'No handicap set'}
-              </p>
+              <Link href="/v2/stats" className="text-sm font-semibold text-golf-200 hover:text-white transition mt-0.5 inline-block">Stats</Link>
             </div>
-            {/* Friends stat bubble */}
-            <Link href="/v2/profile/friends" className="shrink-0 text-center hover:opacity-80 transition">
-              <p className="text-2xl font-bold leading-none">{STUB_FRIENDS.length}</p>
-              <p className="text-xs text-golf-300 mt-1">Friends</p>
-            </Link>
-          </div>
-          {/* Stats nav only */}
-          <div className="mt-4 border-t border-white/10 pt-4">
-            <Link
-              href="/v2/stats"
-              className="text-sm font-semibold text-golf-200 hover:text-white transition"
-            >
-              Stats
-            </Link>
+            {/* Friends + HCP bubbles */}
+            <div className="shrink-0 flex items-center gap-4">
+              <Link href="/v2/profile/friends" className="shrink-0 text-center hover:opacity-80 transition">
+                <p className="text-2xl font-bold leading-none">{STUB_FRIENDS.length}</p>
+                <p className="text-xs text-golf-300 mt-1">Friends</p>
+              </Link>
+              <div className="shrink-0 text-center">
+                <p className="text-2xl font-bold leading-none">{ME.handicap ?? '—'}</p>
+                <p className="text-xs text-golf-300 mt-1">HCP</p>
+              </div>
+            </div>
           </div>
         </div>
       </header>

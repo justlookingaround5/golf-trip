@@ -220,7 +220,7 @@ export default function StatsPage() {
           {/* Modal */}
           <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 pointer-events-none">
             <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden pointer-events-auto">
-              <div className="overflow-y-auto max-h-72 divide-y divide-gray-100">
+              <div className="overflow-y-auto max-h-72 divide-y divide-gray-100 [scrollbar-gutter:stable]">
                 <button
                     onClick={() => { setSelectedCourseId(null); setSheetOpen(false) }}
                     className={`w-full text-left px-4 py-3 text-sm font-semibold flex items-center gap-2 ${
