@@ -74,7 +74,7 @@ export default function HomeV2() {
 
         {/* 2 · Active Round */}
         {hasActiveRound && (
-          <div className="pt-3">
+          <div>
             <h2 className="text-sm font-bold text-gray-700 mb-2">Active Round</h2>
             <ActiveRoundCard />
           </div>
