@@ -164,8 +164,11 @@ export default function StatsPage() {
             onClick={() => { setCourseSearch(''); setSheetOpen(true) }}
             className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200 transition"
           >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-gray-500 shrink-0">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
             {selectedCourseId && <span className="w-1.5 h-1.5 rounded-full bg-golf-800" />}
-            {selectedCourseId ? courses.find(c => c.id === selectedCourseId)?.name ?? 'ALL COURSES' : 'ALL COURSES'}
+            {selectedCourseId ? courses.find(c => c.id === selectedCourseId)?.name ?? 'All Courses' : 'All Courses'}
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
               <polyline points="6 9 12 15 18 9" />
             </svg>
@@ -218,71 +221,73 @@ export default function StatsPage() {
             className="fixed inset-0 bg-black/40 z-[60]"
             onClick={() => setSheetOpen(false)}
           />
-          {/* Sheet */}
-          <div className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-2xl bg-white shadow-xl pb-safe">
-            <div className="px-4 pt-4 pb-2">
-              <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-400 shrink-0">
-                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Search courses..."
-                  value={courseSearch}
-                  onChange={e => setCourseSearch(e.target.value)}
-                  className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none"
-                />
-              </div>
-            </div>
-            <div className="overflow-y-auto max-h-72 divide-y divide-gray-100">
-              {'all courses'.includes(courseSearch.toLowerCase()) && (
-                <button
-                  onClick={() => { setSelectedCourseId(null); setSheetOpen(false) }}
-                  className={`w-full text-left px-4 py-3 text-sm font-semibold flex items-center gap-2 ${
-                    selectedCourseId === null ? 'text-golf-800' : 'text-gray-700'
-                  }`}
-                >
-                  {selectedCourseId === null && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="shrink-0">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                  All Courses
-                </button>
-              )}
-              {/* Grouped, sorted course list */}
-              {Object.entries(
-                courses
-                  .filter(c => c.name.toLowerCase().includes(courseSearch.toLowerCase()))
-                  .reduce<Record<string, typeof courses>>((acc, c) => {
-                    const letter = c.name[0].toUpperCase()
-                    ;(acc[letter] ??= []).push(c)
-                    return acc
-                  }, {})
-              ).map(([letter, group]) => (
-                <div key={letter}>
-                  <div className="sticky top-0 bg-white px-4 py-1 border-b border-gray-100">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{letter}</span>
-                  </div>
-                  {group.map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => { setSelectedCourseId(c.id); setSheetOpen(false) }}
-                      className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 border-b border-gray-100 last:border-b-0 ${
-                        selectedCourseId === c.id ? 'font-semibold text-golf-800' : 'text-gray-700'
-                      }`}
-                    >
-                      {selectedCourseId === c.id && (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="shrink-0">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      )}
-                      {c.name}
-                    </button>
-                  ))}
+          {/* Modal */}
+          <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 pointer-events-none">
+            <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden pointer-events-auto">
+              <div className="px-4 pt-4 pb-2">
+                <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-400 shrink-0">
+                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Search courses..."
+                    value={courseSearch}
+                    onChange={e => setCourseSearch(e.target.value)}
+                    className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none"
+                  />
                 </div>
-              ))}
+              </div>
+              <div className="overflow-y-auto max-h-72 divide-y divide-gray-100">
+                {'all courses'.includes(courseSearch.toLowerCase()) && (
+                  <button
+                    onClick={() => { setSelectedCourseId(null); setSheetOpen(false) }}
+                    className={`w-full text-left px-4 py-3 text-sm font-semibold flex items-center gap-2 ${
+                      selectedCourseId === null ? 'text-golf-800' : 'text-gray-700'
+                    }`}
+                  >
+                    {selectedCourseId === null && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="shrink-0">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                    All Courses
+                  </button>
+                )}
+                {/* Grouped, sorted course list */}
+                {Object.entries(
+                  courses
+                    .filter(c => c.name.toLowerCase().includes(courseSearch.toLowerCase()))
+                    .reduce<Record<string, typeof courses>>((acc, c) => {
+                      const letter = c.name[0].toUpperCase()
+                      ;(acc[letter] ??= []).push(c)
+                      return acc
+                    }, {})
+                ).map(([letter, group]) => (
+                  <div key={letter}>
+                    <div className="sticky top-0 bg-white px-4 py-1 border-b border-gray-100">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{letter}</span>
+                    </div>
+                    {group.map(c => (
+                      <button
+                        key={c.id}
+                        onClick={() => { setSelectedCourseId(c.id); setSheetOpen(false) }}
+                        className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 border-b border-gray-100 last:border-b-0 ${
+                          selectedCourseId === c.id ? 'font-semibold text-golf-800' : 'text-gray-700'
+                        }`}
+                      >
+                        {selectedCourseId === c.id && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="shrink-0">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </>
