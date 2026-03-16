@@ -94,22 +94,13 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold">{friend.name}</h1>
-              {friend.location && (
-                <p className="text-xs text-golf-300 mt-0.5">{friend.location}</p>
-              )}
+              <p className="text-xs text-golf-300 mt-0.5">{friend.handicap != null ? `HCP ${friend.handicap.toFixed(1)}` : 'No handicap'}</p>
               <Link href={`/v2/profile/${userId}/stats`} className="text-sm font-semibold text-golf-200 hover:text-white transition mt-0.5 inline-block">Stats</Link>
             </div>
-            {/* Friends + HCP bubbles */}
-            <div className="shrink-0 flex items-center gap-4">
-              <Link href={`/v2/profile/${userId}/friends`} className="shrink-0 text-center hover:opacity-80 transition">
-                <p className="text-2xl font-bold leading-none">{friend.friendCount ?? '—'}</p>
-                <p className="text-xs text-golf-300 mt-1">Friends</p>
-              </Link>
-              <div className="shrink-0 text-center">
-                <p className="text-2xl font-bold leading-none">{friend.handicap ?? '—'}</p>
-                <p className="text-xs text-golf-300 mt-1">HCP</p>
-              </div>
-            </div>
+            <Link href={`/v2/profile/${userId}/friends`} className="shrink-0 text-center hover:opacity-80 transition">
+              <p className="text-2xl font-bold leading-none">{friend.friendCount ?? '—'}</p>
+              <p className="text-xs text-golf-300 mt-1">Friends</p>
+            </Link>
           </div>
         </div>
       </header>

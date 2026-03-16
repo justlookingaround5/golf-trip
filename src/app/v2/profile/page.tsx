@@ -141,22 +141,13 @@ export default function ProfilePage() {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold">{ME.name}</h1>
-              {ME.location && (
-                <p className="text-xs text-golf-300 mt-0.5">{ME.location}</p>
-              )}
+              <p className="text-xs text-golf-300 mt-0.5">{ME.handicap != null ? `HCP ${ME.handicap.toFixed(1)}` : 'No handicap set'}</p>
               <Link href="/v2/stats" className="text-sm font-semibold text-golf-200 hover:text-white transition mt-0.5 inline-block">Stats</Link>
             </div>
-            {/* Friends + HCP bubbles */}
-            <div className="shrink-0 flex items-center gap-4">
-              <Link href="/v2/profile/friends" className="shrink-0 text-center hover:opacity-80 transition">
-                <p className="text-2xl font-bold leading-none">{STUB_FRIENDS.length}</p>
-                <p className="text-xs text-golf-300 mt-1">Friends</p>
-              </Link>
-              <div className="shrink-0 text-center">
-                <p className="text-2xl font-bold leading-none">{ME.handicap ?? '—'}</p>
-                <p className="text-xs text-golf-300 mt-1">HCP</p>
-              </div>
-            </div>
+            <Link href="/v2/profile/friends" className="shrink-0 text-center hover:opacity-80 transition">
+              <p className="text-2xl font-bold leading-none">{STUB_FRIENDS.length}</p>
+              <p className="text-xs text-golf-300 mt-1">Friends</p>
+            </Link>
           </div>
         </div>
       </header>
