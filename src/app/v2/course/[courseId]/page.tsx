@@ -95,6 +95,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const location = course?.location ?? ''
   const par = course?.par ?? pin?.par ?? 72
   const avgUserRating = course?.avgUserRating ?? null
+  const totalRatings = course?.totalRatings ?? 0
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -113,9 +114,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
           <div className="flex items-center justify-between gap-3">
             <h1 className="text-2xl font-bold">{name}</h1>
             {avgUserRating != null && (
-              <span className="inline-flex items-center justify-center bg-yellow-400 text-yellow-900 text-2xl font-black rounded-xl px-3 py-1 shrink-0">
-                {avgUserRating.toFixed(1)}
-              </span>
+              <div className="inline-flex flex-col items-center justify-center bg-yellow-400 text-yellow-900 rounded-xl px-3 py-1 shrink-0">
+                <span className="text-2xl font-black leading-tight">{avgUserRating.toFixed(1)}</span>
+                <span className="text-[10px] font-semibold leading-tight opacity-75">{totalRatings} ratings</span>
+              </div>
             )}
           </div>
         </div>
