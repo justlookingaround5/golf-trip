@@ -80,6 +80,8 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
   const { userId } = use(params)
   const router = useRouter()
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [courseSearch, setCourseSearch] = useState('')
 
   const friend = STUB_FRIENDS.find(f => f.id === userId)
   const friendName = (friend?.name ?? 'Player').split(' ')[0]
@@ -164,19 +166,17 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
 
       <div className="mx-auto max-w-lg">
         <div className="mx-3 mt-3">
-          {/* Filter pills */}
-          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            <button onClick={() => setSelectedCourseId(null)}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                selectedCourseId === null ? 'bg-golf-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}>All</button>
-            {courses.map(c => (
-              <button key={c.id} onClick={() => setSelectedCourseId(c.id)}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                  selectedCourseId === c.id ? 'bg-golf-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}>{c.name}</button>
-            ))}
-          </div>
+          {/* Course filter trigger */}
+          <button
+            onClick={() => { setCourseSearch(''); setSheetOpen(true) }}
+            className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200 transition"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${selectedCourseId ? 'bg-golf-800' : 'bg-gray-400'}`} />
+            {selectedCourseId ? courses.find(c => c.id === selectedCourseId)?.name ?? 'All Courses' : 'All Courses'}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
 
           {/* Row: Low, GIR%, FW%, Putts */}
           <div className="grid grid-cols-4 gap-2 mt-2">
@@ -210,7 +210,7 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
 
         {/* Round History */}
         <div className="mx-3 mt-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Rounds</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Rounds ({filteredRounds.length})</p>
           {filteredRounds.length > 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               {filteredRounds.map(r => <RoundRow key={r.id} round={r} userId={userId} />)}
@@ -220,6 +220,71 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
           )}
         </div>
       </div>
+
+      {/* Course search bottom sheet */}
+      {sheetOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={() => setSheetOpen(false)}
+          />
+          {/* Sheet */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-white shadow-xl pb-safe">
+            <div className="px-4 pt-4 pb-2">
+              <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-400 shrink-0">
+                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search courses..."
+                  value={courseSearch}
+                  onChange={e => setCourseSearch(e.target.value)}
+                  className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none"
+                />
+              </div>
+            </div>
+            <div className="overflow-y-auto max-h-72 divide-y divide-gray-100">
+              {'all courses'.includes(courseSearch.toLowerCase()) && (
+                <button
+                  onClick={() => { setSelectedCourseId(null); setSheetOpen(false) }}
+                  className={`w-full text-left px-4 py-3 text-sm font-semibold flex items-center gap-2 ${
+                    selectedCourseId === null ? 'text-golf-800' : 'text-gray-700'
+                  }`}
+                >
+                  {selectedCourseId === null && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="shrink-0">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                  All Courses
+                </button>
+              )}
+              {courses
+                .filter(c => c.name.toLowerCase().includes(courseSearch.toLowerCase()))
+                .map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setSelectedCourseId(c.id); setSheetOpen(false) }}
+                    className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${
+                      selectedCourseId === c.id ? 'font-semibold text-golf-800' : 'text-gray-700'
+                    }`}
+                  >
+                    {selectedCourseId === c.id && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="shrink-0">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                    {c.name}
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
