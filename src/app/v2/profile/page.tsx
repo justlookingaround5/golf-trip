@@ -7,6 +7,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import {
   ME,
+  STUB_FRIENDS,
   STUB_PINS,
   STUB_UPCOMING_TRIPS,
   STUB_PAST_TRIPS,
@@ -144,15 +145,14 @@ export default function ProfilePage() {
                 {ME.handicap != null ? `HCP ${ME.handicap}` : 'No handicap set'}
               </p>
             </div>
-          </div>
-          {/* Friends | Stats nav */}
-          <div className="flex gap-6 mt-4 border-t border-white/10 pt-4">
-            <Link
-              href="/v2/profile/friends"
-              className="text-sm font-semibold text-golf-200 hover:text-white transition"
-            >
-              Friends
+            {/* Friends stat bubble */}
+            <Link href="/v2/profile/friends" className="shrink-0 text-center hover:opacity-80 transition">
+              <p className="text-2xl font-bold leading-none">{STUB_FRIENDS.length}</p>
+              <p className="text-xs text-golf-300 mt-1">Friends</p>
             </Link>
+          </div>
+          {/* Stats nav only */}
+          <div className="mt-4 border-t border-white/10 pt-4">
             <Link
               href="/v2/stats"
               className="text-sm font-semibold text-golf-200 hover:text-white transition"

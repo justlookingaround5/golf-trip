@@ -46,7 +46,6 @@ function RoundRow({ round }: { round: RoundV2 }) {
         <p className="text-xs text-gray-400 mt-0.5">
           {new Date(round.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           {round.tripName && <> · {round.tripName}</>}
-          {round.isQuickRound && <> · Quick Round</>}
         </p>
       </div>
       <div className="shrink-0 ml-3 flex items-center gap-2">
@@ -245,7 +244,7 @@ export default function StatsPage() {
                     }, {})
                 ).map(([letter, group]) => (
                   <div key={letter}>
-                    <div className="sticky top-0 bg-white pl-4 pr-3 py-1">
+                    <div className="sticky top-0 bg-white pl-4 pr-4 py-1">
                       <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{letter}</span>
                     </div>
                     {group.map(c => (

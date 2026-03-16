@@ -30,7 +30,7 @@ export default function MyFriendsPage() {
             </svg>
             Profile
           </button>
-          <h1 className="text-xl font-bold">Friends</h1>
+          <h1 className="text-xl font-bold">Friends ({STUB_FRIENDS.length})</h1>
         </div>
       </header>
 

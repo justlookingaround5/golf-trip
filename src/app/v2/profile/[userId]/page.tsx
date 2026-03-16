@@ -55,6 +55,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
     name: 'Player',
     avatarUrl: null,
     handicap: null,
+    location: null,
   }
 
   const friendPins = [...STUB_PINS]
@@ -93,6 +94,9 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold">{friend.name}</h1>
+              {friend.location && (
+                <p className="text-xs text-golf-300 mt-0.5">{friend.location}</p>
+              )}
               <p className="text-sm text-golf-200 mt-0.5">
                 {friend.handicap != null ? `HCP ${friend.handicap}` : 'No handicap'}
               </p>

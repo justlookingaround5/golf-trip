@@ -8,6 +8,7 @@ export interface PlayerV2 {
   name: string          // first name for display
   avatarUrl: string | null
   handicap: number | null
+  location: string | null
 }
 
 export interface HoleScoreV2 {
