@@ -117,29 +117,39 @@ export default function StatsPage() {
   const earnings = meEarnings
     ? (meEarnings.netEarnings >= 0 ? `+$${meEarnings.netEarnings}` : `-$${Math.abs(meEarnings.netEarnings)}`)
     : null
-  const earningsColor = meEarnings != null
-    ? (meEarnings.netEarnings >= 0 ? 'text-green-600' : 'text-red-600')
-    : 'text-gray-900'
+  const earningsHeaderColor = meEarnings != null
+    ? (meEarnings.netEarnings >= 0 ? 'text-green-400' : 'text-red-400')
+    : 'text-white'
 
   // GIR/FW/Putts: derive from hole stats when filtered, else use STUB_PLAYER_STATS
   const girPct     = selectedCourseId ? avg(filteredHoleStats.map(h => h.girPct     ?? 0)) : me?.girPct     ?? null
   const fairwayPct = selectedCourseId ? avg(filteredHoleStats.map(h => h.fairwayPct ?? 0)) : me?.fairwayPct ?? null
-  const puttsAvg   = selectedCourseId ? avg(filteredHoleStats.map(h => h.avgPutts   ?? 0)) : me?.puttsAvg   ?? null
+  const puttsAvg   = selectedCourseId
+    ? (filteredHoleStats.length > 0
+        ? Math.round(filteredHoleStats.reduce((s, h) => s + (h.avgPutts ?? 0), 0) * 10) / 10
+        : null)
+    : me?.puttsAvg ?? null
 
   return (
     <div className="min-h-screen bg-background pb-28">
       <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
-        <div className="mx-auto max-w-lg">
-          <Link
-            href="/v2/profile"
-            className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            Profile
-          </Link>
-          <h1 className="text-2xl font-bold">My Stats</h1>
+        <div className="mx-auto max-w-lg flex items-start justify-between">
+          <div>
+            <Link
+              href="/v2/profile"
+              className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Profile
+            </Link>
+            <h1 className="text-2xl font-bold">My Stats</h1>
+          </div>
+          <div className="text-right text-sm text-golf-200 pt-8 shrink-0">
+            <div>Record <span className="text-base font-bold text-white">{record ?? '—'}</span></div>
+            <div>Earnings <span className={`text-base font-bold ${earningsHeaderColor}`}>{earnings ?? '—'}</span></div>
+          </div>
         </div>
       </header>
 
@@ -173,29 +183,16 @@ export default function StatsPage() {
             ))}
           </div>
 
-          {/* Row 1: Low, Record, Earnings */}
-          <div className="grid grid-cols-3 gap-3 mt-2">
+          {/* Row: Low, GIR%, FW%, Putts */}
+          <div className="grid grid-cols-4 gap-2 mt-2">
             {[
-              { label: 'Low',      value: careerLow != null ? `${careerLow}` : '—', color: 'text-gray-900' },
-              { label: 'Record',   value: record ?? '—',                             color: 'text-gray-900' },
-              { label: 'Earnings', value: earnings ?? '—',                           color: earningsColor   },
+              { label: 'Low',   value: careerLow   != null ? `${careerLow}`                    : '—', color: 'text-gray-900' },
+              { label: 'GIR%',  value: girPct      != null ? `${Math.round(girPct)}%`           : '—', color: 'text-gray-900' },
+              { label: 'FW%',   value: fairwayPct  != null ? `${Math.round(fairwayPct)}%`       : '—', color: 'text-gray-900' },
+              { label: 'Putts', value: puttsAvg    != null ? `${puttsAvg}`                      : '—', color: 'text-gray-900' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
-                <p className={`text-2xl font-black ${color}`}>{value}</p>
-                <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Row 2: GIR%, FW%, Putts */}
-          <div className="grid grid-cols-3 gap-3 mt-3">
-            {[
-              { label: 'GIR%',  value: girPct     != null ? `${girPct}%`     : '—' },
-              { label: 'FW%',   value: fairwayPct != null ? `${fairwayPct}%` : '—' },
-              { label: 'Putts', value: puttsAvg   != null ? `${puttsAvg}`    : '—' },
-            ].map(({ label, value }) => (
-              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
-                <p className="text-2xl font-black text-gray-900">{value}</p>
+              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-2 py-4 text-center">
+                <p className={`text-xl font-black ${color}`}>{value}</p>
                 <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
               </div>
             ))}

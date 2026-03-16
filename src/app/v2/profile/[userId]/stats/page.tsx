@@ -4,7 +4,7 @@
 // Same format as /v2/stats but for a specific friend.
 // Round rows link to /v2/profile/[userId]/round/[roundId] (read-only).
 
-import { use } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_FRIENDS, STUB_USER_HOLE_STATS, STUB_EARNINGS } from '@/lib/v2/stub-data'
@@ -66,11 +66,20 @@ function RoundRow({ round, userId }: { round: RoundV2; userId: string }) {
   )
 }
 
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function avg(values: number[]): number | null {
+  return values.length > 0
+    ? Math.round(values.reduce((s, v) => s + v, 0) / values.length * 10) / 10
+    : null
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function FriendStatsPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
   const router = useRouter()
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
 
   const friend = STUB_FRIENDS.find(f => f.id === userId)
   const friendName = (friend?.name ?? 'Player').split(' ')[0]
@@ -79,34 +88,56 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
   const friendRounds = STUB_ALL_ROUNDS
     .filter(r => r.userId === userId)
     .sort((a, b) => b.date.localeCompare(a.date))
-  const totalRounds = friendRounds.length
-  const completedRounds = friendRounds.filter(r => r.grossTotal != null)
 
   const friendEarnings = STUB_EARNINGS.find(e => e.player.id === userId)
 
-  const careerLow = completedRounds.length > 0
-    ? Math.min(...completedRounds.map(r => r.grossTotal!))
+  const courses = Array.from(
+    new Map(friendRounds.map(r => [r.courseId, r.courseName])).entries()
+  ).map(([id, name]) => ({ id, name }))
+
+  const filteredRounds = selectedCourseId
+    ? friendRounds.filter(r => r.courseId === selectedCourseId)
+    : friendRounds
+
+  const filteredCompleted = filteredRounds.filter(r => r.grossTotal != null)
+
+  const filteredHoleStats = selectedCourseId
+    ? (STUB_USER_HOLE_STATS[selectedCourseId]?.[userId] ?? [])
+    : Object.values(STUB_USER_HOLE_STATS).flatMap(c => c[userId] ?? [])
+
+  // Scoring distribution
+  const totalEagles  = filteredHoleStats.reduce((s, h) => s + h.eagles,  0)
+  const totalBirdies = filteredHoleStats.reduce((s, h) => s + h.birdies, 0)
+  const totalPars    = filteredHoleStats.reduce((s, h) => s + h.pars,    0)
+  const totalBogeys  = filteredHoleStats.reduce((s, h) => s + h.bogeys,  0)
+  const totalDoubles = filteredHoleStats.reduce((s, h) => s + h.doubles, 0)
+  const totalScored  = totalEagles + totalBirdies + totalPars + totalBogeys + totalDoubles
+  const scoringPct   = (n: number) => totalScored > 0 ? (n / totalScored) * 100 : 0
+
+  // Career low (per course when filtered)
+  const careerLow = filteredCompleted.length > 0
+    ? Math.min(...filteredCompleted.map(r => r.grossTotal!))
     : null
+
+  // Record and Earnings remain global
   const record = friendStats
     ? `${friendStats.matchRecord.wins}-${friendStats.matchRecord.losses}-${friendStats.matchRecord.ties}`
     : null
   const earnings = friendEarnings
     ? (friendEarnings.netEarnings >= 0 ? `+$${friendEarnings.netEarnings}` : `-$${Math.abs(friendEarnings.netEarnings)}`)
     : null
-  const earningsColor = friendEarnings != null
-    ? (friendEarnings.netEarnings >= 0 ? 'text-green-600' : 'text-red-600')
-    : 'text-gray-900'
+  const earningsHeaderColor = friendEarnings != null
+    ? (friendEarnings.netEarnings >= 0 ? 'text-green-400' : 'text-red-400')
+    : 'text-white'
 
-  // Scoring distribution from hole stats across all courses
-  const allHoleStats = Object.values(STUB_USER_HOLE_STATS)
-    .flatMap(courseStats => courseStats[userId] ?? [])
-  const totalEagles  = allHoleStats.reduce((s, h) => s + h.eagles,  0)
-  const totalBirdies = allHoleStats.reduce((s, h) => s + h.birdies, 0)
-  const totalPars    = allHoleStats.reduce((s, h) => s + h.pars,    0)
-  const totalBogeys  = allHoleStats.reduce((s, h) => s + h.bogeys,  0)
-  const totalDoubles = allHoleStats.reduce((s, h) => s + h.doubles, 0)
-  const totalScored  = totalEagles + totalBirdies + totalPars + totalBogeys + totalDoubles
-  const scoringPct   = (n: number) => totalScored > 0 ? (n / totalScored) * 100 : 0
+  // GIR/FW/Putts: derive from hole stats when filtered, else use friendStats
+  const girPct     = selectedCourseId ? avg(filteredHoleStats.map(h => h.girPct     ?? 0)) : friendStats?.girPct     ?? null
+  const fairwayPct = selectedCourseId ? avg(filteredHoleStats.map(h => h.fairwayPct ?? 0)) : friendStats?.fairwayPct ?? null
+  const puttsAvg   = selectedCourseId
+    ? (filteredHoleStats.length > 0
+        ? Math.round(filteredHoleStats.reduce((s, h) => s + (h.avgPutts ?? 0), 0) * 10) / 10
+        : null)
+    : friendStats?.puttsAvg ?? null
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -123,63 +154,70 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
               {friendName}
             </button>
             <h1 className="text-2xl font-bold">{friendName}&apos;s Stats</h1>
-            <p className="mt-1 text-sm text-golf-200">{totalRounds} rounds</p>
           </div>
-          {friendStats && (
-            <div className="text-right text-sm text-golf-200 pt-8">
-              <div>GIR% <span className="text-base font-bold text-white">{friendStats.girPct}%</span></div>
-              <div>FW% <span className="text-base font-bold text-white">{friendStats.fairwayPct}%</span></div>
-              <div>Putts <span className="text-base font-bold text-white">{friendStats.puttsAvg}</span></div>
-            </div>
-          )}
+          <div className="text-right text-sm text-golf-200 pt-8 shrink-0">
+            <div>Record <span className="text-base font-bold text-white">{record ?? '—'}</span></div>
+            <div>Earnings <span className={`text-base font-bold ${earningsHeaderColor}`}>{earnings ?? '—'}</span></div>
+          </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-lg">
-        <div className="px-3 pt-3 space-y-4">
-          {/* Low / Record / Earnings */}
-          <div className="grid grid-cols-3 gap-3">
+        <div className="mx-3 mt-3">
+          {/* Filter pills */}
+          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button onClick={() => setSelectedCourseId(null)}
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                selectedCourseId === null ? 'bg-golf-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}>All</button>
+            {courses.map(c => (
+              <button key={c.id} onClick={() => setSelectedCourseId(c.id)}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  selectedCourseId === c.id ? 'bg-golf-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}>{c.name}</button>
+            ))}
+          </div>
+
+          {/* Row: Low, GIR%, FW%, Putts */}
+          <div className="grid grid-cols-4 gap-2 mt-2">
             {[
-              { label: 'Low',      value: careerLow != null ? `${careerLow}` : '—', color: 'text-gray-900' },
-              { label: 'Record',   value: record ?? '—',                             color: 'text-gray-900' },
-              { label: 'Earnings', value: earnings ?? '—',                           color: earningsColor   },
+              { label: 'Low',   value: careerLow  != null ? `${careerLow}`              : '—', color: 'text-gray-900' },
+              { label: 'GIR%',  value: girPct     != null ? `${Math.round(girPct)}%`    : '—', color: 'text-gray-900' },
+              { label: 'FW%',   value: fairwayPct != null ? `${Math.round(fairwayPct)}%`: '—', color: 'text-gray-900' },
+              { label: 'Putts', value: puttsAvg   != null ? `${puttsAvg}`               : '—', color: 'text-gray-900' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
-                <p className={`text-2xl font-black ${color}`}>{value}</p>
+              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-2 py-4 text-center">
+                <p className={`text-xl font-black ${color}`}>{value}</p>
                 <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Scoring Distribution */}
-          <div>
+        {/* Scoring Distribution */}
+        {filteredHoleStats.length > 0 && (
+          <div className="mx-3 mt-3">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Scoring Distribution</p>
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 space-y-2">
-              {totalScored > 0 ? (
-                <>
-                  <ScoringBar label="Eagles"  pct={scoringPct(totalEagles)}  color="bg-yellow-500" />
-                  <ScoringBar label="Birdies" pct={scoringPct(totalBirdies)} color="bg-red-500" />
-                  <ScoringBar label="Pars"    pct={scoringPct(totalPars)}    color="bg-gray-400" />
-                  <ScoringBar label="Bogeys"  pct={scoringPct(totalBogeys)}  color="bg-blue-500" />
-                  <ScoringBar label="Double+" pct={scoringPct(totalDoubles)} color="bg-blue-800" />
-                </>
-              ) : (
-                <p className="text-sm text-gray-400 text-center py-4">No data yet</p>
-              )}
+              <ScoringBar label="Eagles"  pct={scoringPct(totalEagles)}  color="bg-yellow-500" />
+              <ScoringBar label="Birdies" pct={scoringPct(totalBirdies)} color="bg-red-500" />
+              <ScoringBar label="Pars"    pct={scoringPct(totalPars)}    color="bg-gray-400" />
+              <ScoringBar label="Bogeys"  pct={scoringPct(totalBogeys)}  color="bg-blue-500" />
+              <ScoringBar label="Double+" pct={scoringPct(totalDoubles)} color="bg-blue-800" />
             </div>
           </div>
+        )}
 
-          {/* Round History */}
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Rounds</p>
-            {friendRounds.length > 0 ? (
-              <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                {friendRounds.map(r => <RoundRow key={r.id} round={r} userId={userId} />)}
-              </div>
-            ) : (
-              <p className="py-8 text-center text-sm text-gray-400">No rounds yet.</p>
-            )}
-          </div>
+        {/* Round History */}
+        <div className="mx-3 mt-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Rounds</p>
+          {filteredRounds.length > 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              {filteredRounds.map(r => <RoundRow key={r.id} round={r} userId={userId} />)}
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-gray-400">No rounds yet.</p>
+          )}
         </div>
       </div>
     </div>
