@@ -26,25 +26,25 @@ import type {
 
 // ─── Players ──────────────────────────────────────────────────────────────────
 
-export const ME: PlayerV2 = { id: 'p1', name: 'Andrew Cole', avatarUrl: null, handicap: 8, location: 'Chicago, IL' }
+export const ME: PlayerV2 = { id: 'p1', name: 'Andrew Cole', avatarUrl: null, handicap: 8, location: 'Chicago, IL', friendCount: 15 }
 
 export const STUB_PLAYERS: PlayerV2[] = [
   ME,
-  { id: 'p2',  name: 'Jake Brennan',    avatarUrl: null, handicap: 12, location: 'Nashville, TN' },
-  { id: 'p3',  name: 'Mike Stanton',    avatarUrl: null, handicap: 5,  location: 'Austin, TX' },
-  { id: 'p4',  name: 'Tom Whitley',     avatarUrl: null, handicap: 18, location: 'Denver, CO' },
-  { id: 'p5',  name: 'Griffin Haas',    avatarUrl: null, handicap: 10, location: 'Atlanta, GA' },
-  { id: 'p6',  name: 'Danny Rizzo',     avatarUrl: null, handicap: 14, location: 'Phoenix, AZ' },
-  { id: 'p7',  name: 'Chris Navarro',   avatarUrl: null, handicap: 7,  location: 'San Diego, CA' },
-  { id: 'p8',  name: 'Ryan Potts',      avatarUrl: null, handicap: 15, location: 'Charlotte, NC' },
-  { id: 'p9',  name: 'Matt Kessler',    avatarUrl: null, handicap: 6,  location: 'Columbus, OH' },
-  { id: 'p10', name: 'Tyler Dunn',      avatarUrl: null, handicap: 11, location: 'Minneapolis, MN' },
-  { id: 'p11', name: 'Zach Fielding',   avatarUrl: null, handicap: 9,  location: 'Portland, OR' },
-  { id: 'p12', name: 'Logan Marsh',     avatarUrl: null, handicap: 16, location: 'Dallas, TX' },
-  { id: 'p13', name: 'Derek Solano',    avatarUrl: null, handicap: 4,  location: 'Miami, FL' },
-  { id: 'p14', name: 'Sean Calloway',   avatarUrl: null, handicap: 13, location: 'Boston, MA' },
-  { id: 'p15', name: 'Kevin Odle',      avatarUrl: null, handicap: 10, location: 'Seattle, WA' },
-  { id: 'p16', name: 'Brett Langford',  avatarUrl: null, handicap: 17, location: 'Las Vegas, NV' },
+  { id: 'p2',  name: 'Jake Brennan',    avatarUrl: null, handicap: 12, location: 'Nashville, TN',    friendCount: 12 },
+  { id: 'p3',  name: 'Mike Stanton',    avatarUrl: null, handicap: 5,  location: 'Austin, TX',        friendCount: 18 },
+  { id: 'p4',  name: 'Tom Whitley',     avatarUrl: null, handicap: 18, location: 'Denver, CO',        friendCount: 9  },
+  { id: 'p5',  name: 'Griffin Haas',    avatarUrl: null, handicap: 10, location: 'Atlanta, GA',       friendCount: 14 },
+  { id: 'p6',  name: 'Danny Rizzo',     avatarUrl: null, handicap: 14, location: 'Phoenix, AZ',       friendCount: 11 },
+  { id: 'p7',  name: 'Chris Navarro',   avatarUrl: null, handicap: 7,  location: 'San Diego, CA',     friendCount: 20 },
+  { id: 'p8',  name: 'Ryan Potts',      avatarUrl: null, handicap: 15, location: 'Charlotte, NC',     friendCount: 8  },
+  { id: 'p9',  name: 'Matt Kessler',    avatarUrl: null, handicap: 6,  location: 'Columbus, OH',      friendCount: 16 },
+  { id: 'p10', name: 'Tyler Dunn',      avatarUrl: null, handicap: 11, location: 'Minneapolis, MN',   friendCount: 10 },
+  { id: 'p11', name: 'Zach Fielding',   avatarUrl: null, handicap: 9,  location: 'Portland, OR',      friendCount: 13 },
+  { id: 'p12', name: 'Logan Marsh',     avatarUrl: null, handicap: 16, location: 'Dallas, TX',        friendCount: 8  },
+  { id: 'p13', name: 'Derek Solano',    avatarUrl: null, handicap: 4,  location: 'Miami, FL',         friendCount: 19 },
+  { id: 'p14', name: 'Sean Calloway',   avatarUrl: null, handicap: 13, location: 'Boston, MA',        friendCount: 11 },
+  { id: 'p15', name: 'Kevin Odle',      avatarUrl: null, handicap: 10, location: 'Seattle, WA',       friendCount: 15 },
+  { id: 'p16', name: 'Brett Langford',  avatarUrl: null, handicap: 17, location: 'Las Vegas, NV',     friendCount: 9  },
 ]
 
 // ─── Teams ───────────────────────────────────────────────────────────────────

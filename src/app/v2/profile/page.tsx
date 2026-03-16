@@ -141,6 +141,9 @@ export default function ProfilePage() {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold">{ME.name}</h1>
+              {ME.location && (
+                <p className="text-xs text-golf-300 mt-0.5">{ME.location}</p>
+              )}
               <p className="text-sm text-golf-200 mt-0.5">
                 {ME.handicap != null ? `HCP ${ME.handicap}` : 'No handicap set'}
               </p>

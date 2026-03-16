@@ -101,15 +101,13 @@ export default function FriendProfilePage({ params }: { params: Promise<{ userId
                 {friend.handicap != null ? `HCP ${friend.handicap}` : 'No handicap'}
               </p>
             </div>
-          </div>
-          {/* Friends | Stats nav */}
-          <div className="flex gap-6 mt-4 border-t border-white/10 pt-4">
-            <Link
-              href={`/v2/profile/${userId}/friends`}
-              className="text-sm font-semibold text-golf-200 hover:text-white transition"
-            >
-              Friends
+            <Link href={`/v2/profile/${userId}/friends`} className="shrink-0 text-center hover:opacity-80 transition">
+              <p className="text-2xl font-bold leading-none">{friend.friendCount ?? '—'}</p>
+              <p className="text-xs text-golf-300 mt-1">Friends</p>
             </Link>
+          </div>
+          {/* Stats nav */}
+          <div className="mt-4 border-t border-white/10 pt-4">
             <Link
               href={`/v2/profile/${userId}/stats`}
               className="text-sm font-semibold text-golf-200 hover:text-white transition"

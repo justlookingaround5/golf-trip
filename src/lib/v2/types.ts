@@ -9,6 +9,7 @@ export interface PlayerV2 {
   avatarUrl: string | null
   handicap: number | null
   location: string | null
+  friendCount?: number
 }
 
 export interface HoleScoreV2 {
