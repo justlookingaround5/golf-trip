@@ -4,13 +4,11 @@
 // Same format as /v2/stats but for a specific friend.
 // Round rows link to /v2/profile/[userId]/round/[roundId] (read-only).
 
-import { use, useState } from 'react'
+import { use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_EARNINGS, STUB_FRIENDS, STUB_USER_HOLE_STATS } from '@/lib/v2/stub-data'
+import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_FRIENDS, STUB_USER_HOLE_STATS } from '@/lib/v2/stub-data'
 import type { RoundV2 } from '@/lib/v2/types'
-
-type Tab = 'rounds' | 'matches' | 'earnings'
 
 // ─── Scoring Distribution bar ──────────────────────────────────────────────────
 
@@ -68,97 +66,20 @@ function RoundRow({ round, userId }: { round: RoundV2; userId: string }) {
   )
 }
 
-// ─── Match Record ──────────────────────────────────────────────────────────────
-
-function MatchRecord({ userId }: { userId: string }) {
-  const stats = STUB_PLAYER_STATS.find(s => s.player.id === userId)
-  if (!stats) return <p className="py-8 text-center text-sm text-gray-400">No match data yet.</p>
-
-  const { wins, losses, ties } = stats.matchRecord
-  const played = wins + losses + ties
-
-  return (
-    <div className="space-y-4 p-4">
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Wins',   count: wins,   cls: 'border-green-200 bg-green-50 text-green-700' },
-          { label: 'Losses', count: losses, cls: 'border-red-200 bg-red-50 text-red-700'       },
-          { label: 'Ties',   count: ties,   cls: 'border-gray-200 bg-gray-50 text-gray-600'    },
-        ].map(({ label, count, cls }) => (
-          <div key={label} className={`rounded-xl border px-3 py-4 text-center ${cls}`}>
-            <p className="text-3xl font-black">{count}</p>
-            <p className="text-xs font-semibold mt-0.5">{label}</p>
-          </div>
-        ))}
-      </div>
-      <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
-        {[
-          { label: 'Matches played', value: played },
-          { label: 'Win rate',       value: played > 0 ? `${Math.round((wins / played) * 100)}%` : '—' },
-        ].map(({ label, value }) => (
-          <div key={label} className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-gray-600">{label}</span>
-            <span className="text-sm font-bold text-gray-900">{value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── Earnings ──────────────────────────────────────────────────────────────────
-
-function Earnings({ userId }: { userId: string }) {
-  const data = STUB_EARNINGS.find(e => e.player.id === userId)
-  if (!data) return <p className="py-8 text-center text-sm text-gray-400">No earnings data yet.</p>
-
-  const total = data.netEarnings
-
-  return (
-    <div className="space-y-4 p-4">
-      <div className={`rounded-xl border px-5 py-5 text-center ${
-        total >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
-      }`}>
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Career Total</p>
-        <p className={`text-4xl font-black ${total >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-          {total >= 0 ? '+' : ''}${Math.abs(total)}
-        </p>
-      </div>
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Breakdown</p>
-        </div>
-        <div className="divide-y divide-gray-100">
-          {data.breakdown.map(line => (
-            <div key={line.label} className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-gray-700">{line.label}</span>
-              <span className={`text-sm font-bold ${line.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {line.amount >= 0 ? '+' : ''}${Math.abs(line.amount)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function FriendStatsPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
   const router = useRouter()
-  const [tab, setTab] = useState<Tab>('rounds')
 
   const friend = STUB_FRIENDS.find(f => f.id === userId)
   const friendName = (friend?.name ?? 'Player').split(' ')[0]
+  const friendStats = STUB_PLAYER_STATS.find(s => s.player.id === userId)
 
-  const friendRounds = STUB_ALL_ROUNDS.filter(r => r.userId === userId)
+  const friendRounds = STUB_ALL_ROUNDS
+    .filter(r => r.userId === userId)
+    .sort((a, b) => b.date.localeCompare(a.date))
   const totalRounds = friendRounds.length
-  const completedRounds = friendRounds.filter(r => r.grossTotal != null)
-  const avgGross = completedRounds.length > 0
-    ? completedRounds.reduce((s, r) => s + r.grossTotal!, 0) / completedRounds.length
-    : 0
 
   // Scoring distribution from hole stats across all courses
   const allHoleStats = Object.values(STUB_USER_HOLE_STATS)
@@ -174,65 +95,51 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
   return (
     <div className="min-h-screen bg-background pb-28">
       <header className="bg-golf-800 px-4 pt-14 pb-6 text-white">
-        <div className="mx-auto max-w-lg">
-          <button
-            onClick={() => router.back()}
-            className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            {friendName}
-          </button>
-          <h1 className="text-2xl font-bold">{friendName}&apos;s Stats</h1>
-          <div className="mt-1 flex items-center gap-4 text-sm text-golf-200">
-            <span>{totalRounds} rounds</span>
-            {avgGross > 0 && <span>Avg {avgGross.toFixed(1)}</span>}
+        <div className="mx-auto max-w-lg flex items-start justify-between">
+          <div>
+            <button
+              onClick={() => router.back()}
+              className="mb-3 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              {friendName}
+            </button>
+            <h1 className="text-2xl font-bold">{friendName}&apos;s Stats</h1>
+            <p className="mt-1 text-sm text-golf-200">{totalRounds} rounds</p>
           </div>
+          {friendStats && (
+            <div className="text-right text-sm text-golf-200 pt-8">
+              <div>GIR% <span className="text-base font-bold text-white">{friendStats.girPct}%</span></div>
+              <div>FW% <span className="text-base font-bold text-white">{friendStats.fairwayPct}%</span></div>
+              <div>Putts <span className="text-base font-bold text-white">{friendStats.puttsAvg}</span></div>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Tab bar */}
-      <div className="sticky top-0 z-10 flex border-b border-gray-200 bg-white">
-        {([
-          { key: 'rounds',   label: 'Rounds'   },
-          { key: 'matches',  label: 'Matches'  },
-          { key: 'earnings', label: 'Earnings' },
-        ] as { key: Tab; label: string }[]).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex-1 py-3 text-sm font-semibold transition-colors ${
-              tab === key
-                ? 'text-golf-700 border-b-2 border-golf-700'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       <div className="mx-auto max-w-lg">
-        {tab === 'rounds' && (
-          <div className="px-3 pt-3 space-y-4">
-            {/* Scoring Distribution */}
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
-              <h2 className="text-sm font-bold text-gray-900 mb-3">Scoring Distribution</h2>
-              {totalScored > 0 ? (
-                <div className="space-y-2">
-                  <ScoringBar label="Eagles"  pct={scoringPct(totalEagles)}  color="bg-yellow-500" />
-                  <ScoringBar label="Birdies" pct={scoringPct(totalBirdies)} color="bg-red-500" />
-                  <ScoringBar label="Pars"    pct={scoringPct(totalPars)}    color="bg-gray-400" />
-                  <ScoringBar label="Bogeys"  pct={scoringPct(totalBogeys)}  color="bg-blue-500" />
-                  <ScoringBar label="Double+" pct={scoringPct(totalDoubles)} color="bg-blue-800" />
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400 text-center py-4">No data yet</p>
-              )}
-            </div>
+        <div className="px-3 pt-3 space-y-4">
+          {/* Scoring Distribution */}
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-1">Scoring Distribution</p>
+            {totalScored > 0 ? (
+              <div className="space-y-2">
+                <ScoringBar label="Eagles"  pct={scoringPct(totalEagles)}  color="bg-yellow-500" />
+                <ScoringBar label="Birdies" pct={scoringPct(totalBirdies)} color="bg-red-500" />
+                <ScoringBar label="Pars"    pct={scoringPct(totalPars)}    color="bg-gray-400" />
+                <ScoringBar label="Bogeys"  pct={scoringPct(totalBogeys)}  color="bg-blue-500" />
+                <ScoringBar label="Double+" pct={scoringPct(totalDoubles)} color="bg-blue-800" />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 text-center py-4">No data yet</p>
+            )}
+          </div>
 
-            {/* Round History */}
+          {/* Round History */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Rounds</p>
             {friendRounds.length > 0 ? (
               <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                 {friendRounds.map(r => <RoundRow key={r.id} round={r} userId={userId} />)}
@@ -241,9 +148,7 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
               <p className="py-8 text-center text-sm text-gray-400">No rounds yet.</p>
             )}
           </div>
-        )}
-        {tab === 'matches'  && <MatchRecord userId={userId} />}
-        {tab === 'earnings' && <Earnings userId={userId} />}
+        </div>
       </div>
     </div>
   )

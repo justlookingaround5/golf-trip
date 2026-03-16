@@ -66,8 +66,11 @@ function RoundRow({ round }: { round: RoundV2 }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function StatsPage() {
-  const totalRounds = STUB_ALL_ROUNDS.length
-  const completedRounds = STUB_ALL_ROUNDS.filter(r => r.grossTotal != null)
+  const myRounds = STUB_ALL_ROUNDS
+    .filter(r => r.userId === ME.id)
+    .sort((a, b) => b.date.localeCompare(a.date))
+  const totalRounds = myRounds.length
+  const completedRounds = myRounds.filter(r => r.grossTotal != null)
   const me = STUB_PLAYER_STATS.find(s => s.player.id === ME.id)
   const meEarnings = STUB_EARNINGS.find(e => e.player.id === ME.id)
 
@@ -153,7 +156,7 @@ export default function StatsPage() {
         <div className="mx-3 mt-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Rounds</p>
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            {STUB_ALL_ROUNDS.map(r => <RoundRow key={r.id} round={r} />)}
+            {myRounds.map(r => <RoundRow key={r.id} round={r} />)}
           </div>
         </div>
       </div>
