@@ -278,7 +278,7 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
                     }, {})
                 ).map(([letter, group]) => (
                   <div key={letter}>
-                    <div className="sticky top-0 bg-white px-4 py-1 border-b border-gray-100">
+                    <div className="sticky top-0 bg-white pl-4 pr-3 py-1">
                       <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{letter}</span>
                     </div>
                     {group.map(c => (
