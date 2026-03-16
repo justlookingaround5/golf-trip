@@ -874,6 +874,7 @@ function _makeUserHoleStats(courseId: string, rounds: number = 5): UserHoleStats
   const girPcts =  [50, 60, 35, 45, 40, 45, 55, 65, 50, 55, 30, 40, 60, 50, 45, 55, 40, 50]
   const putts =    [1.8, 1.7, 2.0, 1.9, 2.1, 1.9, 1.7, 1.6, 1.8, 1.7, 2.2, 1.9, 1.7, 1.8, 2.0, 1.6, 1.9, 1.8]
 
+  const scale = rounds / 5
   return pars.map((par, i) => ({
     holeNumber: i + 1,
     par,
@@ -881,11 +882,11 @@ function _makeUserHoleStats(courseId: string, rounds: number = 5): UserHoleStats
     avgGross: parseFloat((par + avgOffsets[i]).toFixed(1)),
     avgNet: parseFloat((par + netOffsets[i]).toFixed(1)),
     bestGross: par + bestOffsets[i],
-    birdies: birdies[i],
-    eagles: eaglesCnt[i],
-    pars: parsCnt[i],
-    bogeys: bogeys[i],
-    doubles: doubles[i],
+    birdies: Math.round(birdies[i] * scale),
+    eagles: Math.round(eaglesCnt[i] * scale),
+    pars: Math.round(parsCnt[i] * scale),
+    bogeys: Math.round(bogeys[i] * scale),
+    doubles: Math.round(doubles[i] * scale),
     avgPutts: putts[i],
     fairwayPct: fwPcts[i] as number | null,
     girPct: girPcts[i],
@@ -894,12 +895,12 @@ function _makeUserHoleStats(courseId: string, rounds: number = 5): UserHoleStats
 
 export const STUB_USER_HOLE_STATS: Record<string, Record<string, UserHoleStatsV2[]>> = {
   course1: {
-    [ME.id]: _makeUserHoleStats('course1', 5),
+    [ME.id]: _makeUserHoleStats('course1', 1),
     p2: _makeUserHoleStats('course1', 5).map(h => ({ ...h, avgGross: +(h.avgGross + 0.4).toFixed(1), birdies: Math.max(0, h.birdies - 1), bogeys: h.bogeys + 1 })),
   },
-  course3: { [ME.id]: _makeUserHoleStats('course3', 5) },
-  course4: { [ME.id]: _makeUserHoleStats('course4', 5) },
-  course5: { [ME.id]: _makeUserHoleStats('course5', 5) },
+  course3: { [ME.id]: _makeUserHoleStats('course3', 1) },
+  course4: { [ME.id]: _makeUserHoleStats('course4', 1) },
+  course5: { [ME.id]: _makeUserHoleStats('course5', 1) },
 }
 
 export const STUB_CHAT_MESSAGES: ChatMessageV2[] = [
