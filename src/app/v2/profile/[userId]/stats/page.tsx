@@ -7,7 +7,7 @@
 import { use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_FRIENDS, STUB_USER_HOLE_STATS } from '@/lib/v2/stub-data'
+import { STUB_ALL_ROUNDS, STUB_PLAYER_STATS, STUB_FRIENDS, STUB_USER_HOLE_STATS, STUB_EARNINGS } from '@/lib/v2/stub-data'
 import type { RoundV2 } from '@/lib/v2/types'
 
 // ─── Scoring Distribution bar ──────────────────────────────────────────────────
@@ -80,6 +80,22 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
     .filter(r => r.userId === userId)
     .sort((a, b) => b.date.localeCompare(a.date))
   const totalRounds = friendRounds.length
+  const completedRounds = friendRounds.filter(r => r.grossTotal != null)
+
+  const friendEarnings = STUB_EARNINGS.find(e => e.player.id === userId)
+
+  const careerLow = completedRounds.length > 0
+    ? Math.min(...completedRounds.map(r => r.grossTotal!))
+    : null
+  const record = friendStats
+    ? `${friendStats.matchRecord.wins}-${friendStats.matchRecord.losses}-${friendStats.matchRecord.ties}`
+    : null
+  const earnings = friendEarnings
+    ? (friendEarnings.netEarnings >= 0 ? `+$${friendEarnings.netEarnings}` : `-$${Math.abs(friendEarnings.netEarnings)}`)
+    : null
+  const earningsColor = friendEarnings != null
+    ? (friendEarnings.netEarnings >= 0 ? 'text-green-600' : 'text-red-600')
+    : 'text-gray-900'
 
   // Scoring distribution from hole stats across all courses
   const allHoleStats = Object.values(STUB_USER_HOLE_STATS)
@@ -121,20 +137,36 @@ export default function FriendStatsPage({ params }: { params: Promise<{ userId: 
 
       <div className="mx-auto max-w-lg">
         <div className="px-3 pt-3 space-y-4">
-          {/* Scoring Distribution */}
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-1">Scoring Distribution</p>
-            {totalScored > 0 ? (
-              <div className="space-y-2">
-                <ScoringBar label="Eagles"  pct={scoringPct(totalEagles)}  color="bg-yellow-500" />
-                <ScoringBar label="Birdies" pct={scoringPct(totalBirdies)} color="bg-red-500" />
-                <ScoringBar label="Pars"    pct={scoringPct(totalPars)}    color="bg-gray-400" />
-                <ScoringBar label="Bogeys"  pct={scoringPct(totalBogeys)}  color="bg-blue-500" />
-                <ScoringBar label="Double+" pct={scoringPct(totalDoubles)} color="bg-blue-800" />
+          {/* Low / Record / Earnings */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Low',      value: careerLow != null ? `${careerLow}` : '—', color: 'text-gray-900' },
+              { label: 'Record',   value: record ?? '—',                             color: 'text-gray-900' },
+              { label: 'Earnings', value: earnings ?? '—',                           color: earningsColor   },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="rounded-xl border border-gray-200 bg-white shadow-sm px-3 py-4 text-center">
+                <p className={`text-2xl font-black ${color}`}>{value}</p>
+                <p className="text-xs font-semibold text-gray-500 mt-0.5 uppercase tracking-wider">{label}</p>
               </div>
-            ) : (
-              <p className="text-sm text-gray-400 text-center py-4">No data yet</p>
-            )}
+            ))}
+          </div>
+
+          {/* Scoring Distribution */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Scoring Distribution</p>
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 space-y-2">
+              {totalScored > 0 ? (
+                <>
+                  <ScoringBar label="Eagles"  pct={scoringPct(totalEagles)}  color="bg-yellow-500" />
+                  <ScoringBar label="Birdies" pct={scoringPct(totalBirdies)} color="bg-red-500" />
+                  <ScoringBar label="Pars"    pct={scoringPct(totalPars)}    color="bg-gray-400" />
+                  <ScoringBar label="Bogeys"  pct={scoringPct(totalBogeys)}  color="bg-blue-500" />
+                  <ScoringBar label="Double+" pct={scoringPct(totalDoubles)} color="bg-blue-800" />
+                </>
+              ) : (
+                <p className="text-sm text-gray-400 text-center py-4">No data yet</p>
+              )}
+            </div>
           </div>
 
           {/* Round History */}
