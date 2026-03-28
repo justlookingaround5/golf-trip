@@ -3,12 +3,15 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import MatchScorecard from '@/components/MatchScorecard'
-import type { Hole, Score, MatchPlayer, PlayerCourseHandicap } from '@/lib/types'
+import type { Hole, Score, MatchPlayer, PlayerCourseHandicap, RoundScore } from '@/lib/types'
 import type { MatchFormat } from '@/lib/types'
 
 interface MatchDetailClientProps {
   matchId: string
+  courseId: string
+  tripPlayerIds: string[]
   courseName: string
+  roundDate?: string
   coursePar: number
   format: MatchFormat
   pointValue: number
@@ -16,12 +19,17 @@ interface MatchDetailClientProps {
   holes: Hole[]
   matchPlayers: MatchPlayer[]
   initialScores: Score[]
+  initialRoundScores: RoundScore[]
   courseHandicaps: PlayerCourseHandicap[]
+  hideFormat?: boolean
 }
 
 export default function MatchDetailClient({
   matchId,
+  courseId,
+  tripPlayerIds,
   courseName,
+  roundDate,
   coursePar,
   format,
   pointValue,
@@ -29,21 +37,26 @@ export default function MatchDetailClient({
   holes,
   matchPlayers,
   initialScores,
+  initialRoundScores,
   courseHandicaps,
+  hideFormat,
 }: MatchDetailClientProps) {
   const [scores, setScores] = useState<Score[]>(initialScores)
+  const [roundScores, setRoundScores] = useState<RoundScore[]>(initialRoundScores)
   const [status, setStatus] = useState(initialStatus)
 
   const refreshScores = useCallback(async () => {
     try {
       const supabase = createClient()
       const { data } = await supabase
-        .from('scores')
-        .select('*')
-        .eq('match_id', matchId)
+        .from('round_scores')
+        .select('id, course_id, trip_player_id, hole_id, gross_score, fairway_hit, gir, putts, created_at, updated_at')
+        .eq('course_id', courseId)
+        .in('trip_player_id', tripPlayerIds)
 
       if (data) {
-        setScores(data as Score[])
+        setScores(data.map(s => ({ ...s, match_id: matchId })) as Score[])
+        setRoundScores(data as RoundScore[])
       }
 
       // Also check match status
@@ -59,7 +72,7 @@ export default function MatchDetailClient({
     } catch {
       // Silently fail on refresh
     }
-  }, [matchId])
+  }, [matchId, courseId, tripPlayerIds])
 
   useEffect(() => {
     const supabase = createClient()
@@ -70,8 +83,8 @@ export default function MatchDetailClient({
         {
           event: '*',
           schema: 'public',
-          table: 'scores',
-          filter: `match_id=eq.${matchId}`,
+          table: 'round_scores',
+          filter: `course_id=eq.${courseId}`,
         },
         () => {
           refreshScores()
@@ -88,6 +101,7 @@ export default function MatchDetailClient({
     <MatchScorecard
       matchId={matchId}
       courseName={courseName}
+      roundDate={roundDate}
       coursePar={coursePar}
       format={format}
       pointValue={pointValue}
@@ -95,7 +109,9 @@ export default function MatchDetailClient({
       holes={holes}
       matchPlayers={matchPlayers}
       scores={scores}
+      roundScores={roundScores}
       courseHandicaps={courseHandicaps}
+      hideFormat={hideFormat}
     />
   )
 }

@@ -59,7 +59,7 @@ export default function ActionSheet({ open, onClose, hasActiveRound }: ActionShe
                 </span>
                 <div className="text-left">
                   <p className="font-semibold text-gray-900">Start a Round</p>
-                  <p className="text-xs text-gray-500">Quick play or trip round</p>
+                  <p className="text-xs text-gray-500">Quick play</p>
                 </div>
               </Link>
             )}

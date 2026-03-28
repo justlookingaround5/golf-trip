@@ -31,7 +31,7 @@ export default function Navbar({
   return (
     <nav className="bg-golf-800 text-white">
       <div className="flex items-center justify-between px-4 py-1.5">
-        <Link href="/home" className="flex items-center gap-1.5 hover:opacity-90">
+        <Link href="/" className="flex items-center gap-1.5 hover:opacity-90">
           <ForeLiveLogo />
           <span className="text-base font-bold tracking-tight text-gold">
             ForeLive

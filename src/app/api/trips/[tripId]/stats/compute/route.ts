@@ -55,7 +55,7 @@ export async function POST(
 
   // 3. Fetch all scores for these players across all holes
   const { data: allScores, error: scoresError } = await supabase
-    .from('scores')
+    .from('round_scores')
     .select('trip_player_id, hole_id, gross_score')
     .in('trip_player_id', tripPlayerIds)
     .in('hole_id', allHoleIds)

@@ -29,23 +29,23 @@ const VIEWS: { key: View; label: string }[] = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt1(n: number | null): string {
-  if (n == null) return '—'
+  if (n == null) return ''
   return n.toFixed(1)
 }
 
 function pct(n: number | null): string {
-  if (n == null) return '—'
+  if (n == null) return ''
   return `${Math.round(n)}%`
 }
 
 function money(n: number): string {
-  const abs = Math.abs(n)
-  const s = abs % 1 === 0 ? `$${abs}` : `$${abs.toFixed(2)}`
-  return n >= 0 ? `+${s}` : `-${s}`
+  const abs = Math.round(Math.abs(n))
+  const s = `$${abs}`
+  return n === 0 ? s : n > 0 ? `+${s}` : `-${s}`
 }
 
 function diffStr(diff: number | null): string {
-  if (diff == null) return '—'
+  if (diff == null) return ''
   if (diff === 0) return 'E'
   return diff > 0 ? `+${diff}` : `${diff}`
 }
@@ -150,7 +150,7 @@ function playerDiffStr(diff: number | null): string {
   return diff > 0 ? `(+${diff})` : `(${diff})`
 }
 
-function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[]; roundFilter: number; teams?: TripTeamV2[] }) {
+function MatchLeaderboard({ matches, roundFilter, teams, rounds }: { matches: MatchV2[]; roundFilter: number; teams?: TripTeamV2[]; rounds: TripRoundV2[] }) {
   const router = useRouter()
   const filtered = [...matches.filter(m => m.roundNumber === roundFilter)]
     .sort((a, b) => parseTeeTime(a.teeTime) - parseTeeTime(b.teeTime))
@@ -174,47 +174,50 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
   return (
     <div className="p-3 space-y-4">
       {[...courseGroups.entries()].map(([courseName, courseMatches]) => {
-        const formatLabel = courseMatches[0]?.formatLabel ?? ''
         return (
           <div key={courseName}>
-            <div className="rounded-t-lg px-3 py-2 text-center">
+            <div className="rounded-t-lg px-3 py-2 flex items-center justify-center gap-3">
               <span className="text-sm font-bold text-gray-900">{courseName}</span>
-              <span className="text-xs text-gray-500 ml-1.5">&middot; {formatLabel}</span>
+              {courseMatches[0] && <><span className="text-xs text-gray-500">&middot;</span><span className="text-xs text-gray-500">{courseMatches[0].formatLabel}</span></>}
             </div>
             <div className="space-y-2 mt-2">
               {courseMatches.map(m => {
-                const aWins = m.teamA.points > m.teamB.points
-                const bWins = m.teamB.points > m.teamA.points
-                const tied = m.teamA.points === m.teamB.points
                 const isPending = m.status === 'pending'
                 const isCompleted = m.status === 'completed'
                 const isInProgress = m.status === 'in_progress'
-                const isTiedResult = m.resultMargin === 'AS' || (isCompleted && tied)
+
+                // Prefer recomputed liveLeader (from actual scores) over DB points
+                const aWins = m.liveLeader ? m.liveLeader === 'team_a' : m.teamA.points > m.teamB.points
+                const bWins = m.liveLeader ? m.liveLeader === 'team_b' : m.teamB.points > m.teamA.points
+                const tied = !aWins && !bWins
+
+                // For in-progress matches, resultMargin contains live match play status (e.g. "2UP thru 12")
+                // Extract just the lead portion for the badge (e.g. "2UP")
+                const liveStatus = m.resultMargin?.split(' thru ')[0] ?? null
+                const isTiedResult = m.resultMargin === 'AS' || liveStatus === 'AS' || (isCompleted && tied)
 
                 const thruLabel = isCompleted ? 'FINAL'
                   : m.thru != null ? `THRU ${m.thru}` : '—'
-                const colorA = colorMap.get(m.teamA.name) ?? '#6b7280'
-                const colorB = colorMap.get(m.teamB.name) ?? '#6b7280'
+                const colorA = colorMap.get(m.teamA.name) || ''
+                const colorB = colorMap.get(m.teamB.name) || ''
 
                 // Only the winning side gets shading; tied or losing side always 0
                 let aAlpha = 0
                 let bAlpha = 0
                 const alpha = isCompleted ? 0.20 : isInProgress ? 0.12 : 0
-                if (aWins) aAlpha = alpha
-                else if (bWins) bAlpha = alpha
-
-                const pointDiff = Math.abs(m.teamA.points - m.teamB.points)
+                if (!isTiedResult && colorA && aWins) aAlpha = alpha
+                else if (!isTiedResult && colorB && bWins) bAlpha = alpha
                 const resultBadge = isCompleted
                   ? m.resultMargin
-                  : isInProgress && !tied
-                    ? `${pointDiff}UP`
+                  : isInProgress && liveStatus && liveStatus !== 'AS'
+                    ? liveStatus
                     : null
 
                 return (
                   <div
                     key={m.id}
                     className="flex rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => router.push(`/v2/match/${m.id}`)}
+                    onClick={() => router.push(`/trip/${m.tripId}/matches/${m.id}?rd=${roundFilter}`)}
                   >
                     {/* Team A panel */}
                     <div
@@ -222,7 +225,7 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                       style={{ backgroundColor: aAlpha > 0 ? teamBg(colorA, aAlpha) : undefined }}
                     >
                       {m.teamA.players.map((p, i) => (
-                        <span key={p.id} className={`text-xs leading-5 ${aWins ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+                        <span key={p.id} className={`text-xs leading-5 ${aWins && !isTiedResult ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
                           {p.name.split(' ')[0]}
                           {m.teamA.scoreDiffs[i] != null && (
                             <span className="text-[10px] text-gray-400 ml-1">{playerDiffStr(m.teamA.scoreDiffs[i])}</span>
@@ -231,7 +234,7 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                       ))}
                       {/* Result badge in winner's panel */}
                       {aWins && resultBadge && !isTiedResult && (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-black text-gray-900">{resultBadge}</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-black text-gray-900">{resultBadge}</span>
                       )}
                     </div>
 
@@ -251,7 +254,7 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                       style={{ backgroundColor: bAlpha > 0 ? teamBg(colorB, bAlpha) : undefined }}
                     >
                       {m.teamB.players.map((p, i) => (
-                        <span key={p.id} className={`text-xs leading-5 ${bWins ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+                        <span key={p.id} className={`text-xs leading-5 ${bWins && !isTiedResult ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
                           {m.teamB.scoreDiffs[i] != null && (
                             <span className="text-[10px] text-gray-400 mr-1">{playerDiffStr(m.teamB.scoreDiffs[i])}</span>
                           )}
@@ -260,7 +263,7 @@ function MatchLeaderboard({ matches, roundFilter, teams }: { matches: MatchV2[];
                       ))}
                       {/* Result badge in winner's panel */}
                       {bWins && resultBadge && !isTiedResult && (
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-black text-gray-900">{resultBadge}</span>
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm font-black text-gray-900">{resultBadge}</span>
                       )}
                     </div>
                   </div>
@@ -451,15 +454,15 @@ function HoleStatsView({ holeStats, sortCol, sortDir, onSort }: { holeStats: Hol
   }
 
   // Compute diff = avgNet - par for each hole
-  type HoleRow = HoleLeaderboardStats & { diff: number }
+  type HoleRow = HoleLeaderboardStats & { diff: number | null }
   const baseRows: HoleRow[] = holeStats.map(h => ({
     ...h,
-    diff: parseFloat((h.avgNet - h.par).toFixed(1)),
+    diff: h.avgNet != null ? parseFloat((h.avgNet - h.par).toFixed(1)) : null,
   }))
 
   // Color scale: centered on 0; green for negative, red for positive
-  const posDiffs = baseRows.map(r => r.diff).filter(d => d > 0)
-  const negDiffs = baseRows.map(r => r.diff).filter(d => d < 0)
+  const posDiffs = baseRows.map(r => r.diff).filter((d): d is number => d != null && d > 0)
+  const negDiffs = baseRows.map(r => r.diff).filter((d): d is number => d != null && d < 0)
   const maxDiff = posDiffs.length > 0 ? Math.max(...posDiffs) : 0.01
   const minDiff = negDiffs.length > 0 ? Math.min(...negDiffs) : -0.01
 
@@ -490,30 +493,30 @@ function HoleStatsView({ holeStats, sortCol, sortDir, onSort }: { holeStats: Hol
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-xs">
+      <table className="min-w-full table-fixed text-xs">
         <thead>
           <tr className="bg-golf-800">
-            <th className={TH}>Hole</th>
-            <th className={TH}>Par</th>
-            <th className={thSort('hcp', sortCol)} onClick={() => onSort('hcp')}>
+            <th className={`${TH} w-[12.5%]`}>Hole</th>
+            <th className={`${TH} w-[12.5%]`}>Par</th>
+            <th className={`${thSort('hcp', sortCol)} w-[12.5%]`} onClick={() => onSort('hcp')}>
               HCP<SortArrow col="hcp" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('avg_gross', sortCol)} onClick={() => onSort('avg_gross')}>
-              Avg Gross<SortArrow col="avg_gross" sortCol={sortCol} sortDir={sortDir} />
+            <th className={`${thSort('avg_gross', sortCol)} w-[12.5%]`} onClick={() => onSort('avg_gross')}>
+              Gross<SortArrow col="avg_gross" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('avg_net', sortCol)} onClick={() => onSort('avg_net')}>
-              Avg Net<SortArrow col="avg_net" sortCol={sortCol} sortDir={sortDir} />
+            <th className={`${thSort('avg_net', sortCol)} w-[12.5%]`} onClick={() => onSort('avg_net')}>
+              Net<SortArrow col="avg_net" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('diff', sortCol)} onClick={() => onSort('diff')}>
+            <th className={`${thSort('diff', sortCol)} w-[12.5%]`} onClick={() => onSort('diff')}>
               Diff<SortArrow col="diff" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('fw', sortCol)} onClick={() => onSort('fw')}>
+            <th className={`${thSort('fw', sortCol)} w-[12.5%]`} onClick={() => onSort('fw')}>
               FW%<SortArrow col="fw" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('gir', sortCol)} onClick={() => onSort('gir')}>
+            <th className={`${thSort('gir', sortCol)} w-[12.5%]`} onClick={() => onSort('gir')}>
               GIR%<SortArrow col="gir" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('putts', sortCol)} onClick={() => onSort('putts')}>
+            <th className={`${thSort('putts', sortCol)} w-[12.5%]`} onClick={() => onSort('putts')}>
               Putts<SortArrow col="putts" sortCol={sortCol} sortDir={sortDir} />
             </th>
           </tr>
@@ -530,11 +533,11 @@ function HoleStatsView({ holeStats, sortCol, sortDir, onSort }: { holeStats: Hol
                 <td className={TD}>{fmt1(h.avgNet)}</td>
                 <td
                   className={`${TD} font-semibold`}
-                  style={{ backgroundColor: diffBg(h.diff) }}
+                  style={{ backgroundColor: h.diff != null ? diffBg(h.diff) : 'transparent' }}
                 >
-                  {h.diff > 0 ? `+${h.diff.toFixed(1)}` : h.diff.toFixed(1)}
+                  {h.diff != null ? (h.diff > 0 ? `+${h.diff.toFixed(1)}` : h.diff.toFixed(1)) : ''}
                 </td>
-                <td className={TD}>{pct(h.fairwayPct)}</td>
+                <td className={TD}>{h.par === 3 && h.fairwayPct == null && h.avgGross != null ? '–' : pct(h.fairwayPct)}</td>
                 <td className={TD}>{pct(h.girPct)}</td>
                 <td className={TD}>{fmt1(h.avgPutts)}</td>
               </tr>
@@ -595,7 +598,7 @@ function EarningsView({ earnings, sortCol, sortDir, onSort }: { earnings: TripEa
     ? sortRows(baseRows, sortCol, sortDir, (row, col) => {
         switch (col) {
           case 'player':    return row.player.name
-          case 'team':      return row.team
+          case 'team':      return row.team ?? 0
           case 'matches':   return row.matches
           case 'skins':     return row.skins
           case 'net_total': return row.netTotal
@@ -606,28 +609,28 @@ function EarningsView({ earnings, sortCol, sortDir, onSort }: { earnings: TripEa
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-xs">
+      <table className="min-w-full table-fixed text-xs">
         <thead>
           <tr className="bg-golf-800">
             <th
-              className={`sticky left-0 px-3 py-2 text-left text-[10px] font-bold text-white uppercase tracking-wide cursor-pointer select-none transition-colors ${
+              className={`w-[20%] sticky left-0 px-3 py-2 text-left text-[10px] font-bold text-white uppercase tracking-wide cursor-pointer select-none transition-colors ${
                 sortCol === 'player' ? 'bg-golf-700' : 'bg-golf-800 hover:bg-golf-700'
               }`}
               onClick={() => onSort('player')}
             >
               Player<SortArrow col="player" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('team', sortCol)} onClick={() => onSort('team')}>
+            <th className={`${thSort('team', sortCol)} w-[20%]`} onClick={() => onSort('team')}>
               Team<SortArrow col="team" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('matches', sortCol)} onClick={() => onSort('matches')}>
+            <th className={`${thSort('matches', sortCol)} w-[20%]`} onClick={() => onSort('matches')}>
               Matches<SortArrow col="matches" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('skins', sortCol)} onClick={() => onSort('skins')}>
+            <th className={`${thSort('skins', sortCol)} w-[20%]`} onClick={() => onSort('skins')}>
               Skins<SortArrow col="skins" sortCol={sortCol} sortDir={sortDir} />
             </th>
-            <th className={thSort('net_total', sortCol)} onClick={() => onSort('net_total')}>
-              Net Total<SortArrow col="net_total" sortCol={sortCol} sortDir={sortDir} />
+            <th className={`${thSort('net_total', sortCol)} w-[20%]`} onClick={() => onSort('net_total')}>
+              Total<SortArrow col="net_total" sortCol={sortCol} sortDir={sortDir} />
             </th>
           </tr>
         </thead>
@@ -637,10 +640,10 @@ function EarningsView({ earnings, sortCol, sortDir, onSort }: { earnings: TripEa
             return (
               <tr key={player.id} className={bg}>
                 <td className={tdLeft(bg)}>{player.name.split(' ')[0]}</td>
-                <td className={`${TD} font-semibold ${team    >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(team)}</td>
-                <td className={`${TD} font-semibold ${matches >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(matches)}</td>
-                <td className={`${TD} font-semibold ${skins   >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(skins)}</td>
-                <td className={`${TD} font-black   ${netTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>{money(netTotal)}</td>
+                <td className={`${TD} font-semibold ${team !== null && team < 0 ? 'text-red-600' : 'text-green-600'}`}>{team !== null && team !== 0 ? money(team) : ''}</td>
+                <td className={`${TD} font-semibold ${matches < 0 ? 'text-red-600' : 'text-green-600'}`}>{matches !== 0 ? money(matches) : ''}</td>
+                <td className={`${TD} font-semibold ${skins < 0 ? 'text-red-600' : 'text-green-600'}`}>{skins !== 0 ? money(skins) : ''}</td>
+                <td className={`${TD} ${netTotal === 0 ? 'text-gray-700' : netTotal > 0 ? 'font-black text-green-600' : 'font-black text-red-600'}`}>{money(netTotal)}</td>
               </tr>
             )
           })}
@@ -779,7 +782,7 @@ export default function PointLeaderboard({
 
       {/* Content */}
       {view === 'matches' && (
-        <MatchLeaderboard matches={matches} roundFilter={roundFilter} teams={teams} />
+        <MatchLeaderboard matches={matches} roundFilter={roundFilter} teams={teams} rounds={rounds} />
       )}
       {view === 'individual' && (
         <IndividualLeaderboard

@@ -1,7 +1,7 @@
 /**
  * Settlement Calculator
  *
- * Aggregates game_results + side_bet_hits into a "who owes whom" matrix.
+ * Aggregates game_results into a "who owes whom" matrix.
  * Generates payment deep links for Venmo, Zelle, CashApp, PayPal.
  */
 

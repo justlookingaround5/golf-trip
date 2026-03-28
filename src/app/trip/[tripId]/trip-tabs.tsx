@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import TeamStandings from '@/components/TeamStandings'
-import type { TeamStanding } from '@/lib/leaderboard'
+import TeamScoresCard from '@/components/v2/TeamScoresCard'
 import PlanningSection from './planning-section'
 import RoundGamePills from '@/components/RoundGamePills'
+import PointLeaderboard from '@/components/v2/PointLeaderboard'
+import type { TripLeaderboardData } from '@/lib/v2/trip-leaderboard-data'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -57,67 +56,35 @@ interface TripTabsProps {
   gamesByCourse: Record<string, EnrichedGame[]>
   isAdmin: boolean
   todaysCourse: CourseInfo | null
-  teamStandings: TeamStanding[]
   activeMatches: number
   totalMatches: number
   completedMatches: number
   activityFeed: ActivityItem[]
+  leaderboardData: TripLeaderboardData
 }
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-type InternalTab = 'points' | 'matches' | 'leaderboard' | 'stats' | 'skins' | 'money'
-
-const INTERNAL_TABS: { key: InternalTab; label: string; emoji: string }[] = [
-  { key: 'points', label: 'Points', emoji: '🏆' },
-  { key: 'matches', label: 'Matches', emoji: '⚔️' },
-  { key: 'leaderboard', label: 'Board', emoji: '📊' },
-  { key: 'stats', label: 'Stats', emoji: '📈' },
-  { key: 'skins', label: 'Skins', emoji: '💰' },
-  { key: 'money', label: 'Money', emoji: '🏦' },
-]
-
 export default function TripTabs(props: TripTabsProps) {
-  return (
-    <Suspense fallback={<TripTabsInner {...props} initialTab="points" />}>
-      <TripTabsWithSearchParams {...props} />
-    </Suspense>
-  )
-}
-
-function TripTabsWithSearchParams(props: TripTabsProps) {
-  const searchParams = useSearchParams()
-  const tabParam = searchParams.get('tab') as InternalTab | null
-  const initialTab = tabParam && INTERNAL_TABS.find((t) => t.key === tabParam) ? tabParam : 'points'
-  return <TripTabsInner {...props} initialTab={initialTab} />
-}
-
-function TripTabsInner(props: TripTabsProps & { initialTab: InternalTab }) {
-  const { initialTab, ...rest } = props
-  const [internalTab, setInternalTab] = useState<InternalTab>(initialTab)
-
-  // Sync if initialTab changes (e.g. Suspense resolves with a URL param)
-  useEffect(() => {
-    setInternalTab(initialTab)
-  }, [initialTab])
-
   // Upcoming/setup trips show a different view
-  if (rest.tripStatus === 'setup') {
-    return <UpcomingView {...rest} />
+  if (props.tripStatus === 'setup') {
+    return <UpcomingView {...props} />
   }
 
+  const { leaderboardData } = props
+
   return (
-    <div>
+    <div className="space-y-4">
       {/* Live scoring banner — show when there's a round today */}
-      {rest.todaysCourse && (
+      {props.todaysCourse && (
         <Link
-          href={`/trip/${rest.tripId}/live/${rest.todaysCourse.id}`}
-          className="mb-4 flex items-center gap-3 rounded-xl bg-green-600 px-5 py-4 text-white shadow-md active:bg-green-700 transition"
+          href={`/trip/${props.tripId}/live/${props.todaysCourse.id}`}
+          className="flex items-center gap-3 rounded-xl bg-green-600 px-5 py-4 text-white shadow-md active:bg-green-700 transition"
         >
           <span className="text-2xl">⛳</span>
           <div>
             <p className="font-bold">Live Scoring Active</p>
-            <p className="text-sm text-green-100">{rest.todaysCourse.name}</p>
+            <p className="text-sm text-green-100">{props.todaysCourse.name}</p>
           </div>
           <svg className="ml-auto shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <polyline points="9 18 15 12 9 6" />
@@ -125,31 +92,28 @@ function TripTabsInner(props: TripTabsProps & { initialTab: InternalTab }) {
         </Link>
       )}
 
-      {/* Internal tab bar */}
-      <div className="flex overflow-x-auto scrollbar-hide gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mb-5">
-        {INTERNAL_TABS.map(({ key, label, emoji }) => (
-          <button
-            key={key}
-            onClick={() => setInternalTab(key)}
-            className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-              internalTab === key
-                ? 'bg-white dark:bg-gray-700 text-golf-700 dark:text-golf-400 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <span className="text-base">{emoji}</span>
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Team Standings */}
+      {leaderboardData.teams.length > 1 && (
+        <TeamScoresCard
+          matches={leaderboardData.matches}
+          tripId={props.tripId}
+          teams={leaderboardData.teams}
+          showTeamDetail
+        />
+      )}
 
-      {/* Tab content */}
-      {internalTab === 'points' && <PointsTab {...rest} />}
-      {internalTab === 'matches' && <MatchesTab {...rest} />}
-      {internalTab === 'leaderboard' && <LeaderboardTab {...rest} />}
-      {internalTab === 'stats' && <StatsTab {...rest} />}
-      {internalTab === 'skins' && <SkinsTab {...rest} />}
-      {internalTab === 'money' && <MoneyTab {...rest} />}
+      {/* V2 Point Leaderboard widget */}
+      <PointLeaderboard
+        matches={leaderboardData.matches}
+        rounds={leaderboardData.rounds}
+        players={leaderboardData.players}
+        playerStats={leaderboardData.playerStats}
+        roundScores={leaderboardData.roundScores}
+        holeStatsByRound={leaderboardData.holeStatsByRound}
+        skinsByRound={leaderboardData.skinsByRound}
+        earnings={leaderboardData.earnings}
+        teams={leaderboardData.teams}
+      />
     </div>
   )
 }
@@ -277,116 +241,6 @@ function ChecklistRow({
   )
 }
 
-// ── Points tab ──────────────────────────────────────────────────────────────
-
-function PointsTab({ teamStandings, totalMatches, completedMatches }: TripTabsProps) {
-  if (teamStandings.length === 0) {
-    return (
-      <EmptyTabState
-        icon="🏆"
-        title="No team standings yet"
-        sub="Points will appear here once matches are played."
-      />
-    )
-  }
-  return (
-    <div className="space-y-4">
-      <Card title="Team Standings">
-        <TeamStandings standings={teamStandings} />
-      </Card>
-      {totalMatches > 0 && (
-        <div className="grid grid-cols-2 gap-3">
-          <StatTile label="Matches Played" value={completedMatches} />
-          <StatTile label="Total Matches" value={totalMatches} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Matches tab ──────────────────────────────────────────────────────────────
-
-function MatchesTab({ tripId, totalMatches, completedMatches, activeMatches }: TripTabsProps) {
-  return (
-    <div className="space-y-4">
-      {totalMatches > 0 ? (
-        <>
-          <div className="grid grid-cols-3 gap-2">
-            <StatTile label="Live" value={activeMatches} accent="green" />
-            <StatTile label="Done" value={completedMatches} />
-            <StatTile label="Total" value={totalMatches} />
-          </div>
-          <Link
-            href={`/trip/${tripId}/matches`}
-            className="flex items-center justify-between rounded-xl border border-gray-200 bg-white dark:bg-gray-800 px-4 py-4 shadow-sm hover:border-golf-400 transition"
-          >
-            <span className="font-semibold text-gray-900 dark:text-gray-100">View All Matches</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-400">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </Link>
-        </>
-      ) : (
-        <EmptyTabState icon="⚔️" title="No matches yet" sub="Matches will appear here once they're created." />
-      )}
-    </div>
-  )
-}
-
-// ── Leaderboard tab ──────────────────────────────────────────────────────────
-
-function LeaderboardTab({ tripId }: TripTabsProps) {
-  return (
-    <div className="space-y-3">
-      <NavCard href={`/trip/${tripId}/leaderboard`} icon="📊" label="Full Leaderboard" sub="Gross, Net, and Match records" />
-      <NavCard href={`/trip/${tripId}/head-to-head`} icon="🆚" label="Head-to-Head" sub="Player vs player comparison" />
-      <NavCard href={`/trip/${tripId}/dashboard`} icon="📋" label="Dashboard" sub="Trip overview and totals" />
-    </div>
-  )
-}
-
-// ── Stats tab ────────────────────────────────────────────────────────────────
-
-function StatsTab({ tripId }: TripTabsProps) {
-  return (
-    <div className="space-y-3">
-      <NavCard href={`/trip/${tripId}/stats`} icon="📈" label="Player Stats & Awards" sub="Scoring averages, best rounds, achievements" />
-      <NavCard href={`/trip/${tripId}/competition`} icon="🏌️" label="Ryder Cup" sub="Team competition standings" />
-    </div>
-  )
-}
-
-// ── Skins tab ────────────────────────────────────────────────────────────────
-
-function SkinsTab({ tripId, courses }: TripTabsProps) {
-  return (
-    <div className="space-y-3">
-      {courses.map((course) => (
-        <NavCard
-          key={course.id}
-          href={`/trip/${tripId}/rounds/${course.id}/recap`}
-          icon="💰"
-          label={`${course.name} — Skins`}
-          sub={`Round ${course.round_number}${course.round_date ? ` · ${course.round_date}` : ''}`}
-        />
-      ))}
-      {courses.length === 0 && (
-        <EmptyTabState icon="💰" title="No rounds yet" sub="Skins will appear once rounds are played." />
-      )}
-    </div>
-  )
-}
-
-// ── Money tab ────────────────────────────────────────────────────────────────
-
-function MoneyTab({ tripId }: TripTabsProps) {
-  return (
-    <div className="space-y-3">
-      <NavCard href={`/trip/${tripId}/settlement`} icon="🏦" label="The Bank" sub="Payouts, winnings, and who owes what" />
-    </div>
-  )
-}
-
 // ── Shared UI ────────────────────────────────────────────────────────────────
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
@@ -398,71 +252,3 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   )
 }
 
-function StatTile({
-  label,
-  value,
-  accent,
-}: {
-  label: string
-  value: number
-  accent?: 'green'
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 p-4 text-center shadow-sm">
-      <p className={`text-2xl font-black ${accent === 'green' ? 'text-green-600' : 'text-gray-900 dark:text-gray-100'}`}>
-        {value}
-      </p>
-      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
-    </div>
-  )
-}
-
-function NavCard({
-  href,
-  icon,
-  label,
-  sub,
-}: {
-  href: string
-  icon: string
-  label: string
-  sub: string
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 shadow-sm hover:border-golf-400 hover:shadow-md active:bg-gray-50 transition"
-    >
-      <span className="text-2xl">{icon}</span>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 dark:text-gray-100">{label}</p>
-        <p className="text-xs text-gray-500 mt-0.5 truncate">{sub}</p>
-      </div>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-300 shrink-0">
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
-    </Link>
-  )
-}
-
-function EmptyTabState({ icon, title, sub }: { icon: string; title: string; sub: string }) {
-  return (
-    <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-10 text-center">
-      <div className="text-4xl mb-3">{icon}</div>
-      <p className="font-semibold text-gray-700 dark:text-gray-300">{title}</p>
-      <p className="text-sm text-gray-400 mt-1">{sub}</p>
-    </div>
-  )
-}
-
-function formatRelativeTime(dateStr: string): string {
-  const now = Date.now()
-  const then = new Date(dateStr).getTime()
-  const diff = Math.floor((now - then) / 1000)
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
-  return `${Math.floor(diff / 86400)}d`
-}
-
-void formatRelativeTime // prevent unused warning — available for future activity feed use

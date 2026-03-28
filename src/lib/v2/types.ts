@@ -22,6 +22,7 @@ export interface HoleScoreV2 {
   fairwayHit: boolean | null
   gir: boolean | null
   putts: number | null
+  yardage: Record<string, number> | null
 }
 
 export interface ScorecardPlayerV2 {
@@ -38,6 +39,7 @@ export interface ScorecardV2 {
   par: number
   roundNumber: number | null
   players: ScorecardPlayerV2[]
+  matchId?: string
 }
 
 export interface MatchV2 {
@@ -55,7 +57,9 @@ export interface MatchV2 {
   tripId: string
   teeTime: string | null
   thru: number | null
+  pointValue: number
   resultMargin: string | null
+  liveLeader?: 'team_a' | 'team_b' | 'tie'
 }
 
 export interface TripV2 {
@@ -82,6 +86,8 @@ export interface RoundV2 {
   netTotal: number | null
   par: number
   holesPlayed: number
+  totalHoles: number
+  totalPutts: number | null
   latitude: number | null
   longitude: number | null
 }
@@ -126,8 +132,8 @@ export interface HoleLeaderboardStats {
   holeNumber: number
   par: number
   handicapIndex: number
-  avgGross: number
-  avgNet: number
+  avgGross: number | null
+  avgNet: number | null
   birdiesOrBetter: number
   pars: number
   bogeysOrWorse: number
@@ -185,6 +191,7 @@ export interface TripRoundV2 {
   courseId: string
   courseName: string
   par: number
+  date?: string
 }
 
 export interface SkinResultV2 {
@@ -206,7 +213,7 @@ export interface TripRoundScoreV2 {
 
 export interface TripEarningsRow {
   player: PlayerV2
-  team: number
+  team: number | null
   matches: number
   skins: number
   netTotal: number
@@ -232,7 +239,7 @@ export interface CourseDetailV2 {
   conditionRating: number | null
   layoutRating: number | null
   valueRating: number | null
-  tees: { name: string; yardage: number; slope: number; rating: number }[]
+  tees: { name: string; yardage: number; slope: number; rating: number; par: number }[]
   website: string | null
   phone: string | null
   photoUrls: string[]

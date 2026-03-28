@@ -5,7 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import PostHogProvider from "@/components/PostHogProvider";
-import AppChrome from "@/components/AppChrome";
+import AppChromeV2 from "@/components/v2/AppChromeV2";
 
 
 const geistSans = Geist({
@@ -58,11 +58,12 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <PostHogProvider>
           <ServiceWorkerRegistrar />
           <ConnectionStatus />
-          <AppChrome />
+          <AppChromeV2 />
           {children}
           <Analytics />
         </PostHogProvider>

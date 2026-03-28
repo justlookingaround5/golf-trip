@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   const { data: profiles } = await supabase
     .from('player_profiles')
-    .select('user_id, display_name, avatar_url')
+    .select('user_id, display_name, avatar_url, handicap_index, location')
     .ilike('display_name', `%${q}%`)
     .neq('user_id', user.id)
     .limit(10)
@@ -43,6 +43,8 @@ export async function GET(req: NextRequest) {
       userId: p.user_id,
       displayName: p.display_name || 'Unknown',
       avatarUrl: p.avatar_url,
+      handicap: p.handicap_index ?? null,
+      location: p.location ?? null,
       friendship: fshipMap.get(p.user_id) ?? null,
     })),
   })

@@ -33,6 +33,8 @@ export default function NewTripPage() {
   const [year, setYear] = useState(new Date().getFullYear())
   const [location, setLocation] = useState('')
   const [tripDate, setTripDate] = useState('')
+  const [coverImage, setCoverImage] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
   // Step 2: Invite
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([])
@@ -172,6 +174,20 @@ export default function NewTripPage() {
 
       const trip = await res.json()
 
+      // Upload cover image if provided
+      if (coverImage) {
+        const supabase = createClient()
+        const ext = coverImage.name.split('.').pop() || 'jpg'
+        const path = `${trip.id}/${Date.now()}.${ext}`
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(path, coverImage, { contentType: coverImage.type, upsert: false })
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+          await supabase.from('trips').update({ cover_image_url: urlData.publicUrl }).eq('id', trip.id)
+        }
+      }
+
       // Add selected group members + searched profiles as players
       const usersToAdd = [
         ...Array.from(selectedMembers),
@@ -306,6 +322,51 @@ export default function NewTripPage() {
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
             />
             <p className="mt-1 text-xs text-gray-400">Sets the trip year. Add individual round dates after creating.</p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Trip Photo
+            </label>
+            <div className="flex items-center gap-4">
+              {coverPreview ? (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={coverPreview} alt="Trip cover" className="h-16 w-16 rounded-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => { setCoverImage(null); setCoverPreview(null) }}
+                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gray-800 text-white text-xs hover:bg-gray-700"
+                  >
+                    &times;
+                  </button>
+                </div>
+              ) : (
+                <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border-2 border-dashed border-gray-300 hover:border-golf-500 transition">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      if (file.size > 5 * 1024 * 1024) {
+                        setError('Image must be under 5MB')
+                        return
+                      }
+                      setCoverImage(file)
+                      setCoverPreview(URL.createObjectURL(file))
+                    }}
+                  />
+                </label>
+              )}
+              <p className="text-xs text-gray-400">Optional. JPEG, PNG, or WebP under 5MB.</p>
+            </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">

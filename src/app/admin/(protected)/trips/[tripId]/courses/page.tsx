@@ -268,6 +268,15 @@ export default function CoursesPage() {
     setSaving(true)
     setError(null)
 
+    // Build tee_boxes from course detail if available
+    const teeBoxes = courseDetail?.tees?.male?.map(t => ({
+      tee_name: t.tee_name,
+      slope_rating: t.slope_rating,
+      course_rating: t.course_rating,
+      total_yards: t.total_yards,
+      par_total: t.par_total,
+    })) || null
+
     const payload = {
       trip_id: tripId,
       name: courseName.trim(),
@@ -276,6 +285,8 @@ export default function CoursesPage() {
       slope: slope ? Number(slope) : null,
       rating: rating ? Number(rating) : null,
       par: totalPar,
+      golf_course_api_id: courseDetail?.id || null,
+      tee_boxes: teeBoxes,
       holes: holes.map((h) => ({
         hole_number: h.hole_number,
         par: h.par,

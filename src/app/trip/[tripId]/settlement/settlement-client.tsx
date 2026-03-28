@@ -8,14 +8,6 @@ interface SettlementClientProps {
   tripName: string
   balances: PlayerBalance[]
   payments: PaymentInstruction[]
-  expenses: {
-    id: string
-    description: string
-    category: string
-    amount: number
-    paid_by: { id: string; player: { name: string } | { name: string }[] } | null
-    created_at: string
-  }[]
   tripPlayers: { id: string; name: string; player_id?: string }[]
   currentPlayerId?: string | null
   settledAt?: string | null
@@ -26,12 +18,11 @@ export default function SettlementClient({
   tripName,
   balances,
   payments,
-  expenses,
   tripPlayers,
   currentPlayerId = null,
   settledAt = null,
 }: SettlementClientProps) {
-  const [activeTab, setActiveTab] = useState<'payments' | 'balances' | 'expenses' | 'wallet'>('payments')
+  const [activeTab, setActiveTab] = useState<'payments' | 'balances' | 'wallet'>('payments')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -50,7 +41,7 @@ export default function SettlementClient({
       {/* Tabs */}
       <div className="bg-white border-b">
         <div className="mx-auto max-w-lg flex">
-          {(['payments', 'balances', 'expenses', 'wallet'] as const).map(tab => (
+          {(['payments', 'balances', 'wallet'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -191,36 +182,6 @@ export default function SettlementClient({
             ))}
             {balances.length === 0 && (
               <p className="text-center text-sm text-gray-500 py-8">No transactions yet.</p>
-            )}
-          </div>
-        )}
-
-        {/* Expenses */}
-        {activeTab === 'expenses' && (
-          <div className="space-y-3">
-            <AddExpenseForm tripId={tripId} tripPlayers={tripPlayers} />
-            {expenses.map((exp) => {
-              const payer = exp.paid_by
-                ? Array.isArray(exp.paid_by.player)
-                  ? exp.paid_by.player[0]
-                  : exp.paid_by.player
-                : null
-              return (
-                <div key={exp.id} className="rounded-lg bg-white border border-gray-200 p-3 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">{exp.description}</p>
-                      <p className="text-xs text-gray-500">
-                        Paid by {((payer as { name: string } | null)?.name || 'Unknown').split(' ')[0]} &middot; {exp.category}
-                      </p>
-                    </div>
-                    <span className="font-bold text-gray-900">${exp.amount}</span>
-                  </div>
-                </div>
-              )
-            })}
-            {expenses.length === 0 && (
-              <p className="text-center text-sm text-gray-500 py-4">No expenses recorded yet.</p>
             )}
           </div>
         )}
@@ -395,158 +356,3 @@ function WalletTab({ tripId, currentPlayerId, settledAt }: { tripId: string; cur
   )
 }
 
-function AddExpenseForm({ tripId, tripPlayers }: { tripId: string; tripPlayers: { id: string; name: string }[] }) {
-  const [open, setOpen] = useState(false)
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
-  const [category, setCategory] = useState('other')
-  const [paidBy, setPaidBy] = useState(tripPlayers[0]?.id || '')
-  const [saving, setSaving] = useState(false)
-  const [splitMode, setSplitMode] = useState<'even' | 'custom'>('even')
-  const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set(tripPlayers.map(tp => tp.id)))
-
-  if (!open) {
-    return (
-      <button onClick={() => setOpen(true)}
-        className="w-full rounded-lg border-2 border-dashed border-gray-300 py-3 text-sm text-gray-500 hover:border-golf-500 hover:text-golf-700">
-        + Add Expense
-      </button>
-    )
-  }
-
-  function togglePlayer(id: string) {
-    setSelectedPlayers(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  async function handleSubmit() {
-    if (!description || !amount || !paidBy) return
-    const splitAmong = splitMode === 'custom' ? [...selectedPlayers] : undefined
-    if (splitMode === 'custom' && selectedPlayers.size < 1) return
-    setSaving(true)
-    try {
-      await fetch(`/api/trips/${tripId}/expenses`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          description,
-          amount: parseFloat(amount),
-          category,
-          paid_by_trip_player_id: paidBy,
-          split_among: splitAmong,
-        }),
-      })
-      setOpen(false)
-      setDescription('')
-      setAmount('')
-      window.location.reload()
-    } catch {
-      // ignore
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const perPerson = amount && splitMode === 'custom' && selectedPlayers.size > 0
-    ? (parseFloat(amount) / selectedPlayers.size).toFixed(2)
-    : amount ? (parseFloat(amount) / tripPlayers.length).toFixed(2) : null
-
-  return (
-    <div className="rounded-lg bg-golf-50 border border-golf-200 p-4 space-y-3">
-      <input
-        placeholder="What was it for?"
-        value={description}
-        onChange={e => setDescription(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-      />
-      <div className="flex gap-2">
-        <input
-          type="number"
-          placeholder="$"
-          value={amount}
-          onChange={e => setAmount(e.target.value)}
-          className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-        <select
-          value={category}
-          onChange={e => setCategory(e.target.value)}
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-        >
-          {['lodging', 'food', 'transport', 'golf', 'entertainment', 'other'].map(c =>
-            <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-          )}
-        </select>
-      </div>
-      <select
-        value={paidBy}
-        onChange={e => setPaidBy(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-      >
-        {tripPlayers.map(tp =>
-          <option key={tp.id} value={tp.id}>{tp.name}</option>
-        )}
-      </select>
-
-      {/* Split mode toggle */}
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => { setSplitMode('even'); setSelectedPlayers(new Set(tripPlayers.map(tp => tp.id))) }}
-            className={`flex-1 rounded-md py-1.5 text-xs font-medium ${
-              splitMode === 'even' ? 'bg-golf-700 text-white' : 'bg-white border border-gray-300 text-gray-600'
-            }`}
-          >
-            Split evenly
-          </button>
-          <button
-            type="button"
-            onClick={() => setSplitMode('custom')}
-            className={`flex-1 rounded-md py-1.5 text-xs font-medium ${
-              splitMode === 'custom' ? 'bg-golf-700 text-white' : 'bg-white border border-gray-300 text-gray-600'
-            }`}
-          >
-            Custom split
-          </button>
-        </div>
-        {splitMode === 'custom' && (
-          <div className="space-y-1">
-            {tripPlayers.map(tp => (
-              <label key={tp.id} className="flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={selectedPlayers.has(tp.id)}
-                  onChange={() => togglePlayer(tp.id)}
-                  className="rounded border-gray-300 text-golf-700"
-                />
-                {tp.name}
-              </label>
-            ))}
-            {perPerson && (
-              <p className="text-xs text-gray-500">
-                ${perPerson}/person ({selectedPlayers.size} player{selectedPlayers.size !== 1 ? 's' : ''})
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-2">
-        <button
-          onClick={handleSubmit}
-          disabled={saving || !description || !amount || !paidBy || (splitMode === 'custom' && selectedPlayers.size < 1)}
-          className="flex-1 rounded-md bg-golf-700 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {saving ? 'Adding...' : 'Add Expense'}
-        </button>
-        <button onClick={() => setOpen(false)} className="rounded-md px-3 py-2 text-sm text-gray-500">
-          Cancel
-        </button>
-      </div>
-    </div>
-  )
-}

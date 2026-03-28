@@ -19,8 +19,8 @@ export default async function SettlementPage({
 
   if (!trip) notFound()
 
-  // Fetch ledger entries + player names (with user_id) + expenses in parallel
-  const [entriesRes, playersRes, expensesRes] = await Promise.all([
+  // Fetch ledger entries + player names (with user_id) in parallel
+  const [entriesRes, playersRes] = await Promise.all([
     supabase
       .from('settlement_ledger')
       .select('*')
@@ -30,11 +30,6 @@ export default async function SettlementPage({
       .from('trip_players')
       .select('id, player:players(name, user_id)')
       .eq('trip_id', tripId),
-    supabase
-      .from('trip_expenses')
-      .select('*, paid_by:trip_players!paid_by_trip_player_id(id, player:players(name))')
-      .eq('trip_id', tripId)
-      .order('created_at', { ascending: false }),
   ])
 
   const playerNames = new Map<string, string>()
@@ -99,7 +94,6 @@ export default async function SettlementPage({
       tripName={trip.name}
       balances={balances}
       payments={paymentsWithLinks}
-      expenses={expensesRes.data || []}
       tripPlayers={(playersRes.data || []).map(tp => {
         const player = Array.isArray(tp.player) ? tp.player[0] : tp.player
         return { id: tp.id, name: ((player as { name: string } | null)?.name || 'Unknown').split(' ')[0] }

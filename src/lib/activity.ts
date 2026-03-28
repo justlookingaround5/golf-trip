@@ -5,9 +5,9 @@ import { sendPushToTrip } from '@/lib/push'
 
 const DEFAULT_ICONS: Record<ActivityEventType, string> = {
   score_posted: '📝', birdie: '🐦', eagle: '🦅', skin_won: '💰',
-  game_result: '🏆', lead_change: '🔄', press: '⚡', side_bet_hit: '🎯',
+  game_result: '🏆', lead_change: '🔄', press: '⚡',
   photo: '📸', round_started: '🏌️', round_finalized: '✅',
-  player_joined: '👋', expense_added: '💵', custom: '📣',
+  player_joined: '👋', custom: '📣',
 }
 
 /**
@@ -51,7 +51,7 @@ export async function postActivity(params: {
   }
 
   // Fire-and-forget push notification for notable events
-  const pushEvents: ActivityEventType[] = ['birdie', 'eagle', 'skin_won', 'game_result', 'round_started', 'side_bet_hit']
+  const pushEvents: ActivityEventType[] = ['birdie', 'eagle', 'skin_won', 'game_result', 'round_started']
   if (pushEvents.includes(params.event_type)) {
     sendPushToTrip({
       tripId: params.trip_id,

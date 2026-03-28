@@ -40,6 +40,7 @@ export interface GolfCourseDetail {
     male: GolfCourseTeeBox[]
     female: GolfCourseTeeBox[]
   }
+  website?: string
 }
 
 async function searchCoursesRaw(query: string, apiKey: string): Promise<GolfCourseSearchResult[]> {

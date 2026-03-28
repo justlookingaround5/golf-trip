@@ -1,15 +1,16 @@
 'use client'
 
 import { useEffect } from 'react'
-import posthog from 'posthog-js'
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-      posthog.capture('client_error', {
-        error_message: error.message,
-        error_digest: error.digest,
-        page: window.location.pathname,
+    if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+      import('posthog-js').then(({ default: posthog }) => {
+        posthog.capture('client_error', {
+          error_message: error.message,
+          error_digest: error.digest,
+          page: window.location.pathname,
+        })
       })
     }
   }, [error])

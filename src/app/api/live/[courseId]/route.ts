@@ -76,19 +76,6 @@ export async function GET(
         .in('round_game_id', roundGameIds)
     : { data: [] }
 
-  // Fetch side bets for this trip
-  const { data: sideBets } = await supabase
-    .from('side_bets')
-    .select('*')
-    .eq('trip_id', course.trip_id)
-    .eq('active', true)
-
-  // Fetch side bet hits for this course
-  const { data: sideBetHits } = await supabase
-    .from('side_bet_hits')
-    .select('*')
-    .eq('course_id', courseId)
-
   // Fetch recent activity feed for this course
   const { data: activityFeed } = await supabase
     .from('activity_feed')
@@ -109,6 +96,34 @@ export async function GET(
     return player?.user_id === user.id
   })
 
+  // Find the current user's match on this course
+  let matchInfo: { id: string; format: string; pointValue: number; playerTpIds: string[]; teamA: string[]; teamB: string[] } | null = null
+  if (currentTripPlayer) {
+    const { data: matchRows } = await supabase
+      .from('matches')
+      .select('id, format, point_value, match_players(trip_player_id, side)')
+      .eq('course_id', courseId)
+
+    if (matchRows) {
+      const userMatch = matchRows.find(m =>
+        (m.match_players ?? []).some(
+          (mp: { trip_player_id: string }) => mp.trip_player_id === currentTripPlayer.id
+        )
+      )
+      if (userMatch) {
+        const players = (userMatch.match_players ?? []) as { trip_player_id: string; side: string }[]
+        matchInfo = {
+          id: userMatch.id,
+          format: userMatch.format,
+          pointValue: userMatch.point_value ?? 1,
+          playerTpIds: players.map(mp => mp.trip_player_id),
+          teamA: players.filter(mp => mp.side === 'team_a').map(mp => mp.trip_player_id),
+          teamB: players.filter(mp => mp.side === 'team_b').map(mp => mp.trip_player_id),
+        }
+      }
+    }
+  }
+
   // Fetch player round tees
   const tripPlayerIds = (tripPlayers || []).map(tp => tp.id)
   const { data: playerTees } = tripPlayerIds.length > 0
@@ -127,12 +142,12 @@ export async function GET(
     courseHandicaps: courseHandicaps || [],
     roundGames: roundGames || [],
     gameResults: gameResults || [],
-    sideBets: sideBets || [],
-    sideBetHits: sideBetHits || [],
     activityFeed: activityFeed || [],
     currentTripPlayerId: currentTripPlayer?.id || null,
     playerTees: playerTees || [],
     roundStats: roundStats || [],
+    matchInfo: matchInfo,
     isQuickRound: trip?.is_quick_round || false,
+    ...((tripPlayers || []).length > 4 ? { warning: 'More than 4 players detected. Maximum 4 players per scorecard.' } : {}),
   })
 }

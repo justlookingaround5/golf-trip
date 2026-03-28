@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ActionSheet from './ActionSheet'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -16,14 +16,15 @@ const HomeIcon = () => (
 
 const MessagesIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
   </svg>
 )
 
-const SettingsIcon = () => (
+const CoursesIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+    <line x1="4" y1="22" x2="4" y2="15" />
   </svg>
 )
 
@@ -36,12 +37,14 @@ const ProfileIcon = () => (
 
 // ─── Nav items (null = + button placeholder) ──────────────────────────────────
 
+const HIDE_ON = ['/admin', '/auth', '/score/', '/join', '/courses/', '/messages/']
+
 const NAV = [
-  { href: '/v2',          label: 'Home',     Icon: HomeIcon     },
-  { href: '/v2/messages', label: 'Messages', Icon: MessagesIcon },
+  { href: '/',          label: 'Home',     Icon: HomeIcon     },
+  { href: '/messages', label: 'Messages', Icon: MessagesIcon },
   null, // + button
-  { href: '/v2/profile',  label: 'Profile',  Icon: ProfileIcon  },
-  { href: '/v2/settings', label: 'Settings', Icon: SettingsIcon },
+  { href: '/courses',  label: 'Courses',  Icon: CoursesIcon  },
+  { href: '/profile',  label: 'Profile',  Icon: ProfileIcon  },
 ] as const
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -49,13 +52,20 @@ const NAV = [
 export default function AppChromeV2() {
   const pathname = usePathname()
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [hasActiveRound, setHasActiveRound] = useState(false)
 
-  // STUB: replace with real active-round check
-  const hasActiveRound = true
+  useEffect(() => {
+    fetch('/api/quick-round/active')
+      .then(res => res.ok ? res.json() : { active: false })
+      .then(data => setHasActiveRound(data.active))
+      .catch(() => {})
+  }, [pathname])
+
+  if (HIDE_ON.some((p) => pathname.startsWith(p))) return null
 
   const isActive = (href: string) => {
-    if (href === '/v2') return pathname === '/v2'
-    if (href === '/v2/profile') return pathname.startsWith('/v2/profile') || pathname.startsWith('/v2/stats')
+    if (href === '/') return pathname === '/'
+    if (href === '/profile') return pathname.startsWith('/profile') || pathname.startsWith('/stats') || pathname.startsWith('/settings')
     return pathname.startsWith(href)
   }
 

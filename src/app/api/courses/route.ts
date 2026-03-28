@@ -20,17 +20,21 @@ export async function POST(request: NextRequest) {
   }
 
   // Create the course
+  const insertData: Record<string, unknown> = {
+    trip_id: body.trip_id,
+    name: body.name,
+    slope: body.slope ?? null,
+    rating: body.rating ?? null,
+    par: body.par ?? 72,
+    round_number: body.round_number,
+    round_date: body.round_date ?? null,
+  }
+  if (body.golf_course_api_id) insertData.golf_course_api_id = body.golf_course_api_id
+  if (body.tee_boxes) insertData.tee_boxes = body.tee_boxes
+
   const { data: course, error: courseError } = await supabase
     .from('courses')
-    .insert({
-      trip_id: body.trip_id,
-      name: body.name,
-      slope: body.slope ?? null,
-      rating: body.rating ?? null,
-      par: body.par ?? 72,
-      round_number: body.round_number,
-      round_date: body.round_date ?? null,
-    })
+    .insert(insertData)
     .select()
     .single()
 

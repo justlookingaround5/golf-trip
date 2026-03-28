@@ -60,6 +60,11 @@ export async function PUT(request: NextRequest) {
   if (body.venmo_username !== undefined) updates.venmo_username = body.venmo_username
   if (body.cashapp_cashtag !== undefined) updates.cashapp_cashtag = body.cashapp_cashtag
   if (body.zelle_email !== undefined) updates.zelle_email = body.zelle_email
+  if (body.location !== undefined) updates.location = body.location
+  if (body.onboarding_completed !== undefined) updates.onboarding_completed = body.onboarding_completed
+  if (body.avatar_url !== undefined) updates.avatar_url = body.avatar_url
+  if (body.home_club_latitude !== undefined) updates.home_club_latitude = body.home_club_latitude
+  if (body.home_club_longitude !== undefined) updates.home_club_longitude = body.home_club_longitude
 
   const { data: profile, error } = await supabase
     .from('player_profiles')

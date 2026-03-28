@@ -194,11 +194,10 @@ export const MATCH_FORMAT_LABELS: Record<MatchFormat, string> = {
 // Game Engine Types
 // ============================================================================
 
-export type ScoringType = 'points' | 'match' | 'strokes' | 'dots' | 'side_bet'
+export type ScoringType = 'points' | 'match' | 'strokes' | 'dots'
 export type GameScope = 'foursome' | 'group'
 export type RoundGameStatus = 'setup' | 'active' | 'finalized' | 'cancelled'
-export type SideBetType = 'birdie' | 'eagle' | 'greenie' | 'sandie' | 'barkie' | 'chippie' | 'arnie' | 'custom'
-export type SettlementSourceType = 'game_result' | 'side_bet' | 'expense' | 'adjustment'
+export type SettlementSourceType = 'game_result' | 'adjustment'
 
 export interface GameFormat {
   id: string
@@ -253,26 +252,6 @@ export interface GameResult {
   money: number
   details: Record<string, unknown>
   computed_at: string
-}
-
-export interface SideBet {
-  id: string
-  trip_id: string
-  bet_type: SideBetType
-  custom_label: string | null
-  value: number
-  active: boolean
-  created_at: string
-}
-
-export interface SideBetHit {
-  id: string
-  side_bet_id: string
-  trip_player_id: string
-  hole_id: string
-  course_id: string
-  metadata: Record<string, unknown>
-  created_at: string
 }
 
 export interface SettlementEntry {
@@ -446,14 +425,14 @@ export interface ScorecardPreferences {
 }
 
 // ============================================================================
-// Activity Feed & Expenses Types
+// Activity Feed Types
 // ============================================================================
 
 export type ActivityEventType =
   | 'score_posted' | 'birdie' | 'eagle' | 'skin_won'
-  | 'game_result' | 'lead_change' | 'press' | 'side_bet_hit'
+  | 'game_result' | 'lead_change' | 'press'
   | 'photo' | 'round_started' | 'round_finalized'
-  | 'player_joined' | 'expense_added' | 'custom'
+  | 'player_joined' | 'custom'
 
 export interface ActivityFeedItem {
   id: string
@@ -468,23 +447,6 @@ export interface ActivityFeedItem {
   icon: string
   photo_url: string | null
   metadata: Record<string, unknown>
-  created_at: string
-}
-
-export type ExpenseCategory = 'lodging' | 'food' | 'transport' | 'golf' | 'entertainment' | 'other'
-
-export interface TripExpense {
-  id: string
-  trip_id: string
-  description: string
-  category: ExpenseCategory
-  amount: number
-  paid_by_trip_player_id: string
-  split_among: string[] | null
-  split_method: 'even' | 'custom'
-  custom_splits: Record<string, number> | null
-  receipt_url: string | null
-  created_by: string | null
   created_at: string
 }
 
@@ -542,7 +504,7 @@ export interface CompetitionMatch {
 // Social Engagement Types
 // ============================================================================
 
-export type ReactionEmoji = '🔥' | '👏' | '😂' | '💀' | '⛳' | '💰'
+export type ReactionEmoji = '🔥' | '😂' | '💀' | '⛳' | '💰' | '🏆' | '🎯' | '😤'
 
 export interface ActivityReaction {
   id: string

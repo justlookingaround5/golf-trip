@@ -51,12 +51,12 @@ export default function FeedItemCard({ item }: FeedItemCardProps) {
     <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
       {/* Header: avatar + name + timestamp */}
       <div className="flex items-center gap-3 mb-2.5">
-        <Link href={`/v2/profile/${item.userId}`} className="shrink-0">
+        <Link href={`/profile/${item.userId}`} className="shrink-0">
           <Avatar name={item.userName} url={item.userAvatarUrl} />
         </Link>
         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
           <Link
-            href={`/v2/profile/${item.userId}`}
+            href={`/profile/${item.userId}`}
             className="text-sm font-semibold text-gray-900 hover:text-golf-700 transition"
           >
             {item.userName.split(' ')[0]}
@@ -92,7 +92,7 @@ export default function FeedItemCard({ item }: FeedItemCardProps) {
             </>
           )
           return roundId ? (
-            <Link href={`/v2/scorecard/${roundId}`} className="flex items-start gap-2 hover:opacity-80 transition">
+            <Link href={`/scorecard/${roundId}`} className="flex items-start gap-2 hover:opacity-80 transition">
               {inner}
             </Link>
           ) : (
@@ -126,7 +126,7 @@ export default function FeedItemCard({ item }: FeedItemCardProps) {
       {/* Quick message */}
       <div className="mt-3 flex justify-end">
         <Link
-          href={`/v2/messages/${item.userId}`}
+          href={`/messages/${item.userId}`}
           className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-500 hover:border-golf-400 hover:text-golf-700 transition"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

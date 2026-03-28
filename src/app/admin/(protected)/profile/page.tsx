@@ -16,6 +16,7 @@ interface Profile {
   venmo_username: string | null
   cashapp_cashtag: string | null
   zelle_email: string | null
+  location: string | null
 }
 
 interface ClubSearchResult {
@@ -25,6 +26,8 @@ interface ClubSearchResult {
   location: {
     city: string
     state: string
+    latitude?: number
+    longitude?: number
   }
 }
 
@@ -42,11 +45,15 @@ export default function ProfilePage() {
   const [homeClubLogoUrl, setHomeClubLogoUrl] = useState('')
   const [preferredTee, setPreferredTee] = useState('')
   const [bio, setBio] = useState('')
+  const [location, setLocation] = useState('')
   const [venmoUsername, setVenmoUsername] = useState('')
   const [cashappCashtag, setCashappCashtag] = useState('')
   const [zelleEmail, setZelleEmail] = useState('')
 
   // Club search state
+  const [homeClubLat, setHomeClubLat] = useState<number | null>(null)
+  const [homeClubLon, setHomeClubLon] = useState<number | null>(null)
+
   const [clubSearchQuery, setClubSearchQuery] = useState('')
   const [clubSearchResults, setClubSearchResults] = useState<ClubSearchResult[]>([])
   const [clubSearchLoading, setClubSearchLoading] = useState(false)
@@ -68,6 +75,9 @@ export default function ProfilePage() {
         setHandicapIndex(data.handicap_index != null ? String(data.handicap_index) : '')
         setHomeClub(data.home_club || '')
         setHomeClubLogoUrl(data.home_club_logo_url || '')
+        setHomeClubLat(data.home_club_latitude ?? null)
+        setHomeClubLon(data.home_club_longitude ?? null)
+        setLocation(data.location || '')
         setPreferredTee(data.preferred_tee || '')
         setBio(data.bio || '')
         setVenmoUsername(data.venmo_username || '')
@@ -131,6 +141,12 @@ export default function ProfilePage() {
     setClubSearchQuery('')
     setHomeClub(result.club_name)
 
+    // Save coordinates from search result
+    if (result.location?.latitude != null && result.location?.longitude != null) {
+      setHomeClubLat(result.location.latitude)
+      setHomeClubLon(result.location.longitude)
+    }
+
     // Try to find a logo using Google's favicon service
     // Guess the domain from the club name (e.g., "Hawkshead" → "hawkshead.com")
     const domain = result.club_name
@@ -160,6 +176,9 @@ export default function ProfilePage() {
           handicap_index: handicapIndex ? parseFloat(handicapIndex) : null,
           home_club: homeClub || null,
           home_club_logo_url: homeClubLogoUrl || null,
+          home_club_latitude: homeClubLat,
+          home_club_longitude: homeClubLon,
+          location: location || null,
           preferred_tee: preferredTee || null,
           bio: bio || null,
           venmo_username: venmoUsername || null,
@@ -253,6 +272,20 @@ export default function ProfilePage() {
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="location" className="mb-1 block text-sm font-medium text-gray-700">
+            Location
+          </label>
+          <input
+            id="location"
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="City, State"
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-golf-500 focus:outline-none focus:ring-1 focus:ring-golf-500"
           />
         </div>

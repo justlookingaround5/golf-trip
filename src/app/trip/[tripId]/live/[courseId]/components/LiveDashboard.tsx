@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import type { ActivityFeedItem, GameResult, SideBet, SideBetHit } from '@/lib/types'
+import type { ActivityFeedItem } from '@/lib/types'
 
-type Tab = 'leaderboard' | 'games' | 'feed' | 'side_bets'
+type Tab = 'leaderboard' | 'games' | 'feed'
 
 interface LeaderboardEntry {
   tripPlayerId: string
@@ -34,8 +34,6 @@ interface LiveDashboardProps {
   leaderboard: LeaderboardEntry[]
   games: GameInfo[]
   feed: ActivityFeedItem[]
-  sideBets: SideBet[]
-  sideBetHits: (SideBetHit & { playerName?: string; holeNumber?: number })[]
   coursePar: number
   isQuickRound?: boolean
 }
@@ -44,8 +42,6 @@ export default function LiveDashboard({
   leaderboard,
   games,
   feed,
-  sideBets,
-  sideBetHits,
   coursePar,
   isQuickRound,
 }: LiveDashboardProps) {
@@ -55,7 +51,6 @@ export default function LiveDashboard({
     { key: 'leaderboard', label: 'Board' },
     { key: 'games', label: 'Games' },
     { key: 'feed', label: 'Feed' },
-    { key: 'side_bets', label: 'Bets' },
   ]
 
   // Hide games and bets tabs for quick rounds
@@ -92,9 +87,6 @@ export default function LiveDashboard({
         )}
         {activeTab === 'feed' && (
           <FeedTab feed={feed} />
-        )}
-        {activeTab === 'side_bets' && (
-          <SideBetsTab sideBets={sideBets} hits={sideBetHits} />
         )}
       </div>
     </div>
@@ -201,47 +193,6 @@ function FeedTab({ feed }: { feed: ActivityFeedItem[] }) {
           </div>
         </div>
       ))}
-    </div>
-  )
-}
-
-function SideBetsTab({ sideBets, hits }: {
-  sideBets: SideBet[]
-  hits: (SideBetHit & { playerName?: string; holeNumber?: number })[]
-}) {
-  if (sideBets.length === 0) {
-    return <p className="text-sm text-gray-500 text-center py-4">No side bets active</p>
-  }
-
-  return (
-    <div className="space-y-3">
-      {sideBets.map(bet => {
-        const betHits = hits.filter(h => h.side_bet_id === bet.id)
-        return (
-          <div key={bet.id} className="rounded-lg border border-gray-200 p-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-bold text-gray-900 capitalize">
-                {bet.custom_label || bet.bet_type}
-              </span>
-              <span className="text-xs font-medium text-golf-700">${bet.value}</span>
-            </div>
-            {betHits.length > 0 ? (
-              <div className="space-y-0.5">
-                {betHits.map(hit => (
-                  <div key={hit.id} className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600">
-                      {hit.playerName || 'Player'} - Hole {hit.holeNumber || '?'}
-                    </span>
-                    <span className="font-medium text-green-600">+${bet.value}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400">No hits yet</p>
-            )}
-          </div>
-        )
-      })}
     </div>
   )
 }

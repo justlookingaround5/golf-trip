@@ -242,12 +242,24 @@ export function calculateLeaderboard(params: {
     const matchScores = scores.filter(s => s.match_id === match.id)
     if (matchScores.length === 0) continue
 
-    // Build player strokes map for this match
-    const playerStrokesMap = buildPlayerStrokesMap(
+    // Build player strokes map for this match (adjusted relative to low player)
+    const rawStrokesMap = buildPlayerStrokesMap(
       match.course_id,
       allHoles,
       courseHandicaps
     )
+    const matchTpIds = match.match_players.map(mp => mp.trip_player_id)
+    const matchRawStrokes = matchTpIds.map(id => {
+      const ch = courseHandicaps.find(c => c.trip_player_id === id && c.course_id === match.course_id)
+      return ch?.handicap_strokes ?? 0
+    })
+    const minStrokes = matchRawStrokes.length > 0 ? Math.min(...matchRawStrokes) : 0
+    const playerStrokesMap = new Map<string, Map<number, number>>()
+    for (const mp of match.match_players) {
+      const ch = courseHandicaps.find(c => c.trip_player_id === mp.trip_player_id && c.course_id === match.course_id)
+      const raw = ch?.handicap_strokes ?? 0
+      playerStrokesMap.set(mp.trip_player_id, getStrokesPerHole(Math.max(0, raw - minStrokes), courseHoles))
+    }
 
     // Calculate match result
     const result = calculateMatchPlay(
@@ -351,11 +363,15 @@ export function calculateTeamStandings(params: {
     const matchScores = scores.filter(s => s.match_id === match.id)
     if (matchScores.length === 0) continue
 
-    const playerStrokesMap = buildPlayerStrokesMap(
-      match.course_id,
-      allHoles,
-      courseHandicaps
-    )
+    const playerStrokesMap = new Map<string, Map<number, number>>()
+    const matchRawStrokes2 = match.match_players.map(mp => {
+      const ch = courseHandicaps.find(c => c.trip_player_id === mp.trip_player_id && c.course_id === match.course_id)
+      return { id: mp.trip_player_id, strokes: ch?.handicap_strokes ?? 0 }
+    })
+    const minStrokes2 = matchRawStrokes2.length > 0 ? Math.min(...matchRawStrokes2.map(p => p.strokes)) : 0
+    for (const { id, strokes } of matchRawStrokes2) {
+      playerStrokesMap.set(id, getStrokesPerHole(Math.max(0, strokes - minStrokes2), courseHoles))
+    }
 
     const result = calculateMatchPlay(
       matchScores,

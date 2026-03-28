@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AdminLoginPage() {
@@ -59,7 +60,7 @@ function AdminLoginForm() {
       return
     }
 
-    router.push(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/admin')
+    router.push(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/')
   }
 
   return (
@@ -152,6 +153,16 @@ function AdminLoginForm() {
             {loading ? 'Signing in...' : 'Sign In with Email'}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Don&apos;t have an account?{' '}
+          <Link
+            href={redirectTo ? `/auth/signup?redirect_to=${encodeURIComponent(redirectTo)}` : '/auth/signup'}
+            className="font-medium text-golf-700 hover:text-golf-800"
+          >
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   )

@@ -192,17 +192,17 @@ export default function ScorerPage() {
     [teamAPlayers, teamBPlayers]
   )
 
-  // Build the playerStrokes map for match play calculator
+  // Build the playerStrokes map for match play calculator (adjusted relative to low player)
   const playerStrokesMap = useMemo(() => {
     if (!data) return new Map<string, Map<number, number>>()
+    const rawStrokes = data.matchPlayers.map(mp => {
+      const ch = data.courseHandicaps.find(c => c.trip_player_id === mp.trip_player_id)
+      return { id: mp.trip_player_id, strokes: ch?.handicap_strokes ?? 0 }
+    })
+    const minStrokes = rawStrokes.length > 0 ? Math.min(...rawStrokes.map(p => p.strokes)) : 0
     const map = new Map<string, Map<number, number>>()
-    for (const mp of data.matchPlayers) {
-      const ch = data.courseHandicaps.find(
-        (c) => c.trip_player_id === mp.trip_player_id
-      )
-      const handicapStrokes = ch?.handicap_strokes ?? 0
-      const strokesMap = getStrokesPerHole(handicapStrokes, data.holes)
-      map.set(mp.trip_player_id, strokesMap)
+    for (const { id, strokes } of rawStrokes) {
+      map.set(id, getStrokesPerHole(Math.max(0, strokes - minStrokes), data.holes))
     }
     return map
   }, [data])

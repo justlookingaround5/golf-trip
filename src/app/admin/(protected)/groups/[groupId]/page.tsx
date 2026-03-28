@@ -270,7 +270,7 @@ export default function GroupDetailPage() {
     return (
       <div className="mx-auto max-w-lg py-12 text-center">
         <h2 className="text-xl font-bold text-gray-900">Group not found</h2>
-        <Link href="/home" className="mt-4 inline-block text-sm text-golf-700 hover:underline">
+        <Link href="/" className="mt-4 inline-block text-sm text-golf-700 hover:underline">
           Back to Home
         </Link>
       </div>
@@ -281,7 +281,7 @@ export default function GroupDetailPage() {
     <div className="mx-auto max-w-2xl">
       {/* Header */}
       <div className="mb-6">
-        <Link href="/home" className="text-sm text-golf-700 hover:underline">
+        <Link href="/" className="text-sm text-golf-700 hover:underline">
           &larr; Back to Home
         </Link>
       </div>

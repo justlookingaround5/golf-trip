@@ -18,7 +18,7 @@ export default async function HomeLayout({
   // Ensure profile exists
   let { data: profile } = await supabase
     .from('player_profiles')
-    .select('display_name, avatar_url')
+    .select('display_name, avatar_url, onboarding_completed')
     .eq('user_id', user.id)
     .single()
 
@@ -37,7 +37,11 @@ export default async function HomeLayout({
       avatar_url: avatarUrl,
     })
 
-    profile = { display_name: displayName, avatar_url: avatarUrl }
+    profile = { display_name: displayName, avatar_url: avatarUrl, onboarding_completed: false }
+  }
+
+  if (!profile.onboarding_completed) {
+    redirect('/onboarding')
   }
 
   // Find today's active round for the Live Scoring nav link

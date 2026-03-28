@@ -26,7 +26,7 @@ export default function MatchCard({ match }: MatchCardProps) {
   const isDone = match.status === 'completed'
 
   return (
-    <Link href={`/v2/match/${match.id}`}>
+    <Link href={`/match/${match.id}`}>
       <div className={`rounded-xl border bg-white shadow-sm active:bg-gray-50 transition cursor-pointer ${
         isLive ? 'border-yellow-300' : 'border-gray-200'
       }`}>

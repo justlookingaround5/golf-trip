@@ -46,6 +46,7 @@ interface Friend {
   displayName: string
   avatarUrl: string | null
   handicap: number | null
+  hasActiveRound?: boolean
 }
 
 interface GameFormat {
@@ -76,8 +77,6 @@ export default function QuickRoundClient({
   const [courseResults, setCourseResults] = useState<CourseResult[]>([])
   const [searching, setSearching] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<CourseResult | null>(null)
-  const [manualCourse, setManualCourse] = useState('')
-  const [useManual, setUseManual] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
   // Course detail / tee state
@@ -112,7 +111,7 @@ export default function QuickRoundClient({
   useEffect(() => {
     if (!showAddPicker || friendsLoaded) return
     setLoadingFriends(true)
-    fetch(`/api/friends?userId=${userId}`)
+    fetch(`/api/friends?userId=${userId}&includeActiveRounds=true`)
       .then(r => r.ok ? r.json() : { friends: [] })
       .then(data => { setFriends(data.friends || []); setFriendsLoaded(true) })
       .catch(() => setFriendsLoaded(true))
@@ -146,7 +145,6 @@ export default function QuickRoundClient({
     setCourseQuery(value)
     setSelectedCourse(null)
     setCourseDetail(null)
-    setUseManual(false)
 
     if (searchTimeoutRef[0]) clearTimeout(searchTimeoutRef[0])
     const timeout = setTimeout(() => searchCourses(value), 400)
@@ -157,7 +155,6 @@ export default function QuickRoundClient({
     setSelectedCourse(course)
     setCourseQuery(course.course_name || course.club_name)
     setCourseResults([])
-    setUseManual(false)
     setCourseDetail(null)
     setLoadingDetail(true)
     posthog.capture('course_selected', { course_name: course.course_name || course.club_name, source: 'search' })
@@ -172,15 +169,6 @@ export default function QuickRoundClient({
     } finally {
       setLoadingDetail(false)
     }
-  }
-
-  function useManualCourse() {
-    setUseManual(true)
-    setManualCourse(courseQuery)
-    setCourseResults([])
-    setSelectedCourse(null)
-    setCourseDetail(null)
-    posthog.capture('course_selected', { course_name: courseQuery, source: 'manual' })
   }
 
   function openAddPicker() {
@@ -267,12 +255,10 @@ export default function QuickRoundClient({
 
   const courseName = selectedCourse
     ? selectedCourse.course_name || selectedCourse.club_name
-    : useManual
-      ? manualCourse
-      : ''
+    : ''
 
   const canSubmit =
-    courseName.trim().length > 0 &&
+    !!selectedCourse &&
     players.every(p => p.name.trim().length > 0) &&
     teamsValid &&
     !submitting
@@ -335,7 +321,7 @@ export default function QuickRoundClient({
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-28">
       {/* Header */}
       <header className="bg-golf-800 px-4 py-4 text-white shadow-md">
         <div className="mx-auto flex max-w-lg items-center justify-between">
@@ -344,7 +330,7 @@ export default function QuickRoundClient({
             <p className="text-sm text-golf-200">Start scoring in seconds</p>
           </div>
           <Link
-            href="/home"
+            href="/"
             className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
           >
             Cancel
@@ -433,27 +419,6 @@ export default function QuickRoundClient({
                 </div>
               )}
             </div>
-          ) : useManual ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between rounded-lg border-2 border-golf-500 bg-golf-50 p-3">
-                <input
-                  type="text"
-                  value={manualCourse}
-                  onChange={e => setManualCourse(e.target.value)}
-                  className="w-full bg-transparent font-semibold text-gray-900 outline-none"
-                  placeholder="Course name"
-                />
-                <button
-                  onClick={() => { setUseManual(false); setManualCourse(''); setCourseQuery('') }}
-                  className="ml-3 text-sm font-medium text-golf-700 hover:text-golf-900"
-                >
-                  Change
-                </button>
-              </div>
-              <p className="text-xs text-gray-400">
-                Using generic par-72 layout. You can still score all 18 holes.
-              </p>
-            </div>
           ) : (
             <div className="space-y-2">
               <div className="relative">
@@ -487,21 +452,9 @@ export default function QuickRoundClient({
               )}
 
               {hasSearched && !searching && courseQuery.length >= 3 && courseResults.length === 0 && (
-                <button
-                  onClick={useManualCourse}
-                  className="w-full rounded-lg border border-dashed border-gray-300 px-4 py-3 text-left text-sm text-gray-600 hover:border-golf-400 hover:bg-golf-50"
-                >
-                  Course not found? Use &ldquo;{courseQuery}&rdquo; as course name
-                </button>
-              )}
-
-              {courseResults.length > 0 && courseQuery.length >= 3 && (
-                <button
-                  onClick={useManualCourse}
-                  className="w-full text-center text-xs text-gray-400 hover:text-golf-600"
-                >
-                  Or use &ldquo;{courseQuery}&rdquo; as a custom course name
-                </button>
+                <p className="text-sm text-gray-400 text-center py-3">
+                  No courses found. Try a different search.
+                </p>
               )}
             </div>
           )}
@@ -789,8 +742,13 @@ export default function QuickRoundClient({
                     .map(friend => (
                       <button
                         key={friend.userId}
-                        onClick={() => addFriendPlayer(friend)}
-                        className="flex w-full items-center gap-3 rounded-lg border border-gray-200 p-3 text-left hover:bg-golf-50"
+                        onClick={() => !friend.hasActiveRound && addFriendPlayer(friend)}
+                        disabled={friend.hasActiveRound}
+                        className={`flex w-full items-center gap-3 rounded-lg border border-gray-200 p-3 text-left ${
+                          friend.hasActiveRound
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'hover:bg-golf-50'
+                        }`}
                       >
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-golf-200 overflow-hidden">
                           {friend.avatarUrl ? (
@@ -801,11 +759,13 @@ export default function QuickRoundClient({
                             </span>
                           )}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-gray-900">{friend.displayName}</p>
-                          {friend.handicap != null && (
+                          {friend.hasActiveRound ? (
+                            <p className="text-xs text-amber-600">Currently in a round</p>
+                          ) : friend.handicap != null ? (
                             <p className="text-xs text-gray-500">Handicap {friend.handicap}</p>
-                          )}
+                          ) : null}
                         </div>
                       </button>
                     ))}
@@ -819,7 +779,7 @@ export default function QuickRoundClient({
             {!loadingFriends && friends.length === 0 && friendsLoaded && (
               <div className="mb-4 rounded-lg bg-gray-50 px-4 py-3 text-xs text-gray-500">
                 No friends yet.{' '}
-                <Link href="/home" className="text-golf-700 underline">Add friends</Link> to quickly add them to rounds.
+                <Link href="/" className="text-golf-700 underline">Add friends</Link> to quickly add them to rounds.
               </div>
             )}
 

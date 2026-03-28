@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface Message {
@@ -16,6 +17,8 @@ interface Message {
 
 interface ChatClientProps {
   tripId: string
+  tripName?: string
+  tripCoverImageUrl?: string | null
   currentUserId: string
   initialMessages: Message[]
   currentUserProfile: { display_name: string; avatar_url: string | null }
@@ -23,10 +26,13 @@ interface ChatClientProps {
 
 export default function ChatClient({
   tripId,
+  tripName,
+  tripCoverImageUrl,
   currentUserId,
   initialMessages,
   currentUserProfile,
 }: ChatClientProps) {
+  const router = useRouter()
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
@@ -190,11 +196,11 @@ export default function ChatClient({
     setLoadingMore(false)
   }
 
-  return (
+  const content = (
     <>
       {/* Messages container */}
       <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="mx-auto max-w-2xl space-y-3">
+        <div className={`mx-auto ${tripName ? 'max-w-lg' : 'max-w-2xl'} space-y-3`}>
           {hasMore && (
             <button
               onClick={loadMore}
@@ -271,7 +277,7 @@ export default function ChatClient({
 
       {/* Input bar */}
       <div className="border-t border-gray-200 bg-white px-4 py-3 shrink-0">
-        <div className="mx-auto max-w-2xl flex gap-2">
+        <div className={`mx-auto ${tripName ? 'max-w-lg' : 'max-w-2xl'} flex gap-2`}>
           <input
             type="text"
             value={newMessage}
@@ -291,6 +297,35 @@ export default function ChatClient({
         </div>
       </div>
     </>
+  )
+
+  if (!tripName) return content
+
+  return (
+    <div className="flex flex-col min-h-screen bg-white">
+      <header className="bg-golf-800 px-4 pt-14 pb-4 text-white">
+        <div className="mx-auto max-w-lg flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="text-golf-300 hover:text-white transition shrink-0"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          {tripCoverImageUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={tripCoverImageUrl} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-golf-600 text-sm font-bold text-white shrink-0">
+              {tripName![0]?.toUpperCase()}
+            </div>
+          )}
+          <h1 className="text-lg font-bold leading-tight">{tripName}</h1>
+        </div>
+      </header>
+      {content}
+    </div>
   )
 }
 

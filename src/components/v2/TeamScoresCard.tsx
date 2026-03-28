@@ -153,8 +153,8 @@ export default function TeamScoresCard({ matches, tripId, tripName, teams, linkT
               className={`py-4 text-center bg-white ${showTeamDetail ? 'cursor-pointer active:bg-gray-50 transition' : ''}`}
               onClick={() => handleTeamClick(t.name)}
             >
-              <p className="text-3xl font-black text-golf-700 tabular-nums">{pts(t.points)}</p>
-              <p className="text-xs text-gray-500 mt-1">{t.name}</p>
+              <p className="text-3xl font-black tabular-nums" style={t.color ? { color: t.color } : undefined}>{pts(t.points)}</p>
+              <p className="text-sm text-gray-500 mt-1">{t.name}</p>
             </div>
           ))}
         </div>
@@ -163,15 +163,15 @@ export default function TeamScoresCard({ matches, tripId, tripName, teams, linkT
           {aggregated.map((t, i) => (
             <div
               key={t.name}
-              className={`flex items-center justify-between px-4 py-2.5 ${showTeamDetail ? 'cursor-pointer active:bg-gray-50 transition' : ''}`}
+              className={`flex items-center justify-between px-4 py-3.5 ${showTeamDetail ? 'cursor-pointer active:bg-gray-50 transition' : ''}`}
               style={t.color ? { borderLeft: `4px solid ${t.color}` } : undefined}
               onClick={() => handleTeamClick(t.name)}
             >
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-gray-400 w-4 tabular-nums">{i + 1}</span>
-                <span className="text-sm font-semibold text-gray-900">{t.name}</span>
+                <span className="text-sm font-bold text-gray-400 w-4 tabular-nums">{i + 1}</span>
+                <span className="text-base font-bold text-gray-900">{t.name}</span>
               </div>
-              <span className="text-sm font-black text-golf-700 tabular-nums">{pts(t.points)} pts</span>
+              <span className="text-base font-bold text-golf-700 tabular-nums">{pts(t.points)} pts</span>
             </div>
           ))}
         </div>
@@ -191,7 +191,7 @@ export default function TeamScoresCard({ matches, tripId, tripName, teams, linkT
   )
 
   if (linkToFull) {
-    return <Link href={`/v2/trip/${tripId}/leaderboard?from=home`}>{card}</Link>
+    return <Link href={`/trip/${tripId}`}>{card}</Link>
   }
   return card
 }

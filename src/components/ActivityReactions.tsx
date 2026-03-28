@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { ReactionEmoji } from '@/lib/types'
 
-const EMOJI_SET: ReactionEmoji[] = ['🔥', '👏', '😂', '💀', '⛳', '💰']
+const EMOJI_SET: ReactionEmoji[] = ['🔥', '😂', '💀', '⛳', '💰', '🏆', '🎯', '😤']
 
 interface ReactionCount {
   emoji: ReactionEmoji

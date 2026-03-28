@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
 // PUT /api/friends/[friendshipId] — accept or decline a friend request
@@ -21,7 +22,7 @@ export async function PUT(
   // Only the addressee can accept/decline
   const { data: friendship } = await supabase
     .from('friendships')
-    .select('id, addressee_id, status')
+    .select('id, requester_id, addressee_id, status')
     .eq('id', friendshipId)
     .maybeSingle()
 
@@ -39,6 +40,11 @@ export async function PUT(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  revalidatePath('/profile')
+  revalidatePath(`/profile/${friendship.addressee_id}`)
+  revalidatePath(`/profile/${friendship.requester_id}`)
+
   return NextResponse.json(data)
 }
 
@@ -53,6 +59,14 @@ export async function DELETE(
 
   const { friendshipId } = await params
 
+  // Fetch before deleting so we can revalidate both users' profiles
+  const { data: friendship } = await supabase
+    .from('friendships')
+    .select('requester_id, addressee_id')
+    .eq('id', friendshipId)
+    .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+    .maybeSingle()
+
   const { error } = await supabase
     .from('friendships')
     .delete()
@@ -60,5 +74,12 @@ export async function DELETE(
     .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (friendship) {
+    revalidatePath('/profile')
+    revalidatePath(`/profile/${friendship.requester_id}`)
+    revalidatePath(`/profile/${friendship.addressee_id}`)
+  }
+
   return NextResponse.json({ ok: true })
 }

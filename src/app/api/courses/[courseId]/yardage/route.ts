@@ -56,6 +56,28 @@ export async function POST(
 
   const db = getServiceClient()
 
+  // Cache course-level detail: address, website, tee boxes
+  const teeBoxes = (detail.tees.male || []).map(t => ({
+    tee_name: t.tee_name,
+    slope_rating: t.slope_rating,
+    course_rating: t.course_rating,
+    total_yards: t.total_yards,
+    par_total: t.par_total,
+  }))
+
+  const loc = detail.location
+  const addressParts = [loc?.address, loc?.city, loc?.state].filter(Boolean)
+  const address = addressParts.length > 0 ? addressParts.join(', ') : null
+
+  await db
+    .from('courses')
+    .update({
+      tee_boxes: teeBoxes,
+      address,
+      // website not in API response, leave null
+    })
+    .eq('id', courseId)
+
   // Build yardage per hole from all male tees
   let updated = 0
   for (const hole of holes) {

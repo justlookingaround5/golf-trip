@@ -51,6 +51,8 @@ export async function PUT(
       ...(body.default_match_format !== undefined && { default_match_format: body.default_match_format }),
       ...(body.default_point_value !== undefined && { default_point_value: body.default_point_value }),
       ...(body.format_config !== undefined && { format_config: body.format_config }),
+      ...(body.golf_course_api_id !== undefined && { golf_course_api_id: body.golf_course_api_id }),
+      ...(body.tee_boxes !== undefined && { tee_boxes: body.tee_boxes }),
     })
     .eq('id', courseId)
     .select()

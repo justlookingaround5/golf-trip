@@ -28,7 +28,7 @@ export default function QuickRoundError({ error, reset }: { error: Error & { dig
             Try Again
           </button>
           <Link
-            href="/home"
+            href="/"
             className="rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
             Home

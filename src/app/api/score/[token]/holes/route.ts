@@ -93,6 +93,20 @@ export async function POST(
       onConflict: 'match_id,trip_player_id,hole_id',
     })
 
+  // 3b. Dual-write to round_scores so game engines and trip stats see scorer-entered scores
+  await getServiceClient()
+    .from('round_scores')
+    .upsert(scores.map((entry: ScoreEntry) => ({
+      course_id: match.course_id,
+      trip_player_id: entry.trip_player_id,
+      hole_id,
+      gross_score: entry.gross_score,
+      updated_at: new Date().toISOString(),
+      ...(entry.fairway_hit != null ? { fairway_hit: entry.fairway_hit } : {}),
+      ...(entry.gir != null ? { gir: entry.gir } : {}),
+      ...(entry.putts != null ? { putts: entry.putts } : {}),
+    })), { onConflict: 'course_id,trip_player_id,hole_id' })
+
   if (upsertError) {
     return NextResponse.json(
       { error: upsertError.message },

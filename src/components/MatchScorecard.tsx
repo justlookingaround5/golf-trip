@@ -1,13 +1,11 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import type { Hole, Score, MatchPlayer, PlayerCourseHandicap } from '@/lib/types'
-import { MATCH_FORMAT_LABELS } from '@/lib/types'
+import type { Hole, Score, MatchPlayer, PlayerCourseHandicap, RoundScore } from '@/lib/types'
 import type { MatchFormat } from '@/lib/types'
 import { getStrokesPerHole } from '@/lib/handicap'
 import { calculateMatchPlay, getHoleResults } from '@/lib/match-play'
 import type { MatchPlayResult, HoleResult } from '@/lib/match-play'
-import ScoreIndicator from '@/components/ScoreIndicator'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -16,6 +14,7 @@ import ScoreIndicator from '@/components/ScoreIndicator'
 interface MatchScorecardProps {
   matchId: string
   courseName: string
+  roundDate?: string
   coursePar: number
   format: MatchFormat
   pointValue: number
@@ -24,14 +23,45 @@ interface MatchScorecardProps {
   matchPlayers: MatchPlayer[]
   scores: Score[]
   courseHandicaps: PlayerCourseHandicap[]
+  roundScores?: RoundScore[]
+  hideFormat?: boolean
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function playerName(mp: MatchScorecardProps['matchPlayers'][number]): string {
+function playerName(mp: MatchPlayer): string {
   return (mp.trip_player?.player?.name ?? 'Unknown').split(' ')[0]
+}
+
+function scoreBadge(gross: number, par: number) {
+  const diff = gross - par
+  if (diff <= -2) {
+    return (
+      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-red-600 text-red-600 font-semibold">
+        <span className="inline-flex items-center justify-center w-[14px] h-[14px] rounded-full border border-red-600 text-[10px]">{gross}</span>
+      </span>
+    )
+  }
+  if (diff === -1) {
+    return (
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-red-600 text-red-600 font-semibold text-xs">{gross}</span>
+    )
+  }
+  if (diff === 0) {
+    return <span className="text-xs text-gray-700">{gross}</span>
+  }
+  if (diff === 1) {
+    return (
+      <span className="inline-flex items-center justify-center w-5 h-5 border border-blue-500 text-blue-600 text-xs">{gross}</span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center justify-center w-6 h-6 border border-blue-500 text-blue-600">
+      <span className="inline-flex items-center justify-center w-[14px] h-[14px] border border-blue-500 text-[10px]">{gross}</span>
+    </span>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -40,6 +70,7 @@ function playerName(mp: MatchScorecardProps['matchPlayers'][number]): string {
 
 export default function MatchScorecard({
   courseName,
+  roundDate,
   coursePar,
   format,
   pointValue,
@@ -48,8 +79,11 @@ export default function MatchScorecard({
   matchPlayers,
   scores,
   courseHandicaps,
+  roundScores,
+  hideFormat,
 }: MatchScorecardProps) {
-  const [viewMode, setViewMode] = useState<'horizontal' | 'vertical'>('vertical')
+  const [infoHole, setInfoHole] = useState<number | null>(null)
+  const [statsPlayerId, setStatsPlayerId] = useState<string | null>(null)
 
   const sortedHoles = useMemo(
     () => [...holes].sort((a, b) => a.hole_number - b.hole_number),
@@ -66,7 +100,7 @@ export default function MatchScorecard({
     [matchPlayers]
   )
 
-  // Build player strokes map — low handicap player gets 0, others receive the difference
+  // Build player strokes map
   const playerStrokesMap = useMemo(() => {
     const rawStrokes = matchPlayers.map((mp) => ({
       id: mp.trip_player_id,
@@ -112,51 +146,14 @@ export default function MatchScorecard({
     return map
   }, [scores])
 
-  // Status display
-  const statusDisplay = useMemo(() => {
-    if (!matchResult || matchResult.holesPlayed === 0) {
-      return { label: 'Not Started', color: 'bg-gray-100 text-gray-700' }
-    }
-
-    const teamANames = teamAPlayers.map(playerName).join(' & ')
-    const teamBNames = teamBPlayers.map(playerName).join(' & ')
-
-    if (matchResult.isComplete) {
-      if (matchResult.leader === 'tie') {
-        return { label: `Tied - ${matchResult.status}`, color: 'bg-yellow-100 text-yellow-800' }
-      }
-      const winnerNames = matchResult.leader === 'team_a' ? teamANames : teamBNames
-      return {
-        label: `${winnerNames} win ${matchResult.status}`,
-        color: 'bg-green-100 text-green-800',
-      }
-    }
-
-    if (matchResult.leader === 'tie') {
-      return {
-        label: `All Square thru ${matchResult.holesPlayed}`,
-        color: 'bg-gray-100 text-gray-700',
-      }
-    }
-
-    const leaderNames = matchResult.leader === 'team_a' ? teamANames : teamBNames
-    return {
-      label: `${leaderNames} ${matchResult.status}`,
-      color: 'bg-green-100 text-green-800',
-    }
-  }, [matchResult, teamAPlayers, teamBPlayers])
-
-  const frontNine = sortedHoles.filter((h) => h.hole_number <= 9)
-  const backNine = sortedHoles.filter((h) => h.hole_number > 9)
-  const allPlayers = [...teamAPlayers, ...teamBPlayers]
-
-  // Running match status per hole — clinch-aware, standard labels
+  // Running match status per hole
   const runningStatus = useMemo(() => {
     const map = new Map<number, {
       leader: 'team_a' | 'team_b' | 'tie'
       margin: number
       clinched: boolean
       label: string
+      lead: number // positive = team_a leading
     }>()
     const totalHoles = sortedHoles.length || 18
     let aUp = 0
@@ -172,31 +169,93 @@ export default function MatchScorecard({
       const absLead = Math.abs(diff)
       if (absLead > holesLeft) {
         const label = holesLeft === 0 ? `${absLead}UP` : `${absLead}&${holesLeft}`
-        map.set(hole.hole_number, {
-          leader: diff > 0 ? 'team_a' : 'team_b',
-          margin: absLead,
-          clinched: true,
-          label,
-        })
+        if (hr.winner !== 'halved' || i === 0) {
+          map.set(hole.hole_number, {
+            leader: diff > 0 ? 'team_a' : 'team_b',
+            margin: absLead,
+            clinched: true,
+            label,
+            lead: diff,
+          })
+        }
         break
       }
-      const label = diff === 0 ? 'AS' : diff > 0 ? `${absLead} UP` : `${absLead} DN`
-      map.set(hole.hole_number, {
-        leader: diff > 0 ? 'team_a' : diff < 0 ? 'team_b' : 'tie',
-        margin: absLead,
-        clinched: false,
-        label,
-      })
+      if (hr.winner !== 'halved' || i === 0) {
+        const label = diff === 0 ? 'AS' : `${absLead}UP`
+        map.set(hole.hole_number, {
+          leader: diff > 0 ? 'team_a' : diff < 0 ? 'team_b' : 'tie',
+          margin: absLead,
+          clinched: false,
+          label,
+          lead: diff,
+        })
+      }
     }
     return map
   }, [sortedHoles, holeResultByNumber])
 
-  const clinchHoleNumber = useMemo(() => {
-    for (const [holeNum, s] of runningStatus) {
-      if (s.clinched) return holeNum
+  // Match play data for the table
+  const matchPlayData = useMemo(() => {
+    return sortedHoles.map(hole => {
+      const status = runningStatus.get(hole.hole_number)
+      return { hole, status }
+    })
+  }, [sortedHoles, runningStatus])
+
+  // Status display
+  const statusDisplay = useMemo(() => {
+    if (!matchResult || matchResult.holesPlayed === 0) {
+      return { label: 'Not Started', color: 'bg-gray-100 text-gray-700' }
     }
-    return null
-  }, [runningStatus])
+
+    const teamANames = teamAPlayers.map(playerName).join(' & ')
+    const teamBNames = teamBPlayers.map(playerName).join(' & ')
+
+    if (matchResult.isComplete) {
+      if (matchResult.leader === 'tie') {
+        return { label: `Tied - ${matchResult.status}`, color: 'bg-green-100 text-green-800' }
+      }
+      const winnerNames = matchResult.leader === 'team_a' ? teamANames : teamBNames
+      return {
+        label: `${winnerNames} win ${matchResult.status}`,
+        color: 'bg-green-100 text-green-800',
+      }
+    }
+
+    if (matchResult.leader === 'tie') {
+      return {
+        label: `All Square thru ${matchResult.holesPlayed}`,
+        color: 'bg-yellow-100 text-yellow-800',
+      }
+    }
+
+    const leaderNames = matchResult.leader === 'team_a' ? teamANames : teamBNames
+    return {
+      label: `${leaderNames} ${matchResult.status}`,
+      color: 'bg-yellow-100 text-yellow-800',
+    }
+  }, [matchResult, teamAPlayers, teamBPlayers])
+
+  // Vs-par for each player
+  const playerVsPar = useMemo(() => {
+    const map = new Map<string, number | null>()
+    for (const mp of matchPlayers) {
+      let gross = 0
+      let par = 0
+      let hasScores = false
+      for (const hole of sortedHoles) {
+        const holeScores = scoresByHoleAndPlayer.get(hole.id)
+        const g = holeScores?.get(mp.trip_player_id)
+        if (g !== undefined) {
+          gross += g
+          par += hole.par
+          hasScores = true
+        }
+      }
+      map.set(mp.trip_player_id, hasScores ? gross - par : null)
+    }
+    return map
+  }, [matchPlayers, sortedHoles, scoresByHoleAndPlayer])
 
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
@@ -205,214 +264,212 @@ export default function MatchScorecard({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">{courseName}</h3>
-            <p className="text-xs text-gray-500">
-              {MATCH_FORMAT_LABELS[format]} &middot; Par {coursePar} &middot;{' '}
-              {pointValue} pt{pointValue !== 1 ? 's' : ''}
-            </p>
+            {roundDate && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                {new Date(roundDate + 'T12:00:00').toLocaleDateString('en-US', {
+                  weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+                })}
+              </p>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            {/* View toggle */}
-            <button
-              onClick={() => setViewMode(viewMode === 'vertical' ? 'horizontal' : 'vertical')}
-              className="rounded-md border border-gray-300 px-2 py-1 text-[10px] text-gray-500 hover:bg-gray-50"
-            >
-              {viewMode === 'vertical' ? '⟷' : '⟳'}
-            </button>
-            <StatusBadge status={status} />
-          </div>
+          <span
+            className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-medium ${statusDisplay.color}`}
+          >
+            {statusDisplay.label}
+          </span>
         </div>
       </div>
 
-      {/* Teams & Match Status */}
-      <div className="border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <div className="mb-2 flex items-center justify-between text-sm">
-          <div className="font-semibold text-gray-900 dark:text-white">
-            {teamAPlayers.map(playerName).join(' & ')}
-          </div>
-          <span className="mx-2 text-xs text-gray-400">vs</span>
-          <div className="font-semibold text-gray-900 dark:text-white">
-            {teamBPlayers.map(playerName).join(' & ')}
-          </div>
-        </div>
-        <div
-          className={`rounded-lg px-3 py-2 text-center text-sm font-bold ${statusDisplay.color}`}
-        >
-          {statusDisplay.label}
-        </div>
-      </div>
-
-      {/* Scorecard */}
-      {scores.length > 0 && viewMode === 'vertical' && (
-        <VerticalScorecard
-          holes={sortedHoles}
-          allPlayers={allPlayers}
-          scoresByHoleAndPlayer={scoresByHoleAndPlayer}
-          holeResultByNumber={holeResultByNumber}
-          runningStatus={runningStatus}
-          playerStrokesMap={playerStrokesMap}
-          clinchHoleNumber={clinchHoleNumber}
-        />
-      )}
-
-      {scores.length > 0 && viewMode === 'horizontal' && (
+      {/* Scorecard table */}
+      {scores.length > 0 && (
         <div className="overflow-x-auto">
-          {[
-            { label: 'Front 9', holes: frontNine },
-            { label: 'Back 9', holes: backNine },
-          ]
-            .filter((nine) => nine.holes.length > 0)
-            .map((nine) => (
-              <div key={nine.label}>
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                      <th className="px-2 py-2 text-left font-medium text-gray-500">
-                        {nine.label}
-                      </th>
-                      {nine.holes.map((h) => (
-                        <th
-                          key={h.id}
-                          className="w-10 px-1 py-2 text-center font-medium text-gray-500"
-                        >
-                          {h.hole_number}
-                        </th>
-                      ))}
-                      <th className="w-12 px-2 py-2 text-center font-medium text-gray-500">
-                        Out/In
-                      </th>
-                    </tr>
-                    {/* Par row */}
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <td className="px-2 py-1 text-xs font-medium text-gray-400">
-                        Par
-                      </td>
-                      {nine.holes.map((h) => (
-                        <td
-                          key={h.id}
-                          className="px-1 py-1 text-center text-gray-400"
-                        >
-                          {h.par}
-                        </td>
-                      ))}
-                      <td className="px-2 py-1 text-center font-medium text-gray-400">
-                        {nine.holes.reduce((sum, h) => sum + h.par, 0)}
-                      </td>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allPlayers.map((mp) => {
-                      const sideLabel = mp.side === 'team_a' ? 'A' : 'B'
-                      let nineTotal = 0
-                      let hasScores = false
+          <table className="min-w-full text-xs border-collapse table-fixed">
+            <colgroup>
+              <col className="w-8" />
+              <col className="w-7" />
+              {teamAPlayers.map(mp => (
+                <col key={`col-a-${mp.trip_player_id}`} style={{ width: `${(100 - 25) / (teamAPlayers.length + teamBPlayers.length)}%` }} />
+              ))}
+              <col className="w-10" />
+              {teamBPlayers.map(mp => (
+                <col key={`col-b-${mp.trip_player_id}`} style={{ width: `${(100 - 25) / (teamAPlayers.length + teamBPlayers.length)}%` }} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Hole</th>
+                <th className="px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-gray-200">Par</th>
+                {teamAPlayers.map(mp => {
+                  const vsPar = playerVsPar.get(mp.trip_player_id)
+                  const label = vsPar === null || vsPar === undefined ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
+                  return (
+                    <th key={mp.trip_player_id} onClick={() => setStatsPlayerId(mp.trip_player_id)} className="px-1 py-1.5 text-center font-semibold text-blue-900 border-b border-l border-gray-200 cursor-pointer hover:bg-gray-50 truncate">
+                      {playerName(mp)}
+                      {label && <span className="font-normal text-gray-400">{label}</span>}
+                    </th>
+                  )
+                })}
+                <th className="px-1 py-1.5 text-center text-[10px] font-semibold text-gray-500 border-b border-l border-gray-200">Match</th>
+                {teamBPlayers.map(mp => {
+                  const vsPar = playerVsPar.get(mp.trip_player_id)
+                  const label = vsPar === null || vsPar === undefined ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
+                  return (
+                    <th key={mp.trip_player_id} onClick={() => setStatsPlayerId(mp.trip_player_id)} className="px-1 py-1.5 text-center font-semibold text-blue-900 border-b border-l border-gray-200 cursor-pointer hover:bg-gray-50 truncate">
+                      {playerName(mp)}
+                      {label && <span className="font-normal text-gray-400">{label}</span>}
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: 'Front', start: 1, end: 9 },
+                { label: 'Back', start: 10, end: 18 },
+              ].flatMap(nine => {
+                const nineData = matchPlayData.filter(
+                  d => d.hole.hole_number >= nine.start && d.hole.hole_number <= nine.end
+                )
+                if (nineData.length === 0) return []
 
+                const holeRows = nineData.map(({ hole, status: holeStatus }) => {
+                  return (
+                    <tr key={hole.id} className="border-b border-gray-100">
+                      <td
+                        onClick={() => setInfoHole(hole.hole_number)}
+                        className="w-8 px-1 py-2 text-center font-medium text-gray-700 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                      >
+                        {hole.hole_number}
+                      </td>
+                      <td
+                        onClick={() => setInfoHole(hole.hole_number)}
+                        className="w-7 px-1 py-2 text-center text-gray-500 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                      >
+                        {hole.par}
+                      </td>
+                      {/* Team A player scores */}
+                      {teamAPlayers.map(mp => {
+                        const holeScores = scoresByHoleAndPlayer.get(hole.id)
+                        const gross = holeScores?.get(mp.trip_player_id)
+                        const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
+                        return (
+                          <td
+                            key={mp.trip_player_id}
+                            className="relative px-1 py-2 text-center border-l border-gray-200"
+                          >
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-sm leading-none text-gray-500">*</span>}
+                            {gross !== undefined ? scoreBadge(gross, hole.par) : <span className="text-gray-300">-</span>}
+                          </td>
+                        )
+                      })}
+                      {/* Running match play status */}
+                      <td className="w-10 px-1 py-2 text-center font-semibold text-[11px] border-l border-gray-200">
+                        {holeStatus && (
+                          <span className="flex items-center justify-center gap-0.5 text-blue-900">
+                            {holeStatus.lead > 0 && <span>&#9664;</span>}
+                            <span>{holeStatus.label}</span>
+                            {holeStatus.lead < 0 && <span>&#9654;</span>}
+                          </span>
+                        )}
+                      </td>
+                      {/* Team B player scores */}
+                      {teamBPlayers.map(mp => {
+                        const holeScores = scoresByHoleAndPlayer.get(hole.id)
+                        const gross = holeScores?.get(mp.trip_player_id)
+                        const strokes = playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0
+                        return (
+                          <td
+                            key={mp.trip_player_id}
+                            className="relative px-1 py-2 text-center border-l border-gray-200"
+                          >
+                            {strokes > 0 && <span className="absolute right-0.5 top-0 text-sm leading-none text-gray-500">*</span>}
+                            {gross !== undefined ? scoreBadge(gross, hole.par) : <span className="text-gray-300">-</span>}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })
+
+                const parSum = nineData.reduce((s, d) => s + d.hole.par, 0)
+
+                const subtotalRow = (
+                  <tr key={`${nine.label}-sub`} className="border-b-2 border-gray-300 bg-gray-50 font-bold">
+                    <td className="px-1 py-2 text-center text-gray-600 text-[10px]">{nine.label}</td>
+                    <td className="px-1 py-2 text-center text-gray-600">{parSum}</td>
+                    {teamAPlayers.map(mp => {
+                      let grossSum = 0
+                      const allScored = nineData.every(({ hole }) => {
+                        const holeScores = scoresByHoleAndPlayer.get(hole.id)
+                        const g = holeScores?.get(mp.trip_player_id)
+                        if (g !== undefined) grossSum += g
+                        return g !== undefined
+                      })
                       return (
-                        <tr
-                          key={mp.trip_player_id}
-                          className="border-b border-gray-100"
-                        >
-                          <td className="px-2 py-2 font-medium text-gray-900 dark:text-white">
-                            <span className="text-xs text-gray-400">
-                              [{sideLabel}]{' '}
-                            </span>
-                            {playerName(mp)}
-                          </td>
-                          {nine.holes.map((h) => {
-                            const holeScores = scoresByHoleAndPlayer.get(h.id)
-                            const gross = holeScores?.get(mp.trip_player_id)
-                            if (gross !== undefined) {
-                              nineTotal += gross
-                              hasScores = true
-                            }
-
-                            const receivesStroke = (playerStrokesMap.get(mp.trip_player_id)?.get(h.hole_number) ?? 0) > 0
-                            const afterClinch = clinchHoleNumber !== null && h.hole_number > clinchHoleNumber
-
-                            return (
-                              <td
-                                key={h.id}
-                                className={`relative px-1 py-2 text-center ${afterClinch ? 'opacity-30' : receivesStroke ? 'bg-golf-50 dark:bg-golf-900/20' : ''}`}
-                              >
-                                {receivesStroke && !afterClinch && (
-                                  <span className="absolute right-0.5 top-0.5 text-[8px] leading-none text-golf-600 dark:text-golf-400">●</span>
-                                )}
-                                {gross !== undefined ? (
-                                  <ScoreIndicator score={gross} par={h.par} size="xs" />
-                                ) : (
-                                  <span className="text-gray-300">-</span>
-                                )}
-                              </td>
-                            )
-                          })}
-                          <td className="px-2 py-2 text-center font-semibold text-gray-900 dark:text-white">
-                            {hasScores ? nineTotal : '-'}
-                          </td>
-                        </tr>
+                        <td key={mp.trip_player_id} className="px-1 py-2 text-center border-l border-gray-200 text-blue-900">
+                          {allScored ? grossSum : ''}
+                        </td>
                       )
                     })}
+                    <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200" />
+                    {teamBPlayers.map(mp => {
+                      let grossSum = 0
+                      const allScored = nineData.every(({ hole }) => {
+                        const holeScores = scoresByHoleAndPlayer.get(hole.id)
+                        const g = holeScores?.get(mp.trip_player_id)
+                        if (g !== undefined) grossSum += g
+                        return g !== undefined
+                      })
+                      return (
+                        <td key={mp.trip_player_id} className="px-1 py-2 text-center border-l border-gray-200 text-blue-900">
+                          {allScored ? grossSum : ''}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
 
-                    {/* Hole result row */}
-                    <tr className="border-b border-gray-100 bg-golf-50 dark:bg-golf-900/30">
-                      <td className="px-2 py-1 text-xs font-medium text-golf-700">
-                        Result
-                      </td>
-                      {nine.holes.map((h) => {
-                        const hr = holeResultByNumber.get(h.hole_number)
-                        const afterClinch = clinchHoleNumber !== null && h.hole_number > clinchHoleNumber
-                        if (afterClinch) {
-                          return <td key={h.id} className="px-1 py-1 text-center text-gray-200 dark:text-gray-700">—</td>
-                        }
-                        if (!hr) {
-                          return <td key={h.id} className="px-1 py-1 text-center text-gray-300">·</td>
-                        }
-                        return (
-                          <td key={h.id} className="px-1 py-1 text-center">
-                            {hr.winner === 'team_a' ? (
-                              <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" />
-                            ) : hr.winner === 'team_b' ? (
-                              <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-400" />
-                            ) : (
-                              <span className="inline-block h-2.5 w-2.5 rounded-full bg-gray-300" />
-                            )}
-                          </td>
-                        )
-                      })}
-                      <td className="px-2 py-1 text-center text-xs text-gray-400">—</td>
-                    </tr>
+                return [...holeRows, subtotalRow]
+              })}
 
-                    {/* Running standing row */}
-                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-golf-50 dark:bg-golf-900/30">
-                      <td className="px-2 py-1 text-xs font-medium text-golf-700">
-                        Standing
+              {/* Total row */}
+              {sortedHoles.length > 0 && (
+                <tr className="bg-gray-100 font-bold">
+                  <td className="px-1 py-2 text-center text-gray-600 text-[10px]">Total</td>
+                  <td className="px-1 py-2 text-center text-gray-600">{sortedHoles.reduce((s, h) => s + h.par, 0)}</td>
+                  {teamAPlayers.map(mp => {
+                    let grossSum = 0
+                    const allScored = sortedHoles.every(h => {
+                      const holeScores = scoresByHoleAndPlayer.get(h.id)
+                      const g = holeScores?.get(mp.trip_player_id)
+                      if (g !== undefined) grossSum += g
+                      return g !== undefined
+                    })
+                    return (
+                      <td key={mp.trip_player_id} className="px-1 py-2 text-center border-l border-gray-200 text-blue-900">
+                        {allScored ? grossSum : ''}
                       </td>
-                      {nine.holes.map((h) => {
-                        const s = runningStatus.get(h.hole_number)
-                        const afterClinch = clinchHoleNumber !== null && h.hole_number > clinchHoleNumber
-                        if (afterClinch) {
-                          return <td key={h.id} className="px-1 py-1 text-center text-gray-200 dark:text-gray-700">—</td>
-                        }
-                        if (!s) {
-                          return <td key={h.id} className="px-1 py-1 text-center text-gray-300">·</td>
-                        }
-                        return (
-                          <td key={h.id} className="px-1 py-1 text-center">
-                            <span className={`text-[9px] font-bold leading-none ${
-                              s.clinched
-                                ? s.leader === 'team_a' ? 'text-green-700' : 'text-red-600'
-                                : s.leader === 'team_a' ? 'text-green-700'
-                                : s.leader === 'team_b' ? 'text-red-600'
-                                : 'text-gray-500'
-                            }`}>
-                              {s.label}
-                            </span>
-                          </td>
-                        )
-                      })}
-                      <td className="px-2 py-1 text-center text-xs text-gray-400">—</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            ))}
+                    )
+                  })}
+                  <td className="px-1 py-2 text-center text-[10px] font-semibold border-l border-gray-200" />
+                  {teamBPlayers.map(mp => {
+                    let grossSum = 0
+                    const allScored = sortedHoles.every(h => {
+                      const holeScores = scoresByHoleAndPlayer.get(h.id)
+                      const g = holeScores?.get(mp.trip_player_id)
+                      if (g !== undefined) grossSum += g
+                      return g !== undefined
+                    })
+                    return (
+                      <td key={mp.trip_player_id} className="px-1 py-2 text-center border-l border-gray-200 text-blue-900">
+                        {allScored ? grossSum : ''}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -422,110 +479,134 @@ export default function MatchScorecard({
           No scores recorded yet for this match.
         </div>
       )}
-    </div>
-  )
-}
 
-// ---------------------------------------------------------------------------
-// Vertical Scorecard (mobile-first)
-// ---------------------------------------------------------------------------
-
-function VerticalScorecard({
-  holes,
-  allPlayers,
-  scoresByHoleAndPlayer,
-  holeResultByNumber,
-  runningStatus,
-  playerStrokesMap,
-  clinchHoleNumber,
-}: {
-  holes: Hole[]
-  allPlayers: MatchPlayer[]
-  scoresByHoleAndPlayer: Map<string, Map<string, number>>
-  holeResultByNumber: Map<number, HoleResult>
-  runningStatus: Map<number, {
-    leader: 'team_a' | 'team_b' | 'tie'
-    margin: number
-    clinched: boolean
-    label: string
-  }>
-  playerStrokesMap: Map<string, Map<number, number>>
-  clinchHoleNumber: number | null
-}) {
-  return (
-    <div className="divide-y divide-gray-100">
-      {holes.map((hole) => {
-        const hr = holeResultByNumber.get(hole.hole_number)
-        const status = runningStatus.get(hole.hole_number)
-        const holeScores = scoresByHoleAndPlayer.get(hole.id)
-        const hasAnyScore = holeScores && holeScores.size > 0
-        const afterClinch = clinchHoleNumber !== null && hole.hole_number > clinchHoleNumber
-
+      {/* Hole info popup */}
+      {infoHole !== null && (() => {
+        const hole = sortedHoles.find(h => h.hole_number === infoHole)
+        if (!hole) return null
         return (
-          <div key={hole.id} className={`px-4 py-2 ${afterClinch ? 'opacity-40' : ''}`}>
-            <div className="flex items-center gap-3">
-              {/* Hole number + par */}
-              <div className="w-12 shrink-0 text-center">
-                <div className="text-sm font-bold text-gray-900">{hole.hole_number}</div>
-                <div className="text-[10px] text-gray-400">Par {hole.par}</div>
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={() => setInfoHole(null)}>
+            <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-gray-900">Hole {hole.hole_number}</h3>
+                <button onClick={() => setInfoHole(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
               </div>
-
-              {/* Player scores */}
-              <div className="flex-1 flex items-center gap-4">
-                {allPlayers.map((mp) => {
-                  const gross = holeScores?.get(mp.trip_player_id)
-                  const firstName = (playerName(mp).split(' ')[0] ?? '').slice(0, 6)
-                  const receivesStroke = (playerStrokesMap.get(mp.trip_player_id)?.get(hole.hole_number) ?? 0) > 0
-
-                  return (
-                    <div key={mp.trip_player_id} className={`relative text-center min-w-[40px] rounded px-1 ${receivesStroke ? 'bg-golf-50 dark:bg-golf-900/20' : ''}`}>
-                      <div className="text-[10px] text-gray-500 truncate">{firstName}</div>
-                      {receivesStroke && (
-                        <span className="absolute right-0.5 top-0.5 text-[8px] leading-none text-golf-600 dark:text-golf-400">●</span>
-                      )}
-                      {gross !== undefined ? (
-                        <ScoreIndicator score={gross} par={hole.par} size="xs" />
-                      ) : (
-                        <span className="text-xs text-gray-300">-</span>
-                      )}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg bg-gray-50 p-3 text-center">
+                  <div className="text-xs text-gray-500 mb-1">Par</div>
+                  <div className="text-2xl font-bold text-gray-800">{hole.par}</div>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-3 text-center">
+                  <div className="text-xs text-gray-500 mb-1">Handicap</div>
+                  <div className="text-2xl font-bold text-gray-800">{hole.handicap_index}</div>
+                </div>
+              </div>
+              {hole.yardage && (() => {
+                const entries = Object.entries(hole.yardage as Record<string, number>)
+                  .sort(([, a], [, b]) => b - a)
+                if (entries.length === 0) return null
+                return (
+                  <div className="mt-3 rounded-lg bg-gray-50 p-3">
+                    <div className="text-xs text-gray-500 mb-2">Yardage</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {entries.map(([tee, yards]) => (
+                        <div key={tee} className="text-center">
+                          <div className="text-xs text-gray-500">{tee}</div>
+                          <div className="font-semibold text-gray-800">{yards}</div>
+                        </div>
+                      ))}
                     </div>
-                  )
-                })}
-              </div>
-
-              {/* Hole result */}
-              <div className="w-8 shrink-0 text-center">
-                {hr && hole.hole_number <= (clinchHoleNumber ?? Infinity) ? (
-                  hr.winner === 'team_a' ? (
-                    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-green-100 text-[9px] font-bold text-green-700">W</span>
-                  ) : hr.winner === 'team_b' ? (
-                    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-[9px] font-bold text-red-600">L</span>
-                  ) : (
-                    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-100 text-[9px] font-bold text-gray-500">H</span>
-                  )
-                ) : hasAnyScore && clinchHoleNumber === null ? (
-                  <span className="text-[10px] text-gray-300">·</span>
-                ) : null}
-              </div>
-
-              {/* Running standing */}
-              <div className="w-14 shrink-0 text-right">
-                {status && hole.hole_number <= (clinchHoleNumber ?? Infinity) ? (
-                  <span className={`text-[10px] font-bold ${
-                    status.clinched
-                      ? status.leader === 'team_a' ? 'text-green-700' : 'text-red-600'
-                      : status.leader === 'team_a' ? 'text-green-700'
-                      : status.leader === 'team_b' ? 'text-red-600'
-                      : 'text-gray-500'
-                  }`}>
-                    {status.label}
-                  </span>
-                ) : null}
-              </div>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )
-      })}
+      })()}
+
+      {/* Player stats popup */}
+      {statsPlayerId !== null && (() => {
+        const mp = matchPlayers.find(m => m.trip_player_id === statsPlayerId)
+        if (!mp) return null
+        const name = mp.trip_player?.player?.name ?? 'Unknown'
+        const rs = roundScores?.filter(s => s.trip_player_id === statsPlayerId) ?? []
+        const holesPlayed = rs.length
+
+        // Fairways: non-par-3 holes only
+        const fairwayScores = rs.filter(s => {
+          const hole = sortedHoles.find(h => h.id === s.hole_id)
+          return hole && hole.par > 3 && s.fairway_hit !== null && s.fairway_hit !== undefined
+        })
+        const fairwaysHit = fairwayScores.filter(s => s.fairway_hit === true).length
+
+        // GIR
+        const girScores = rs.filter(s => s.gir !== null && s.gir !== undefined)
+        const girHit = girScores.filter(s => s.gir === true).length
+
+        // Putts
+        const puttsScores = rs.filter(s => s.putts !== null && s.putts !== undefined)
+        const totalPutts = puttsScores.reduce((sum, s) => sum + (s.putts ?? 0), 0)
+
+        const ch = courseHandicaps.find(c => c.trip_player_id === statsPlayerId)
+
+        return (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={() => setStatsPlayerId(null)}>
+            <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">{name}</h3>
+                  <p className="text-xs text-gray-500">
+                    {ch && <span>{ch.handicap_strokes} strokes</span>}
+                  </p>
+                </div>
+                <button onClick={() => setStatsPlayerId(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              </div>
+
+              {holesPlayed === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">No scores yet</p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-xl bg-gray-50 p-3 text-center">
+                      <div className="text-xs text-gray-500 mb-1">Fairways</div>
+                      {fairwayScores.length > 0 ? (
+                        <>
+                          <div className="text-xl font-bold text-gray-800">{fairwaysHit}/{fairwayScores.length}</div>
+                          <div className="text-xs text-gray-400">{Math.round(fairwaysHit / fairwayScores.length * 100)}%</div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-400">&mdash;</div>
+                      )}
+                    </div>
+                    <div className="rounded-xl bg-gray-50 p-3 text-center">
+                      <div className="text-xs text-gray-500 mb-1">GIR</div>
+                      {girScores.length > 0 ? (
+                        <>
+                          <div className="text-xl font-bold text-gray-800">{girHit}/{girScores.length}</div>
+                          <div className="text-xs text-gray-400">{Math.round(girHit / girScores.length * 100)}%</div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-400">&mdash;</div>
+                      )}
+                    </div>
+                    <div className="rounded-xl bg-gray-50 p-3 text-center">
+                      <div className="text-xs text-gray-500 mb-1">Putts</div>
+                      {puttsScores.length > 0 ? (
+                        <>
+                          <div className="text-xl font-bold text-gray-800">{totalPutts}</div>
+                          <div className="text-xs text-gray-400">total</div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-400">&mdash;</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -534,19 +615,4 @@ function VerticalScorecard({
 // Status badge
 // ---------------------------------------------------------------------------
 
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    pending: 'bg-gray-100 text-gray-600',
-    in_progress: 'bg-yellow-100 text-yellow-800',
-    completed: 'bg-green-100 text-green-800',
-  }
-  return (
-    <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
-        colors[status] ?? 'bg-gray-100 text-gray-600'
-      }`}
-    >
-      {status.replace('_', ' ')}
-    </span>
-  )
-}
+

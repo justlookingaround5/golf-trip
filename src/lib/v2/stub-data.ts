@@ -82,7 +82,7 @@ export const ACTIVE_ROUND: RoundV2 = {
   grossTotal: null,  // in progress
   netTotal: null,
   par: 72,
-  holesPlayed: 9,
+  holesPlayed: 9, totalHoles: 18, totalPutts: null,
   latitude: 36.5833,
   longitude: -121.9672,
 }
@@ -97,7 +97,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2], STUB_PLAYERS[3]], points: 0, scoreDiffs: [2, 12] },
     result: 'Team Nicklaus wins 3&2', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '7:30 AM', thru: 18, resultMargin: '3&2',
+    teeTime: '7:30 AM', thru: 18, pointValue: 1, resultMargin: '3&2',
   },
   {
     id: 'm2', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
@@ -105,7 +105,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[12], STUB_PLAYERS[13]], points: 1, scoreDiffs: [1, 5] },
     result: 'Team Jones wins 1UP', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '7:40 AM', thru: 18, resultMargin: '1UP',
+    teeTime: '7:40 AM', thru: 18, pointValue: 1, resultMargin: '1UP',
   },
   {
     id: 'm3', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
@@ -113,7 +113,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Hogan',    players: [STUB_PLAYERS[10], STUB_PLAYERS[11]], points: 0, scoreDiffs: [5, 11] },
     result: 'Team Nicklaus wins 2&1', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '7:50 AM', thru: 18, resultMargin: '2&1',
+    teeTime: '7:50 AM', thru: 18, pointValue: 1, resultMargin: '2&1',
   },
   {
     id: 'm4', roundNumber: 1, format: '2v2_best_ball', formatLabel: '2v2 Best Ball', status: 'completed',
@@ -121,7 +121,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[14], STUB_PLAYERS[15]], points: 0.5, scoreDiffs: [3, 9] },
     result: 'Halved', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '8:00 AM', thru: 18, resultMargin: 'AS',
+    teeTime: '8:00 AM', thru: 18, pointValue: 1, resultMargin: 'AS',
   },
   // ── Round 2: 8× 1v1 Match Play at Pebble Beach (16 players) ──────────────
   {
@@ -130,7 +130,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2]], points: 0, scoreDiffs: [7] },
     result: 'Andrew wins 3&2', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '7:30 AM', thru: 18, resultMargin: '3&2',
+    teeTime: '7:30 AM', thru: 18, pointValue: 1, resultMargin: '3&2',
   },
   {
     id: 'm6', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
@@ -138,7 +138,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[3]], points: 1, scoreDiffs: [6] },
     result: 'Tom wins 1UP', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '7:40 AM', thru: 18, resultMargin: '1UP',
+    teeTime: '7:40 AM', thru: 18, pointValue: 1, resultMargin: '1UP',
   },
   {
     id: 'm7', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
@@ -146,7 +146,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Jones',    players: [STUB_PLAYERS[12]], points: 1, scoreDiffs: [1] },
     result: 'Derek wins 2&1', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '7:50 AM', thru: 18, resultMargin: '2&1',
+    teeTime: '7:50 AM', thru: 18, pointValue: 1, resultMargin: '2&1',
   },
   {
     id: 'm8', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
@@ -154,7 +154,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Hogan',    players: [STUB_PLAYERS[4]], points: 0, scoreDiffs: [10] },
     result: 'Ryan wins 2UP', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '8:00 AM', thru: 18, resultMargin: '2UP',
+    teeTime: '8:00 AM', thru: 18, pointValue: 1, resultMargin: '2UP',
   },
   {
     id: 'm9', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
@@ -162,7 +162,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[13]], points: 0.5, scoreDiffs: [8] },
     result: 'Halved', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '8:10 AM', thru: 18, resultMargin: 'AS',
+    teeTime: '8:10 AM', thru: 18, pointValue: 1, resultMargin: 'AS',
   },
   {
     id: 'm10', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'completed',
@@ -170,7 +170,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Palmer', players: [STUB_PLAYERS[8]], points: 0, scoreDiffs: [6] },
     result: 'Zach wins 4&3', statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '8:20 AM', thru: 18, resultMargin: '4&3',
+    teeTime: '8:20 AM', thru: 18, pointValue: 1, resultMargin: '4&3',
   },
   {
     id: 'm11', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'pending',
@@ -178,7 +178,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[14]], points: 0, scoreDiffs: [null] },
     result: null, statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '1:00 PM', thru: null, resultMargin: null,
+    teeTime: '1:00 PM', thru: null, pointValue: 1, resultMargin: null,
   },
   {
     id: 'm12', roundNumber: 2, format: '1v1_match', formatLabel: '1v1 Match Play', status: 'pending',
@@ -186,7 +186,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Jones',  players: [STUB_PLAYERS[15]], points: 0, scoreDiffs: [null] },
     result: null, statusLabel: null,
     courseId: 'course1', courseName: 'Pebble Beach Golf Links', tripId: 'trip1',
-    teeTime: '1:10 PM', thru: null, resultMargin: null,
+    teeTime: '1:10 PM', thru: null, pointValue: 1, resultMargin: null,
   },
   // ── Round 3: 4× 2v2 Foursomes at Spyglass Hill (in_progress + pending) ───
   {
@@ -195,7 +195,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Palmer',   players: [STUB_PLAYERS[2], STUB_PLAYERS[8]], points: 1, scoreDiffs: [5, 6] },
     result: null, statusLabel: 'Team Nicklaus leads thru 12',
     courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
-    teeTime: '8:00 AM', thru: 12, resultMargin: null,
+    teeTime: '8:00 AM', thru: 12, pointValue: 1, resultMargin: null,
   },
   {
     id: 'm14', roundNumber: 3, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
@@ -203,7 +203,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Jones', players: [STUB_PLAYERS[12], STUB_PLAYERS[14]], points: 1.5, scoreDiffs: [4, 3] },
     result: null, statusLabel: 'All square thru 10',
     courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
-    teeTime: '8:10 AM', thru: 10, resultMargin: null,
+    teeTime: '8:10 AM', thru: 10, pointValue: 1, resultMargin: null,
   },
   {
     id: 'm15', roundNumber: 3, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'in_progress',
@@ -211,7 +211,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Nicklaus', players: [STUB_PLAYERS[1], STUB_PLAYERS[7]], points: 2.5, scoreDiffs: [5, 3] },
     result: null, statusLabel: 'Team Nicklaus leads thru 7',
     courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
-    teeTime: '8:20 AM', thru: 7, resultMargin: null,
+    teeTime: '8:20 AM', thru: 7, pointValue: 1, resultMargin: null,
   },
   {
     id: 'm16', roundNumber: 3, format: '2v2_foursomes', formatLabel: '2v2 Foursomes', status: 'pending',
@@ -219,7 +219,7 @@ export const STUB_MATCHES: MatchV2[] = [
     teamB: { name: 'Team Hogan', players: [STUB_PLAYERS[5], STUB_PLAYERS[11]], points: 0, scoreDiffs: [null, null] },
     result: null, statusLabel: null,
     courseId: 'course2', courseName: 'Spyglass Hill', tripId: 'trip1',
-    teeTime: '1:00 PM', thru: null, resultMargin: null,
+    teeTime: '1:00 PM', thru: null, pointValue: 1, resultMargin: null,
   },
 ]
 
@@ -473,6 +473,7 @@ function makeHoles(grossScores: number[]): import('./types').HoleScoreV2[] {
     fairwayHit: HOLE_PARS[i] === 3 ? null : Math.random() > 0.45,
     gir: Math.random() > 0.55,
     putts: Math.floor(Math.random() * 2) + 1,
+    yardage: null,
   }))
 }
 
@@ -567,31 +568,31 @@ export const STUB_ALL_ROUNDS: RoundV2[] = [
   {
     id: 'r1', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2025-06-11', userId: ME.id, tripId: 'trip1', tripName: 'Pebble Beach 2025',
-    isQuickRound: false, grossTotal: 78, netTotal: 70, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 78, netTotal: 70, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r2', courseId: 'course3', courseName: 'Augusta National',
     date: '2024-04-10', userId: ME.id, tripId: 'trip2', tripName: 'Masters Trip 2024',
-    isQuickRound: false, grossTotal: 81, netTotal: 73, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 81, netTotal: 73, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 33.5021, longitude: -82.0232,
   },
   {
     id: 'r3', courseId: 'course4', courseName: 'Pinehurst No. 2',
     date: '2024-07-15', userId: ME.id, tripId: 'trip3', tripName: 'Pinehurst 2024',
-    isQuickRound: false, grossTotal: 80, netTotal: 72, par: 70, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 80, netTotal: 72, par: 70, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 35.1954, longitude: -79.4699,
   },
   {
     id: 'r4', courseId: 'course6', courseName: 'Torrey Pines (South)',
     date: '2024-02-03', userId: ME.id, tripId: null, tripName: null,
-    isQuickRound: true, grossTotal: 82, netTotal: 74, par: 72, holesPlayed: 18,
+    isQuickRound: true, grossTotal: 82, netTotal: 74, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 32.8998, longitude: -117.2498,
   },
   {
     id: 'r5', courseId: 'course5', courseName: 'Whistling Straits',
     date: '2023-08-22', userId: ME.id, tripId: 'trip4', tripName: 'Kohler Trip 2023',
-    isQuickRound: false, grossTotal: 84, netTotal: 76, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 84, netTotal: 76, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 43.8567, longitude: -87.7245,
   },
 
@@ -599,43 +600,43 @@ export const STUB_ALL_ROUNDS: RoundV2[] = [
   {
     id: 'r_p2_1', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2025-06-11', userId: 'p2', tripId: 'trip1', tripName: 'Pebble Beach 2025',
-    isQuickRound: false, grossTotal: 83, netTotal: 71, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 83, netTotal: 71, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r_p2_2', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2024-04-10', userId: 'p2', tripId: 'trip2', tripName: 'Masters Trip 2024',
-    isQuickRound: false, grossTotal: 86, netTotal: 74, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 86, netTotal: 74, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r_p2_3', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2024-07-15', userId: 'p2', tripId: 'trip3', tripName: 'Pinehurst 2024',
-    isQuickRound: false, grossTotal: 85, netTotal: 73, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 85, netTotal: 73, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r_p2_4', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2024-02-03', userId: 'p2', tripId: null, tripName: null,
-    isQuickRound: true, grossTotal: 87, netTotal: 75, par: 72, holesPlayed: 18,
+    isQuickRound: true, grossTotal: 87, netTotal: 75, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r_p2_5', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2023-08-22', userId: 'p2', tripId: 'trip4', tripName: 'Kohler Trip 2023',
-    isQuickRound: false, grossTotal: 84, netTotal: 72, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 84, netTotal: 72, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r_p2_6', courseId: 'course3', courseName: 'Augusta National',
     date: '2024-04-11', userId: 'p2', tripId: 'trip2', tripName: 'Masters Trip 2024',
-    isQuickRound: false, grossTotal: 89, netTotal: 77, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 89, netTotal: 77, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 33.5021, longitude: -82.0232,
   },
   {
     id: 'r_p2_7', courseId: 'course3', courseName: 'Augusta National',
     date: '2024-04-12', userId: 'p2', tripId: 'trip2', tripName: 'Masters Trip 2024',
-    isQuickRound: false, grossTotal: 91, netTotal: 79, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 91, netTotal: 79, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 33.5021, longitude: -82.0232,
   },
 
@@ -643,25 +644,25 @@ export const STUB_ALL_ROUNDS: RoundV2[] = [
   {
     id: 'r_p3_1', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2025-06-11', userId: 'p3', tripId: 'trip1', tripName: 'Pebble Beach 2025',
-    isQuickRound: false, grossTotal: 74, netTotal: 69, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 74, netTotal: 69, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r_p3_2', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2024-04-10', userId: 'p3', tripId: 'trip2', tripName: 'Masters Trip 2024',
-    isQuickRound: false, grossTotal: 76, netTotal: 71, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 76, netTotal: 71, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r_p3_3', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2024-07-15', userId: 'p3', tripId: null, tripName: null,
-    isQuickRound: true, grossTotal: 75, netTotal: 70, par: 72, holesPlayed: 18,
+    isQuickRound: true, grossTotal: 75, netTotal: 70, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r_p3_4', courseId: 'course4', courseName: 'Pinehurst No. 2',
     date: '2024-07-16', userId: 'p3', tripId: 'trip3', tripName: 'Pinehurst 2024',
-    isQuickRound: false, grossTotal: 73, netTotal: 68, par: 70, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 73, netTotal: 68, par: 70, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 35.1954, longitude: -79.4699,
   },
 
@@ -669,19 +670,19 @@ export const STUB_ALL_ROUNDS: RoundV2[] = [
   {
     id: 'r_p4_1', courseId: 'course3', courseName: 'Augusta National',
     date: '2024-04-10', userId: 'p4', tripId: 'trip2', tripName: 'Masters Trip 2024',
-    isQuickRound: false, grossTotal: 91, netTotal: 73, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 91, netTotal: 73, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 33.5021, longitude: -82.0232,
   },
   {
     id: 'r_p4_2', courseId: 'course3', courseName: 'Augusta National',
     date: '2024-04-11', userId: 'p4', tripId: 'trip2', tripName: 'Masters Trip 2024',
-    isQuickRound: false, grossTotal: 93, netTotal: 75, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 93, netTotal: 75, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 33.5021, longitude: -82.0232,
   },
   {
     id: 'r_p4_3', courseId: 'course5', courseName: 'Whistling Straits',
     date: '2023-08-22', userId: 'p4', tripId: 'trip4', tripName: 'Kohler Trip 2023',
-    isQuickRound: false, grossTotal: 95, netTotal: 77, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 95, netTotal: 77, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 43.8567, longitude: -87.7245,
   },
 
@@ -689,19 +690,19 @@ export const STUB_ALL_ROUNDS: RoundV2[] = [
   {
     id: 'r_p5_1', courseId: 'course1', courseName: 'Pebble Beach Golf Links',
     date: '2025-06-11', userId: 'p5', tripId: 'trip1', tripName: 'Pebble Beach 2025',
-    isQuickRound: false, grossTotal: 80, netTotal: 70, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 80, netTotal: 70, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 36.5677, longitude: -121.9500,
   },
   {
     id: 'r_p5_2', courseId: 'course5', courseName: 'Whistling Straits',
     date: '2023-08-22', userId: 'p5', tripId: 'trip4', tripName: 'Kohler Trip 2023',
-    isQuickRound: false, grossTotal: 83, netTotal: 73, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 83, netTotal: 73, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 43.8567, longitude: -87.7245,
   },
   {
     id: 'r_p5_3', courseId: 'course5', courseName: 'Whistling Straits',
     date: '2023-08-23', userId: 'p5', tripId: 'trip4', tripName: 'Kohler Trip 2023',
-    isQuickRound: false, grossTotal: 85, netTotal: 75, par: 72, holesPlayed: 18,
+    isQuickRound: false, grossTotal: 85, netTotal: 75, par: 72, holesPlayed: 18, totalHoles: 18, totalPutts: null,
     latitude: 43.8567, longitude: -87.7245,
   },
 ]
@@ -838,9 +839,9 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
     layoutRating: 9.6,
     valueRating: 7.8,
     tees: [
-      { name: 'Blue', yardage: 6828, slope: 145, rating: 74.3 },
-      { name: 'White', yardage: 6414, slope: 138, rating: 72.1 },
-      { name: 'Red', yardage: 5574, slope: 126, rating: 68.5 },
+      { name: 'Blue', yardage: 6828, slope: 145, rating: 74.3, par: 72 },
+      { name: 'White', yardage: 6414, slope: 138, rating: 72.1, par: 72 },
+      { name: 'Red', yardage: 5574, slope: 126, rating: 68.5, par: 72 },
     ],
     website: 'https://www.pebblebeach.com',
     phone: '(831) 574-5609',
@@ -865,8 +866,8 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
     layoutRating: 9.5,
     valueRating: 8.0,
     tees: [
-      { name: 'Masters', yardage: 7475, slope: 148, rating: 76.2 },
-      { name: 'Member', yardage: 6365, slope: 137, rating: 72.8 },
+      { name: 'Masters', yardage: 7475, slope: 148, rating: 76.2, par: 72 },
+      { name: 'Member', yardage: 6365, slope: 137, rating: 72.8, par: 72 },
     ],
     website: null,
     phone: null,
@@ -890,9 +891,9 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
     layoutRating: 9.0,
     valueRating: 8.8,
     tees: [
-      { name: 'Championship', yardage: 7588, slope: 140, rating: 73.8 },
-      { name: 'Resort', yardage: 6572, slope: 131, rating: 71.2 },
-      { name: 'Forward', yardage: 5586, slope: 122, rating: 67.9 },
+      { name: 'Championship', yardage: 7588, slope: 140, rating: 73.8, par: 70 },
+      { name: 'Resort', yardage: 6572, slope: 131, rating: 71.2, par: 70 },
+      { name: 'Forward', yardage: 5586, slope: 122, rating: 67.9, par: 70 },
     ],
     website: 'https://www.pinehurst.com',
     phone: '(910) 295-6811',
@@ -915,9 +916,9 @@ export const STUB_COURSE_DETAILS: Record<string, CourseDetailV2> = {
     layoutRating: 8.8,
     valueRating: 7.6,
     tees: [
-      { name: 'Straits', yardage: 7790, slope: 151, rating: 76.7 },
-      { name: 'Middle', yardage: 7011, slope: 141, rating: 73.4 },
-      { name: 'Forward', yardage: 6221, slope: 130, rating: 69.8 },
+      { name: 'Straits', yardage: 7790, slope: 151, rating: 76.7, par: 72 },
+      { name: 'Middle', yardage: 7011, slope: 141, rating: 73.4, par: 72 },
+      { name: 'Forward', yardage: 6221, slope: 130, rating: 69.8, par: 72 },
     ],
     website: 'https://www.americanclubresort.com',
     phone: '(920) 565-6050',

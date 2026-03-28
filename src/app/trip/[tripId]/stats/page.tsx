@@ -42,7 +42,7 @@ export default async function TripStatsPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-28">
       <header className="bg-golf-900 text-white">
         <div className="mx-auto max-w-2xl px-4 py-6">
           <Link

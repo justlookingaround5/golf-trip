@@ -181,7 +181,7 @@ export async function recomputeRoundGames(
 
     // Fetch scores and handicaps for this game's players
     const [scoresRes, handicapsRes] = await Promise.all([
-      db.from('scores').select('*').in('trip_player_id', playerIds).in('hole_id', holeIds),
+      db.from('round_scores').select('trip_player_id, hole_id, gross_score').in('trip_player_id', playerIds).in('hole_id', holeIds),
       db.from('player_course_handicaps').select('*').in('trip_player_id', playerIds).eq('course_id', courseId),
     ])
 
@@ -319,13 +319,17 @@ export async function checkAndCompleteMatch(
 
   if (scores.length === 0 || holes.length === 0) return
 
-  // Build strokes map for match play calculator
-  const playerStrokesMap = new Map<string, Map<number, number>>()
-  for (const mp of matchPlayers) {
+  // Build strokes map for match play calculator (adjusted relative to low player)
+  const rawMatchStrokes = matchPlayers.map(mp => {
     const ch = (handicapsRes.data || []).find(
       (c: { trip_player_id: string }) => c.trip_player_id === mp.trip_player_id
     )
-    playerStrokesMap.set(mp.trip_player_id, getStrokesPerHole(ch?.handicap_strokes ?? 0, holes))
+    return { id: mp.trip_player_id, strokes: ch?.handicap_strokes ?? 0 }
+  })
+  const minMatchStrokes = rawMatchStrokes.length > 0 ? Math.min(...rawMatchStrokes.map(p => p.strokes)) : 0
+  const playerStrokesMap = new Map<string, Map<number, number>>()
+  for (const { id, strokes } of rawMatchStrokes) {
+    playerStrokesMap.set(id, getStrokesPerHole(Math.max(0, strokes - minMatchStrokes), holes))
   }
 
   // Run match-play calculation

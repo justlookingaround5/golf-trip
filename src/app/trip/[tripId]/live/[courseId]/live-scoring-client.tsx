@@ -2,10 +2,15 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getStrokesPerHole } from '@/lib/handicap'
-import type { ActivityFeedItem, RoundScore, SideBet, SideBetHit } from '@/lib/types'
+import { getHoleResults, calculateMatchPlay } from '@/lib/match-play'
+import type { HoleResult } from '@/lib/match-play'
+import type { ActivityFeedItem, RoundScore, MatchFormat } from '@/lib/types'
+import { MATCH_FORMAT_LABELS } from '@/lib/types'
 import posthog from 'posthog-js'
+import CourseRatingModal from './components/CourseRatingModal'
 
 interface HoleData {
   id: string
@@ -74,10 +79,9 @@ interface ApiResponse {
   courseHandicaps: CourseHandicapData[]
   roundGames: RoundGameData[]
   gameResults: GameResultData[]
-  sideBets: SideBet[]
-  sideBetHits: SideBetHit[]
   activityFeed: ActivityFeedItem[]
   currentTripPlayerId: string | null
+  matchInfo: { id: string; format: string; pointValue: number; playerTpIds: string[]; teamA: string[]; teamB: string[] } | null
   playerTees: PlayerTeeData[]
   roundStats: Record<string, unknown>[]
   isQuickRound: boolean
@@ -145,6 +149,18 @@ export default function LiveScoringClient({
   const [roundActionLoading, setRoundActionLoading] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const [statsPlayerId, setStatsPlayerId] = useState<string | null>(null)
+  const [showRatingModal, setShowRatingModal] = useState(false)
+  const [existingRating, setExistingRating] = useState<{ overall: number; condition: number | null; layout: number | null; value: number | null } | null | undefined>(undefined)
+
+  // Fetch existing course rating when rating modal is triggered
+  useEffect(() => {
+    if (!showRatingModal) return
+    setExistingRating(undefined)
+    fetch(`/api/courses/${courseId}/ratings`)
+      .then(res => res.json())
+      .then(data => setExistingRating(data.userRating ?? null))
+      .catch(() => setExistingRating(null))
+  }, [showRatingModal, courseId])
 
   // Close menu on outside click
   useEffect(() => {
@@ -160,14 +176,20 @@ export default function LiveScoringClient({
   async function handleEndRound() {
     setRoundActionLoading(true)
     try {
-      const res = await fetch(`/api/rounds/${courseId}`, { method: 'POST' })
+      const url = `/api/rounds/${courseId}`
+      const res = await fetch(url, { method: 'POST' })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        throw new Error(body.error || 'Failed to end round')
+        throw new Error(body.error || `Failed to end round (${url})`)
       }
       posthog.capture('round_ended', { course_name: courseName })
-      router.push('/home')
+      if (!mountedRef.current) return
+      setRoundActionLoading(false)
+      setConfirmAction(null)
+      setShowRoundMenu(false)
+      setShowRatingModal(true)
     } catch (err) {
+      if (!mountedRef.current) return
       setError(err instanceof Error ? err.message : 'Failed to end round')
       setRoundActionLoading(false)
       setConfirmAction(null)
@@ -177,39 +199,65 @@ export default function LiveScoringClient({
   async function handleDeleteRound() {
     setRoundActionLoading(true)
     try {
-      const res = await fetch(`/api/rounds/${courseId}`, { method: 'DELETE' })
+      const url = `/api/rounds/${courseId}`
+      const res = await fetch(url, { method: 'DELETE' })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        throw new Error(body.error || 'Failed to delete round')
+        throw new Error(body.error || `Failed to delete round (${url})`)
       }
       posthog.capture('round_deleted', { course_name: courseName })
-      router.push('/home')
+      router.push('/')
     } catch (err) {
+      if (!mountedRef.current) return
       setError(err instanceof Error ? err.message : 'Failed to delete round')
       setRoundActionLoading(false)
       setConfirmAction(null)
     }
   }
 
+  // Abort controller for in-flight fetches — shared across loadData and realtime
+  const abortRef = useRef<AbortController | null>(null)
+  const mountedRef = useRef(true)
+
   // Load data
   const loadData = useCallback(async () => {
+    // Cancel any previous in-flight request
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
       setLoading(true)
-      const res = await fetch(`/api/live/${courseId}`)
+      const url = `/api/live/${courseId}`
+      const res = await fetch(url, { signal: controller.signal })
+      if (!mountedRef.current) return
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        throw new Error(body.error || 'Failed to load')
+        throw new Error(body.error || `Failed to load ${url}`)
       }
       const json: ApiResponse = await res.json()
+      if (!mountedRef.current) return
       setData(json)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      if (!mountedRef.current) return
+      const message = err instanceof Error ? err.message : 'Something went wrong'
+      console.error('[LiveScoring] fetch error:', message)
+      setError(message)
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }, [courseId])
 
-  useEffect(() => { loadData() }, [loadData])
+  // Initial load + mark unmounted on cleanup
+  useEffect(() => {
+    mountedRef.current = true
+    loadData()
+    return () => {
+      mountedRef.current = false
+      abortRef.current?.abort()
+    }
+  }, [loadData])
 
   // Realtime subscriptions
   useEffect(() => {
@@ -220,6 +268,7 @@ export default function LiveScoringClient({
         'postgres_changes',
         { event: '*', schema: 'public', table: 'round_scores', filter: `course_id=eq.${courseId}` },
         (payload) => {
+          if (!mountedRef.current) return
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const newScore = payload.new as RoundScore
             setData(prev => {
@@ -236,7 +285,7 @@ export default function LiveScoringClient({
         'postgres_changes',
         { event: '*', schema: 'public', table: 'game_results' },
         () => {
-          // Refresh game results on change
+          if (!mountedRef.current) return
           loadData()
         }
       )
@@ -244,24 +293,12 @@ export default function LiveScoringClient({
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'activity_feed', filter: `course_id=eq.${courseId}` },
         (payload) => {
+          if (!mountedRef.current) return
           setData(prev => {
             if (!prev) return prev
             return {
               ...prev,
               activityFeed: [payload.new as ActivityFeedItem, ...prev.activityFeed].slice(0, 30),
-            }
-          })
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'side_bet_hits', filter: `course_id=eq.${courseId}` },
-        (payload) => {
-          setData(prev => {
-            if (!prev) return prev
-            return {
-              ...prev,
-              sideBetHits: [...prev.sideBetHits, payload.new as SideBetHit],
             }
           })
         }
@@ -278,6 +315,16 @@ export default function LiveScoringClient({
   }, [data])
 
   const currentTripPlayerId = data?.currentTripPlayerId || null
+
+  // Filter tripPlayers to only match members when a match exists
+  const displayPlayers = useMemo(() => {
+    if (!data) return []
+    if (data.matchInfo && data.matchInfo.playerTpIds.length > 0) {
+      const matchSet = new Set(data.matchInfo.playerTpIds)
+      return data.tripPlayers.filter(tp => matchSet.has(tp.id))
+    }
+    return data.tripPlayers
+  }, [data])
 
   const playerNameMap = useMemo(() => {
     const map = new Map<string, string>()
@@ -350,12 +397,15 @@ export default function LiveScoringClient({
     setEditCell(null)
 
     try {
-      await fetch(`/api/live/${courseId}/scores`, {
+      const url = `/api/live/${courseId}/scores`
+      await fetch(url, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hole_id: hole.id, trip_player_id: editCell.tripPlayerId }),
       })
-    } catch {
+    } catch (err) {
+      if (!mountedRef.current) return
+      console.error('[LiveScoring] delete score error:', err)
       setError('Failed to delete score.')
     }
   }
@@ -398,17 +448,18 @@ export default function LiveScoringClient({
 
     setSaving(true)
     try {
-      const res = await fetch(`/api/live/${courseId}/scores`, {
+      const url = `/api/live/${courseId}/scores`
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hole_id: hole.id, scores: [entry] }),
       })
+      if (!mountedRef.current) return
       if (res.ok) {
         const result = await res.json()
         setData(prev => prev ? { ...prev, roundScores: result.roundScores } : prev)
         posthog.capture('score_saved', { hole_number: editCell.holeNumber, course_id: courseId })
       } else {
-        // Restore the previous score so the cell doesn't go blank
         setData(prev => {
           if (!prev) return prev
           const withoutOptimistic = prev.roundScores.filter(s => !s.id.startsWith('optimistic-'))
@@ -419,7 +470,9 @@ export default function LiveScoringClient({
         })
         setError('Failed to save. Tap the cell to retry.')
       }
-    } catch {
+    } catch (err) {
+      if (!mountedRef.current) return
+      console.error('[LiveScoring] save score error:', err)
       setData(prev => {
         if (!prev) return prev
         const withoutOptimistic = prev.roundScores.filter(s => !s.id.startsWith('optimistic-'))
@@ -430,14 +483,14 @@ export default function LiveScoringClient({
       })
       setError('Connection lost. Score may not be saved.')
     } finally {
-      setSaving(false)
+      if (mountedRef.current) setSaving(false)
     }
   }
 
   // Build leaderboard from round_scores
   const leaderboard = useMemo(() => {
     if (!data) return []
-    return data.tripPlayers.map(tp => {
+    return displayPlayers.map(tp => {
       const scores = data.roundScores.filter(s => s.trip_player_id === tp.id)
       const grossTotal = scores.reduce((sum, s) => sum + s.gross_score, 0)
       const holesPlayed = scores.length
@@ -499,22 +552,12 @@ export default function LiveScoringClient({
   // All players have a gross score on every hole → prompt to finish
   const allGrossScoresSaved = useMemo(() => {
     if (!data || holes.length === 0) return false
-    return data.tripPlayers.every(tp =>
+    return displayPlayers.every(tp =>
       holes.every(hole =>
         data.roundScores.some(s => s.hole_id === hole.id && s.trip_player_id === tp.id)
       )
     )
-  }, [data, holes])
-
-  // Build side bet hits with names
-  const enrichedHits = useMemo(() => {
-    if (!data) return []
-    return data.sideBetHits.map(hit => ({
-      ...hit,
-      playerName: playerNameMap.get(hit.trip_player_id) || 'Player',
-      holeNumber: holes.find(h => h.id === hit.hole_id)?.hole_number,
-    }))
-  }, [data, playerNameMap, holes])
+  }, [data, holes, displayPlayers])
 
   const activeTeeNames = useMemo(() => {
     const names = new Set<string>()
@@ -530,16 +573,24 @@ export default function LiveScoringClient({
     [data])
 
   const teamAssignments = useMemo(() => {
-    if (!bestBallGame) return { team_a: [] as string[], team_b: [] as string[] }
-    return {
-      team_a: bestBallGame.round_game_players
-        .filter(rgp => rgp.side === 'team_a')
-        .map(rgp => rgp.trip_player_id),
-      team_b: bestBallGame.round_game_players
-        .filter(rgp => rgp.side === 'team_b')
-        .map(rgp => rgp.trip_player_id),
+    if (bestBallGame) {
+      return {
+        team_a: bestBallGame.round_game_players
+          .filter(rgp => rgp.side === 'team_a')
+          .map(rgp => rgp.trip_player_id),
+        team_b: bestBallGame.round_game_players
+          .filter(rgp => rgp.side === 'team_b')
+          .map(rgp => rgp.trip_player_id),
+      }
     }
-  }, [bestBallGame])
+    if (data?.matchInfo) {
+      return {
+        team_a: data.matchInfo.teamA,
+        team_b: data.matchInfo.teamB,
+      }
+    }
+    return { team_a: [] as string[], team_b: [] as string[] }
+  }, [bestBallGame, data])
 
   const bbTeamNames = useMemo(() => {
     const getName = (tpId: string) => {
@@ -554,7 +605,7 @@ export default function LiveScoringClient({
     }
   }, [teamAssignments, data])
 
-  const isBestBallMatchPlay = bestBallGame !== null &&
+  const isBestBallMatchPlay = (bestBallGame !== null || data?.matchInfo !== null) &&
     teamAssignments.team_a.length > 0 &&
     teamAssignments.team_b.length > 0
 
@@ -573,52 +624,122 @@ export default function LiveScoringClient({
     return map
   }, [isBestBallMatchPlay, data, teamAssignments])
 
-  const matchPlayData = useMemo(() => {
-    if (!isBestBallMatchPlay || !data) return null
+  // Use the same match-play library functions as the viewer scorecard
+  const matchFormat = (data?.matchInfo?.format ?? '2v2_best_ball') as MatchFormat
 
-    let aWins = 0
-    let bWins = 0
-    let firstResultSeen = false
+  const matchPlayersList = useMemo(() => {
+    return [
+      ...teamAssignments.team_a.map(id => ({ trip_player_id: id, side: 'team_a' as const })),
+      ...teamAssignments.team_b.map(id => ({ trip_player_id: id, side: 'team_b' as const })),
+    ]
+  }, [teamAssignments])
 
-    return holes.map(hole => {
-      const getTeamBestNet = (teamIds: string[]): number | null => {
-        const nets = teamIds.flatMap(tpId => {
-          const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
-          if (!score) return []
-          const strokes = matchStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
-          return [score.gross_score - strokes]
+  const matchScores = useMemo(() => {
+    if (!data || !isBestBallMatchPlay) return []
+    const tpIds = new Set(matchPlayersList.map(mp => mp.trip_player_id))
+    return data.roundScores
+      .filter(s => tpIds.has(s.trip_player_id))
+      .map(s => ({ trip_player_id: s.trip_player_id, hole_id: s.hole_id, gross_score: s.gross_score }))
+  }, [data, isBestBallMatchPlay, matchPlayersList])
+
+  const matchResult = useMemo(() => {
+    if (!isBestBallMatchPlay || matchScores.length === 0) return null
+    return calculateMatchPlay(matchScores, matchPlayersList, holes, matchStrokesMap, matchFormat)
+  }, [isBestBallMatchPlay, matchScores, matchPlayersList, holes, matchStrokesMap, matchFormat])
+
+  const holeResults: HoleResult[] = useMemo(() => {
+    if (!isBestBallMatchPlay || matchScores.length === 0) return []
+    return getHoleResults(matchScores, matchPlayersList, holes, matchStrokesMap, matchFormat)
+  }, [isBestBallMatchPlay, matchScores, matchPlayersList, holes, matchStrokesMap, matchFormat])
+
+  const holeResultByNumber = useMemo(() => {
+    const map = new Map<number, HoleResult>()
+    for (const hr of holeResults) {
+      map.set(hr.holeNumber, hr)
+    }
+    return map
+  }, [holeResults])
+
+  // Running match status per hole — same logic as MatchScorecard
+  const runningStatus = useMemo(() => {
+    const map = new Map<number, {
+      leader: 'team_a' | 'team_b' | 'tie'
+      label: string
+      lead: number
+    }>()
+    const totalHoles = holes.length || 18
+    let aUp = 0
+    let bUp = 0
+    for (let i = 0; i < holes.length; i++) {
+      const hole = holes[i]
+      const hr = holeResultByNumber.get(hole.hole_number)
+      if (!hr) continue
+      if (hr.winner === 'team_a') aUp++
+      else if (hr.winner === 'team_b') bUp++
+      const holesLeft = totalHoles - (i + 1)
+      const diff = aUp - bUp
+      const absLead = Math.abs(diff)
+      if (absLead > holesLeft) {
+        const label = holesLeft === 0 ? `${absLead}UP` : `${absLead}&${holesLeft}`
+        if (hr.winner !== 'halved' || i === 0) {
+          map.set(hole.hole_number, {
+            leader: diff > 0 ? 'team_a' : 'team_b',
+            label,
+            lead: diff,
+          })
+        }
+        break
+      }
+      if (hr.winner !== 'halved' || i === 0) {
+        const label = diff === 0 ? 'AS' : `${absLead}UP`
+        map.set(hole.hole_number, {
+          leader: diff > 0 ? 'team_a' : diff < 0 ? 'team_b' : 'tie',
+          label,
+          lead: diff,
         })
-        return nets.length === 0 ? null : Math.min(...nets)
       }
+    }
+    return map
+  }, [holes, holeResultByNumber])
 
-      const allPlayersScored = [...teamAssignments.team_a, ...teamAssignments.team_b].every(
-        tpId => data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
-      )
-
-      const aBest = getTeamBestNet(teamAssignments.team_a)
-      const bBest = getTeamBestNet(teamAssignments.team_b)
-
-      if (allPlayersScored && aBest !== null && bBest !== null) {
-        if (aBest < bBest) aWins++
-        else if (bBest < aBest) bWins++
-      }
-
-      const lead = aWins - bWins
-      const hasResult = allPlayersScored && aBest !== null && bBest !== null
-      const holeWasDecided = hasResult && aBest !== bBest
-      const isFirstResult = hasResult && !firstResultSeen
-      if (hasResult) firstResultSeen = true
-
-      // Show only when the hole was won/lost, or on the very first scored hole (AS)
-      const showStatus = holeWasDecided || isFirstResult
-
-      const status = hasResult
-        ? (lead === 0 ? 'AS' : `${Math.abs(lead)}UP`)
-        : null
-
-      return { hole, aBest, bBest, lead, status, showStatus }
+  const matchPlayData = useMemo(() => {
+    if (!isBestBallMatchPlay) return null
+    return holes.map(hole => {
+      const status = runningStatus.get(hole.hole_number)
+      return { hole, status }
     })
-  }, [isBestBallMatchPlay, data, holes, teamAssignments, matchStrokesMap])
+  }, [isBestBallMatchPlay, holes, runningStatus])
+
+  // Match summary pill — same logic as MatchScorecard statusDisplay
+  const matchSummary = useMemo(() => {
+    if (!matchResult || matchResult.holesPlayed === 0) {
+      return { label: 'Not Started', color: 'bg-gray-100 text-gray-700' }
+    }
+
+    if (matchResult.isComplete) {
+      if (matchResult.leader === 'tie') {
+        return { label: `Tied - ${matchResult.status}`, color: 'bg-green-100 text-green-800' }
+      }
+      const winnerTeam = matchResult.leader === 'team_a' ? bbTeamNames.team_a : bbTeamNames.team_b
+      return {
+        label: `${winnerTeam} win ${matchResult.status}`,
+        color: 'bg-green-100 text-green-800',
+      }
+    }
+
+    if (matchResult.leader === 'tie') {
+      return {
+        label: `All Square thru ${matchResult.holesPlayed}`,
+        color: 'bg-yellow-100 text-yellow-800',
+      }
+    }
+
+    const leaderTeam = matchResult.leader === 'team_a' ? bbTeamNames.team_a : bbTeamNames.team_b
+    return {
+      label: `${leaderTeam} ${matchResult.status}`,
+      color: 'bg-yellow-100 text-yellow-800',
+    }
+  }, [matchResult, bbTeamNames])
 
   // Loading
   if (loading) {
@@ -656,17 +777,27 @@ export default function LiveScoringClient({
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Course rating modal (shown after ending round) */}
+      {showRatingModal && existingRating !== undefined && (
+        <CourseRatingModal
+          courseId={courseId}
+          tripId={tripId}
+          courseName={courseName}
+          initialRating={existingRating}
+          onClose={() => {
+            setShowRatingModal(false)
+            router.push('/')
+          }}
+        />
+      )}
+
       {/* Confirmation dialog */}
       {confirmAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900">
-              {confirmAction === 'end' ? 'End Round Early?' : 'Delete Round?'}
-            </h3>
+            <h3 className="text-lg font-bold text-gray-900">Delete Round?</h3>
             <p className="mt-2 text-sm text-gray-600">
-              {confirmAction === 'end'
-                ? 'This will finalize the round with whatever scores have been entered. You can still view the scorecard afterward.'
-                : 'This will permanently delete the round and all scores. This cannot be undone.'}
+              This will permanently delete the round and all scores. This cannot be undone.
             </p>
             <div className="mt-5 flex gap-3">
               <button
@@ -677,15 +808,11 @@ export default function LiveScoringClient({
                 Cancel
               </button>
               <button
-                onClick={confirmAction === 'end' ? handleEndRound : handleDeleteRound}
+                onClick={handleDeleteRound}
                 disabled={roundActionLoading}
-                className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50 ${
-                  confirmAction === 'delete'
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-golf-700 hover:bg-golf-800'
-                }`}
+                className="flex-1 rounded-lg px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50 bg-red-600 hover:bg-red-700"
               >
-                {roundActionLoading ? 'Working...' : confirmAction === 'end' ? 'End Round' : 'Delete Round'}
+                {roundActionLoading ? 'Working...' : 'Delete Round'}
               </button>
             </div>
           </div>
@@ -693,68 +820,41 @@ export default function LiveScoringClient({
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-golf-800 px-4 py-3 text-white shadow-md">
-        <div className="mx-auto max-w-lg flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold">{courseName}</h1>
-            <p className="text-sm text-golf-200">
-              Live Scoring &middot; Par {data.course.par}
-              {data.roundGames.length > 0 && (
-                <span> &middot; {data.roundGames.map(rg => rg.game_format?.name || 'Game').join(' · ')}</span>
-              )}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {!data.isQuickRound && (
-              <a
-                href={`/trip/${tripId}`}
-                className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
-              >
-                Trip
-              </a>
+      <header className="bg-golf-800 px-4 py-4 text-white shadow-md">
+        <div className="mx-auto max-w-2xl flex items-center justify-between">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition-colors"
+          >
+            &larr; Home
+          </Link>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowRoundMenu(!showRoundMenu)}
+              className="rounded-md p-1.5 text-golf-300 hover:text-white hover:bg-golf-700"
+              aria-label="Round options"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <circle cx="10" cy="4" r="1.5" />
+                <circle cx="10" cy="10" r="1.5" />
+                <circle cx="10" cy="16" r="1.5" />
+              </svg>
+            </button>
+            {showRoundMenu && (
+              <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg z-30">
+                <button
+                  onClick={() => { setShowRoundMenu(false); setConfirmAction('delete') }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                >
+                  Delete Round
+                </button>
+              </div>
             )}
-            {data.isQuickRound && (
-              <a
-                href="/home"
-                className="rounded-md border border-golf-600 px-3 py-1.5 text-xs font-medium text-golf-200 hover:bg-golf-700"
-              >
-                Home
-              </a>
-            )}
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setShowRoundMenu(!showRoundMenu)}
-                className="rounded-md p-1.5 text-golf-200 hover:bg-golf-700"
-                aria-label="Round options"
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <circle cx="10" cy="4" r="1.5" />
-                  <circle cx="10" cy="10" r="1.5" />
-                  <circle cx="10" cy="16" r="1.5" />
-                </svg>
-              </button>
-              {showRoundMenu && (
-                <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                  <button
-                    onClick={() => { setShowRoundMenu(false); setConfirmAction('end') }}
-                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    End Round Early
-                  </button>
-                  <button
-                    onClick={() => { setShowRoundMenu(false); setConfirmAction('delete') }}
-                    className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
-                  >
-                    Delete Round
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-lg px-4 py-4">
+      <div className="mx-auto max-w-2xl px-4 py-6 pb-28">
         {/* Error banner */}
         {error && (
           <div className="mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
@@ -763,50 +863,42 @@ export default function LiveScoringClient({
           </div>
         )}
 
-        {/* Scorecard */}
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Scorecard</h2>
-          <div className="text-sm text-gray-500">
-            {completedHoles.size}/{holes.length} holes
-          </div>
-        </div>
-
-        {/* Best Ball match status banner */}
-        {isBestBallMatchPlay && matchPlayData && (() => {
-          const lastPlayed = [...matchPlayData].reverse().find(d => d.status !== null)
-          if (!lastPlayed) return (
-            <div className="mb-3 rounded-lg bg-gray-100 px-4 py-2.5 text-center text-sm text-gray-500">
-              Match not started
-            </div>
-          )
-          const { lead, status } = lastPlayed
-          const holesPlayed = matchPlayData.filter(d => d.status !== null).length
-          const holesRemaining = holes.length - holesPlayed
-          if (lead === 0) return (
-            <div className="mb-3 rounded-lg bg-gray-100 px-4 py-2.5 text-center">
-              <span className="font-bold text-gray-700">All Square</span>
-              <span className="ml-2 text-xs text-gray-400">thru {holesPlayed}</span>
-            </div>
-          )
-          const leadingTeam = lead > 0 ? bbTeamNames.team_a : bbTeamNames.team_b
-          const isMatchOver = Math.abs(lead) > holesRemaining
-          return (
-            <div className={`mb-3 rounded-lg px-4 py-2.5 text-center ${lead > 0 ? 'bg-golf-50' : 'bg-blue-50'}`}>
-              <span className={`font-bold ${lead > 0 ? 'text-golf-800' : 'text-blue-700'}`}>
-                {leadingTeam} {status}
-              </span>
-              {isMatchOver
-                ? <span className="ml-2 text-xs text-gray-500">Match over</span>
-                : <span className="ml-2 text-xs text-gray-400">thru {holesPlayed}</span>
-              }
-            </div>
-          )
-        })()}
-
-        {/* Scorecard table — Best Ball match play layout */}
+        {/* Scorecard — match play layout */}
         {isBestBallMatchPlay && matchPlayData ? (
-          <div className="-mx-4 overflow-x-auto">
-            <table className="min-w-full text-xs border-collapse">
+          <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+            {/* Card header */}
+            <div className="border-b border-gray-200 bg-golf-50 px-4 py-3 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{courseName}</h3>
+                  {data.course.round_date && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {new Date(data.course.round_date + 'T12:00:00').toLocaleDateString('en-US', {
+                        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+                      })}
+                    </p>
+                  )}
+                </div>
+                <span
+                  className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-medium ${matchSummary.color}`}
+                >
+                  {matchSummary.label}
+                </span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+            <table className="min-w-full text-xs border-collapse table-fixed">
+              <colgroup>
+                <col className="w-8" />
+                <col className="w-7" />
+                {teamAssignments.team_a.map(tpId => (
+                  <col key={`col-a-${tpId}`} style={{ width: `${(100 - 25) / (teamAssignments.team_a.length + teamAssignments.team_b.length)}%` }} />
+                ))}
+                <col className="w-10" />
+                {teamAssignments.team_b.map(tpId => (
+                  <col key={`col-b-${tpId}`} style={{ width: `${(100 - 25) / (teamAssignments.team_a.length + teamAssignments.team_b.length)}%` }} />
+                ))}
+              </colgroup>
               <thead>
                 {/* Player name headers */}
                 <tr className="bg-gray-50">
@@ -822,7 +914,7 @@ export default function LiveScoringClient({
                     const vsPar = tpScores.length > 0 ? gross - par : null
                     const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                     return (
-                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-golf-800 border-b border-l border-gray-200 cursor-pointer hover:bg-golf-50">
+                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-blue-900 border-b border-l border-gray-200 cursor-pointer hover:bg-gray-50 truncate">
                         {(playerNameMap.get(tpId) || '—').split(' ')[0]}
                         {label && <span className="font-normal text-gray-400">{label}</span>}
                       </th>
@@ -839,7 +931,7 @@ export default function LiveScoringClient({
                     const vsPar = tpScores.length > 0 ? gross - par : null
                     const label = vsPar === null ? '' : vsPar === 0 ? ' E' : vsPar > 0 ? ` +${vsPar}` : ` ${vsPar}`
                     return (
-                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-blue-700 border-b border-l border-gray-200 cursor-pointer hover:bg-blue-50">
+                      <th key={tpId} onClick={() => setStatsPlayerId(tpId)} className="px-1 py-1.5 text-center font-semibold text-blue-900 border-b border-l border-gray-200 cursor-pointer hover:bg-gray-50 truncate">
                         {(playerNameMap.get(tpId) || '—').split(' ')[0]}
                         {label && <span className="font-normal text-gray-400">{label}</span>}
                       </th>
@@ -857,7 +949,7 @@ export default function LiveScoringClient({
                   )
                   if (nineHoles.length === 0) return []
 
-                  const holeRows = nineHoles.map(({ hole, aBest, bBest, lead, status, showStatus }) => (
+                  const holeRows = nineHoles.map(({ hole, status: holeStatus }) => (
                     <tr key={hole.id} className="border-b border-gray-100">
                       {/* Hole number */}
                       <td
@@ -878,26 +970,24 @@ export default function LiveScoringClient({
                         const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
                         const gross = score?.gross_score
                         const strokes = matchStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
-                        const net = gross !== undefined ? gross - strokes : undefined
-                        const isTeamBest = net !== undefined && aBest !== null && net === aBest
                         return (
                           <td
                             key={tpId}
                             onClick={() => openCell(hole.hole_number, tpId)}
-                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-golf-100 ${isTeamBest ? 'bg-golf-100' : ''}`}
+                            className="relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
                           >
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-sm leading-none text-gray-500">*</span>}
-                            {gross !== undefined && scoreBadge(gross, hole.par)}
+                            {gross !== undefined ? scoreBadge(gross, hole.par) : <span className="text-gray-300">-</span>}
                           </td>
                         )
                       })}
                       {/* Running match play status */}
                       <td className="w-10 px-1 py-2 text-center font-semibold text-[11px] border-l border-gray-200">
-                        {status && showStatus && (
-                          <span className={`flex items-center justify-center gap-0.5 ${lead > 0 ? 'text-golf-700' : lead < 0 ? 'text-blue-600' : 'text-gray-500'}`}>
-                            {lead > 0 && <span>◀</span>}
-                            <span>{status}</span>
-                            {lead < 0 && <span>▶</span>}
+                        {holeStatus && (
+                          <span className="flex items-center justify-center gap-0.5 text-blue-900">
+                            {holeStatus.lead > 0 && <span>&#9664;</span>}
+                            <span>{holeStatus.label}</span>
+                            {holeStatus.lead < 0 && <span>&#9654;</span>}
                           </span>
                         )}
                       </td>
@@ -906,16 +996,14 @@ export default function LiveScoringClient({
                         const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tpId)
                         const gross = score?.gross_score
                         const strokes = matchStrokesMap.get(tpId)?.get(hole.hole_number) ?? 0
-                        const net = gross !== undefined ? gross - strokes : undefined
-                        const isTeamBest = net !== undefined && bBest !== null && net === bBest
                         return (
                           <td
                             key={tpId}
                             onClick={() => openCell(hole.hole_number, tpId)}
-                            className={`relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer active:bg-blue-100 ${isTeamBest ? 'bg-blue-100' : ''}`}
+                            className="relative px-1 py-2 text-center border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100"
                           >
                             {strokes > 0 && <span className="absolute right-0.5 top-0 text-sm leading-none text-gray-500">*</span>}
-                            {gross !== undefined && scoreBadge(gross, hole.par)}
+                            {gross !== undefined ? scoreBadge(gross, hole.par) : <span className="text-gray-300">-</span>}
                           </td>
                         )
                       })}
@@ -940,7 +1028,7 @@ export default function LiveScoringClient({
                           return !!s
                         })
                         return (
-                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-golf-800">
+                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-blue-900">
                             {allScored ? grossSum : ''}
                           </td>
                         )
@@ -954,7 +1042,7 @@ export default function LiveScoringClient({
                           return !!s
                         })
                         return (
-                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-blue-700">
+                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-blue-900">
                             {allScored ? grossSum : ''}
                           </td>
                         )
@@ -979,7 +1067,7 @@ export default function LiveScoringClient({
                           return !!s
                         })
                         return (
-                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-golf-800">
+                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-blue-900">
                             {allScored ? grossSum : ''}
                           </td>
                         )
@@ -993,7 +1081,7 @@ export default function LiveScoringClient({
                           return !!s
                         })
                         return (
-                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-blue-700">
+                          <td key={tpId} className="px-1 py-2 text-center border-l border-gray-200 text-blue-900">
                             {allScored ? grossSum : ''}
                           </td>
                         )
@@ -1004,6 +1092,7 @@ export default function LiveScoringClient({
               </tbody>
             </table>
           </div>
+          </div>
         ) : (
         /* Flat scorecard — standard / non-Best Ball rounds */
         <div className="-mx-4 overflow-x-auto">
@@ -1012,7 +1101,7 @@ export default function LiveScoringClient({
               <tr className="bg-gray-100">
                 <th className="sticky left-0 z-10 bg-gray-100 w-9 px-1 py-2 text-center font-semibold text-gray-600 border-b border-gray-200">Hole</th>
                 <th className="sticky left-9 z-10 bg-gray-100 w-9 px-1 py-2 text-center font-semibold text-gray-600 border-b border-l border-gray-200">Par</th>
-                {data.tripPlayers.map(tp => {
+                {displayPlayers.map(tp => {
                   const tpScores = data.roundScores.filter(s => s.trip_player_id === tp.id)
                   const grossTotal = tpScores.reduce((sum, s) => sum + s.gross_score, 0)
                   const parTotal = tpScores.reduce((sum, s) => {
@@ -1044,7 +1133,7 @@ export default function LiveScoringClient({
                   >
                     <td onClick={() => setInfoHole(hole.hole_number)} className="sticky left-0 z-10 bg-white w-9 px-1 py-2 text-center font-medium text-gray-700 cursor-pointer hover:bg-gray-50 active:bg-gray-100">{hole.hole_number}</td>
                     <td onClick={() => setInfoHole(hole.hole_number)} className="sticky left-9 z-10 bg-white w-9 px-1 py-2 text-center text-gray-500 border-l border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100">{hole.par}</td>
-                    {data.tripPlayers.map(tp => {
+                    {displayPlayers.map(tp => {
                       const score = data.roundScores.find(s => s.hole_id === hole.id && s.trip_player_id === tp.id)
                       const gross = score?.gross_score
                       const strokes = playerStrokesMap.get(tp.id)?.get(hole.hole_number) ?? 0
@@ -1063,7 +1152,7 @@ export default function LiveScoringClient({
                   <tr key={`${nine.label}-sub`} className="border-b-2 border-gray-300 bg-gray-50 font-bold">
                     <td className="sticky left-0 z-10 bg-gray-50 px-1 py-2 text-center text-gray-700">{nine.label}</td>
                     <td className="sticky left-9 z-10 bg-gray-50 px-1 py-2 text-center text-gray-600 border-l border-gray-200">{parSum}</td>
-                    {data.tripPlayers.map(tp => {
+                    {displayPlayers.map(tp => {
                       let grossSum = 0
                       const allScored = nineHoles.every(h => {
                         const s = data.roundScores.find(sc => sc.hole_id === h.id && sc.trip_player_id === tp.id)
@@ -1084,7 +1173,7 @@ export default function LiveScoringClient({
                 <tr className="bg-gray-100 font-bold">
                   <td className="sticky left-0 z-10 bg-gray-100 px-1 py-2 text-center text-gray-700">Total</td>
                   <td className="sticky left-9 z-10 bg-gray-100 px-1 py-2 text-center text-gray-600 border-l border-gray-200">{holes.reduce((s, h) => s + h.par, 0)}</td>
-                  {data.tripPlayers.map(tp => {
+                  {displayPlayers.map(tp => {
                     let grossSum = 0
                     const allScored = holes.every(h => {
                       const s = data.roundScores.find(sc => sc.hole_id === h.id && sc.trip_player_id === tp.id)
@@ -1333,9 +1422,7 @@ export default function LiveScoringClient({
                 <div>
                   <h3 className="text-base font-bold text-gray-900">{name}</h3>
                   <p className="text-xs text-gray-500">
-                    {holesPlayed} hole{holesPlayed !== 1 ? 's' : ''} played
-                    {ch && <span> &middot; {ch.handicap_strokes} strokes</span>}
-                    {tee && <span> &middot; {tee.tee_name}</span>}
+                    {ch && <span>{ch.handicap_strokes} strokes</span>}
                   </p>
                 </div>
                 <button onClick={() => setStatsPlayerId(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>

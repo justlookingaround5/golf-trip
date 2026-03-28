@@ -1,16 +1,35 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import type { Trip, Course, Score, Match, PlayerCourseHandicap, TripPlayer } from '@/lib/types'
-import { calculateTeamStandings } from '@/lib/leaderboard'
+import type { Trip, Course } from '@/lib/types'
+import { getTripLeaderboardData } from '@/lib/v2/trip-leaderboard-data'
+
+function formatDateRange(start: string, end: string): string {
+  const fmt = (d: string, includeYear: boolean) => {
+    const date = new Date(d + 'T12:00:00')
+    const month = date.toLocaleString('en-US', { month: 'short' })
+    const day = date.getDate()
+    return includeYear ? `${month} ${day}, ${date.getFullYear()}` : `${month} ${day}`
+  }
+  if (start === end) return fmt(start, true)
+  const sDate = new Date(start + 'T12:00:00')
+  const eDate = new Date(end + 'T12:00:00')
+  if (sDate.getMonth() === eDate.getMonth() && sDate.getFullYear() === eDate.getFullYear()) {
+    return `${sDate.toLocaleString('en-US', { month: 'short' })} ${sDate.getDate()} – ${eDate.getDate()}, ${eDate.getFullYear()}`
+  }
+  return `${fmt(start, false)} – ${fmt(end, true)}`
+}
 import TripTabs from './trip-tabs'
 
 export default async function TripPublicPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ tripId: string }>
+  searchParams: Promise<{ from?: string }>
 }) {
   const { tripId } = await params
+  const { from } = await searchParams
   const supabase = await createClient()
 
   // Fetch trip
@@ -158,24 +177,6 @@ export default async function TripPublicPage({
     })
   }
 
-  // Reshape teams for the utility function
-  const shapedTeams = (teams ?? []).map((t) => ({
-    id: t.id as string,
-    trip_id: t.trip_id as string,
-    name: t.name as string,
-    players: (t.team_players ?? [])
-      .map((tp: { trip_player: unknown }) => tp.trip_player as TripPlayer)
-      .filter(Boolean) as TripPlayer[],
-  }))
-
-  const teamStandings = calculateTeamStandings({
-    teams: shapedTeams,
-    matches: (matches ?? []) as Match[],
-    courses: (courses ?? []) as Course[],
-    scores: (scores ?? []) as Score[],
-    courseHandicaps: (courseHandicaps ?? []) as PlayerCourseHandicap[],
-  })
-
   // Count active/completed matches
   const activeMatches = (matches ?? []).filter(
     (m) => m.status === 'in_progress'
@@ -267,6 +268,9 @@ export default async function TripPublicPage({
     defaultTab = 'play'
   }
 
+  // Fetch V2 leaderboard data
+  const leaderboardData = await getTripLeaderboardData(tripId)
+
   // Serialize courses for tabs (strip holes, not needed in tabs)
   const coursesForTabs = (courses as Course[] ?? []).map(c => ({
     id: c.id,
@@ -277,19 +281,57 @@ export default async function TripPublicPage({
   }))
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-28">
       {/* Header */}
-      <header className="bg-golf-800 px-4 py-6 text-white shadow-md">
-        <div className="mx-auto max-w-2xl">
+      <header className="bg-golf-800 px-4 pt-6 pb-8 text-white shadow-md">
+        <div className="mx-auto max-w-lg">
           <Link
-            href="/"
-            className="mb-2 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition-colors"
+            href={from === 'messages' ? '/messages?tab=trips' : '/'}
+            className="mb-4 inline-flex items-center gap-1 text-sm text-golf-300 hover:text-white transition-colors"
           >
-            &larr; Home
+            &larr; {from === 'messages' ? 'Back' : 'Home'}
           </Link>
-          <h1 className="text-2xl font-bold">{(trip as Trip).name}</h1>
-          <p className="mt-1 text-golf-200">
-            {(trip as Trip).location ?? 'Location TBD'} &middot; {(trip as Trip).year}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              {(trip as any).cover_image_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={(trip as any).cover_image_url} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-golf-600 text-lg font-bold text-white shrink-0">
+                  {(trip as Trip).name[0]?.toUpperCase()}
+                </div>
+              )}
+              <h1 className="text-2xl font-bold truncate">{(trip as Trip).name}</h1>
+            </div>
+            <Link
+              href={`/messages/trip-${tripId}`}
+              className="p-2 rounded-full hover:bg-golf-700/50 transition shrink-0 ml-3"
+              aria-label="Trip chat"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </Link>
+          </div>
+          <p className="mt-2 flex items-center gap-4 text-sm text-golf-200">
+            <span>{(trip as Trip).location ?? 'Location TBD'}</span>
+            {(() => {
+              const roundDates = (courses as Course[] ?? [])
+                .map(c => c.round_date)
+                .filter(Boolean)
+                .sort() as string[]
+              const dateRangeStr = roundDates.length > 0
+                ? formatDateRange(roundDates[0], roundDates[roundDates.length - 1])
+                : null
+              const playerCount = (tripPlayers ?? []).length
+              return (
+                <>
+                  {dateRangeStr && <><span>&middot;</span><span>{dateRangeStr}</span></>}
+                  {playerCount > 0 && <><span>&middot;</span><span>{playerCount} players</span></>}
+                </>
+              )
+            })()}
           </p>
           {daysUntilTrip !== null && daysUntilTrip > 0 && (
             <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-golf-700/60 px-4 py-1.5 text-sm font-medium">
@@ -300,7 +342,7 @@ export default async function TripPublicPage({
         </div>
       </header>
 
-      <div className="mx-auto max-w-2xl px-4 py-6">
+      <div className="mx-auto max-w-lg px-4 py-6">
         <TripTabs
           tripId={tripId}
           tripStatus={tripStatus}
@@ -316,7 +358,6 @@ export default async function TripPublicPage({
             round_number: todaysCourse.round_number,
             round_date: todaysCourse.round_date,
           } : null}
-          teamStandings={teamStandings}
           activeMatches={activeMatches}
           totalMatches={totalMatches}
           completedMatches={completedMatches}
@@ -328,6 +369,7 @@ export default async function TripPublicPage({
             icon: item.icon,
             created_at: item.created_at,
           }))}
+          leaderboardData={leaderboardData}
         />
       </div>
     </div>

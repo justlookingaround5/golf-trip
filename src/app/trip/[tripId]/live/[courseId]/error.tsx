@@ -28,7 +28,7 @@ export default function LiveScoringError({ error, reset }: { error: Error & { di
             Reload
           </button>
           <Link
-            href="/home"
+            href="/"
             className="rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
             Home

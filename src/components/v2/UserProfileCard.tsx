@@ -16,7 +16,7 @@ interface UserProfileCardProps {
   badge?: React.ReactNode
   /** If provided, a quick message button appears */
   onMessage?: () => void
-  /** Base href for tapping the card — defaults to /v2/profile/[id] */
+  /** Base href for tapping the card — defaults to /profile/[id] */
   href?: string
 }
 
@@ -45,11 +45,11 @@ export default function UserProfileCard({
   onMessage,
   href,
 }: UserProfileCardProps) {
-  const dest = href ?? `/v2/profile/${player.id}`
+  const dest = href ?? `/profile/${player.id}`
 
   return (
     <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-      <Link href={`/v2/profile/${player.id}`} className="shrink-0">
+      <Link href={`/profile/${player.id}`} className="shrink-0">
         <Avatar player={player} />
       </Link>
 

@@ -3,8 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { processScoreEvents } from '@/lib/score-processing'
 import { computeRoundStats } from '@/lib/compute-round-stats'
-import { computeRoundStats as computeRoundStatsLegacy, computeTripStats, computeAwards } from '@/lib/stats'
-import { getStrokesPerHole } from '@/lib/handicap'
+import { recomputeTripStatsAndAwards } from '@/lib/recompute-trip-stats'
 
 function getServiceClient() {
   return createClient(
@@ -47,6 +46,10 @@ export async function POST(
     return NextResponse.json({ error: 'scores array is required' }, { status: 400 })
   }
 
+  if (scores.length > 4) {
+    return NextResponse.json({ error: 'Maximum 4 players per scorecard' }, { status: 400 })
+  }
+
   for (const entry of scores) {
     if (!entry.trip_player_id || typeof entry.gross_score !== 'number') {
       return NextResponse.json({ error: 'Each score must have trip_player_id and gross_score' }, { status: 400 })
@@ -79,91 +82,22 @@ export async function POST(
     return NextResponse.json({ error: roundScoreError.message }, { status: 500 })
   }
 
-  // 2. Sync to scores table via synthetic round match (best-effort — errors logged but do not block the response)
-  try {
-    const syntheticToken = `live_round_${courseId}`
-    let { data: match } = await db
-      .from('matches')
-      .select('id, status')
-      .eq('scorer_token', syntheticToken)
-      .single()
-
-    if (!match) {
-      const { data: course } = await db
-        .from('courses')
-        .select('id, trip_id')
-        .eq('id', courseId)
-        .single()
-
-      if (course) {
-        const { data: newMatch, error: matchError } = await db
-          .from('matches')
-          .insert({
-            course_id: courseId,
-            format: '1v1_stroke',
-            point_value: 0,
-            scorer_token: syntheticToken,
-            status: 'in_progress',
-          })
-          .select('id, status')
-          .single()
-
-        if (!matchError && newMatch) {
-          match = newMatch
-
-          const { data: tripPlayers } = await db
-            .from('trip_players')
-            .select('id')
-            .eq('trip_id', course.trip_id)
-
-          if (tripPlayers && tripPlayers.length > 0) {
-            const matchPlayers = tripPlayers.map((tp, i) => ({
-              match_id: newMatch.id,
-              trip_player_id: tp.id,
-              side: i % 2 === 0 ? 'team_a' : 'team_b',
-            }))
-            await db.from('match_players').insert(matchPlayers)
-          }
-        } else if (matchError) {
-          console.error('Failed to create synthetic match:', matchError.message)
-        }
-      }
-    }
-
-    if (match) {
-      const scoreData = scores.map((entry) => ({
-        match_id: match!.id,
-        trip_player_id: entry.trip_player_id,
-        hole_id,
-        gross_score: entry.gross_score,
-        updated_at: new Date().toISOString(),
-      }))
-      const { error: scoreError } = await db
-        .from('scores')
-        .upsert(scoreData, { onConflict: 'match_id,trip_player_id,hole_id' })
-      if (scoreError) {
-        console.error('Failed to sync to scores table:', scoreError.message)
-      }
-    }
-  } catch (syncErr) {
-    console.error('Score sync error (non-fatal):', syncErr)
-  }
-
-  // 3. Return updated round_scores
+  // 2. Return updated round_scores
   const { data: updatedScores } = await db
     .from('round_scores')
     .select('*')
     .eq('course_id', courseId)
 
-  // 4. Fire-and-forget: process events + recompute games
+  // 3. Fire-and-forget: process events + recompute games
   processScoreEvents(db, courseId, hole_id, scores).catch(
     (err) => console.error('Live score event processing error:', err)
   )
 
-  // 5. Fire-and-forget: recompute round stats, then trip stats + awards
-  recomputeRoundStats(db, courseId).then(() =>
-    recomputeTripStats(db, courseId)
-  ).catch(
+  // 4. Fire-and-forget: recompute round stats, then trip stats + awards
+  recomputeRoundStats(db, courseId).then(async () => {
+    const { data: c } = await db.from('courses').select('trip_id').eq('id', courseId).single()
+    if (c) await recomputeTripStatsAndAwards(db, c.trip_id)
+  }).catch(
     (err) => console.error('Stats recompute error:', err)
   )
 
@@ -263,107 +197,3 @@ async function recomputeRoundStats(db: SupabaseClient, courseId: string) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Recompute trip stats + awards after round stats are fresh
-// ---------------------------------------------------------------------------
-
-async function recomputeTripStats(db: SupabaseClient, courseId: string) {
-  // Get trip_id from course
-  const { data: course } = await db
-    .from('courses')
-    .select('trip_id')
-    .eq('id', courseId)
-    .single()
-
-  if (!course) return
-
-  const tripId = course.trip_id
-
-  // Get all courses for this trip with holes
-  const { data: courses } = await db
-    .from('courses')
-    .select('id, par, holes(id, hole_number, par, handicap_index)')
-    .eq('trip_id', tripId)
-    .order('round_number')
-
-  if (!courses || courses.length === 0) return
-
-  // Get trip players
-  const { data: tripPlayers } = await db
-    .from('trip_players')
-    .select('id, player:players(id, name)')
-    .eq('trip_id', tripId)
-
-  if (!tripPlayers || tripPlayers.length === 0) return
-
-  const tripPlayerIds = tripPlayers.map(tp => tp.id)
-  const allHoleIds = courses.flatMap(c => (c.holes || []).map((h: { id: string }) => h.id))
-
-  // Get all scores
-  const { data: allScores } = await db
-    .from('scores')
-    .select('trip_player_id, hole_id, gross_score')
-    .in('trip_player_id', tripPlayerIds)
-    .in('hole_id', allHoleIds)
-
-  // Get handicaps
-  const { data: courseHandicaps } = await db
-    .from('player_course_handicaps')
-    .select('trip_player_id, course_id, handicap_strokes')
-    .in('trip_player_id', tripPlayerIds)
-
-  const { data: roundTees } = await db
-    .from('player_round_tees')
-    .select('trip_player_id, course_id, course_handicap')
-    .in('trip_player_id', tripPlayerIds)
-
-  // Compute round stats for each player on each course (using legacy function that works with scores table)
-  const allRoundStats: Record<string, ReturnType<typeof computeRoundStatsLegacy>[]> = {}
-
-  for (const tp of tripPlayers) {
-    allRoundStats[tp.id] = []
-    for (const c of courses) {
-      const holes = (c.holes || []).map((h: { id: string; hole_number: number; par: number; handicap_index: number }) => ({
-        id: h.id, hole_number: h.hole_number, par: h.par, handicap_index: h.handicap_index, course_id: c.id,
-      }))
-      const roundTee = (roundTees || []).find(rt => rt.trip_player_id === tp.id && rt.course_id === c.id)
-      const courseHcp = (courseHandicaps || []).find(ch => ch.trip_player_id === tp.id && ch.course_id === c.id)
-      const handicapStrokes = roundTee?.course_handicap ?? courseHcp?.handicap_strokes ?? 0
-      const strokesMap = getStrokesPerHole(handicapStrokes, holes)
-
-      allRoundStats[tp.id].push(
-        computeRoundStatsLegacy(c.id, tp.id, allScores || [], holes, strokesMap)
-      )
-    }
-  }
-
-  // Upsert trip_stats
-  const now = new Date().toISOString()
-  const tripStatsRecords = tripPlayers
-    .map(tp => ({ ...computeTripStats(tripId, tp.id, allRoundStats[tp.id]), computed_at: now }))
-    .filter(ts => ts.total_holes > 0)
-
-  if (tripStatsRecords.length > 0) {
-    await db.from('trip_stats').upsert(tripStatsRecords, { onConflict: 'trip_id,trip_player_id' })
-  }
-
-  // Compute and replace awards
-  const awardInputs = tripPlayers.map(tp => {
-    const playerArr = tp.player as unknown as { id: string; name: string }[] | null
-    const player = playerArr?.[0] ?? null
-    return {
-      trip_player_id: tp.id,
-      player_name: player?.name ?? 'Unknown',
-      trip_stats: computeTripStats(tripId, tp.id, allRoundStats[tp.id]),
-      round_stats: allRoundStats[tp.id],
-    }
-  })
-
-  const awards = computeAwards(tripId, awardInputs)
-  if (awards.length > 0) {
-    await db.from('trip_awards').delete().eq('trip_id', tripId)
-    await db.from('trip_awards').insert(
-      awards.map(a => ({ trip_id: tripId, ...a, computed_at: now }))
-    )
-  }
-}

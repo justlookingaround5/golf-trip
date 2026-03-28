@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { recomputeTripStatsAndAwards } from '@/lib/recompute-trip-stats'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+
+function getServiceClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 /**
  * POST /api/rounds/[courseId] — End round early (finalize with current scores)
@@ -91,8 +100,36 @@ export async function DELETE(
 
   const tripId = course.trip_id
   const isQuickRound = trip.is_quick_round
+  const db = getServiceClient()
 
-  // Delete the course (cascade deletes holes, round_scores, round_games, etc.)
+  // 1. Delete activity_feed rows for this course (before cascade sets course_id to NULL)
+  await db.from('activity_feed').delete().eq('course_id', courseId)
+
+  // 2. Delete settlement_ledger entries linked to this course's game results
+  const { data: roundGames } = await db
+    .from('round_games')
+    .select('id')
+    .eq('course_id', courseId)
+
+  if (roundGames && roundGames.length > 0) {
+    const gameIds = roundGames.map(rg => rg.id)
+    // game_results reference round_games; settlement_ledger references game_results via source_id
+    const { data: gameResults } = await db
+      .from('game_results')
+      .select('id')
+      .in('round_game_id', gameIds)
+
+    if (gameResults && gameResults.length > 0) {
+      const resultIds = gameResults.map(gr => gr.id)
+      await db
+        .from('settlement_ledger')
+        .delete()
+        .in('source_id', resultIds)
+        .eq('source_type', 'game_result')
+    }
+  }
+
+  // 3. Delete the course (cascade deletes holes, round_scores, round_games, etc.)
   const { error: deleteError } = await supabase
     .from('courses')
     .delete()
@@ -107,6 +144,13 @@ export async function DELETE(
     await supabase.from('trip_players').delete().eq('trip_id', tripId)
     await supabase.from('trip_members').delete().eq('trip_id', tripId)
     await supabase.from('trips').delete().eq('id', tripId)
+  } else {
+    // 4. Recompute trip_stats and trip_awards from remaining rounds
+    try {
+      await recomputeTripStatsAndAwards(db, tripId)
+    } catch (err) {
+      console.error('Failed to recompute trip stats after deletion:', err)
+    }
   }
 
   return NextResponse.json({ success: true, action: 'deleted', isQuickRound })
